@@ -161,7 +161,38 @@ header h1{font-size:16px!important;white-space:nowrap}
 </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
-<script id="s3-fbconfig">window.S3_FB=null;</script>
+<script id="s3-audio">
+/* Real US/UK neural voices, lazy loaded. Nothing is fetched until the first time a sound is played. */
+(function(){
+var H=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(16).padStart(14,'0')};
+var idx={},pend={},A=null,rangeOK=true,cache=new Map(),SIL='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+function fam(l){l=String(l||'');if(location.protocol==='file:')return null;if(/^en[-_]gb/i.test(l))return'uk';if(/^en[-_]us/i.test(l))return'us';return null}
+function el(){if(!A){A=new Audio();try{A.preservesPitch=true}catch(e){}}return A}
+function unlock(){document.removeEventListener('touchend',unlock,true);document.removeEventListener('click',unlock,true);try{var a=el();a.src=SIL;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
+document.addEventListener('touchend',unlock,true);document.addEventListener('click',unlock,true);
+function load(f){if(idx[f])return Promise.resolve(idx[f]);if(pend[f])return pend[f];
+ pend[f]=fetch('audio_index_'+f+'.json').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){idx[f]=j;return j}).catch(function(){setTimeout(function(){delete pend[f]},60000);return null});return pend[f]}
+var bad={};
+function clip(f,ix,e){var k=f+e.join(','),pk=ix.p[e[0]];if(cache.has(k))return Promise.resolve(cache.get(k));
+ if(bad[pk]&&Date.now()-bad[pk]<20000)return Promise.resolve(null);
+ return fetch(pk,{headers:{Range:'bytes='+e[1]+'-'+(e[1]+e[2]-1)}}).then(function(r){
+  if(r.status===200){rangeOK=false;try{r.body&&r.body.cancel()}catch(x){}return null}
+  if(r.status!==206){bad[pk]=Date.now();return null}
+  return r.arrayBuffer()}).then(function(b){if(!b)return null;var u=URL.createObjectURL(new Blob([b],{type:'audio/mpeg'}));
+  if(cache.size>400){var o=cache.keys().next().value;try{URL.revokeObjectURL(cache.get(o))}catch(x){}cache.delete(o)}cache.set(k,u);return u}).catch(function(){return null})}
+window.S3A={fam:fam,
+ stop:function(){if(A){try{A.onended=A.onerror=null;A.pause()}catch(e){}}},
+ play:function(f,text,rate,isCur,cb){if(!rangeOK)return Promise.resolve(false);
+  var key=H(String(text).toLowerCase());
+  return load(f).then(function(ix){if(!ix)return false;var e=ix.m[key];if(!e)return false;
+   return clip(f,ix,e).then(function(u){if(!u)return false;if(!isCur())return true;
+    var a=el();a.onended=function(){if(isCur()&&cb)cb()};a.onerror=null;a.src=u;a.playbackRate=rate||1;
+    var p=a.play();return p&&p.then?p.then(function(){return true},function(){return false}):true})})}};
+try{if(window.speechSynthesis){var oc=speechSynthesis.cancel.bind(speechSynthesis);speechSynthesis.cancel=function(){window.S3A.stop();return oc()}}}catch(e){}
+})();
+</script>
+
+<script id="s3-fbconfig">window.S3_FB={apiKey:"AIzaSyDRk19Es3claWEYZybQT0QcMwQTl3xIIe0",authDomain:"english-3-sec.firebaseapp.com",projectId:"english-3-sec",storageBucket:"english-3-sec.firebasestorage.app",messagingSenderId:"563965840525",appId:"1:563965840525:web:1945655946be1045cde6c4"};</script>
 <script id="s3-shuf">
 /* Option shuffling: options are reordered in memory per question (new order on every login and every quiz start).
    Saved progress is stored in the ORIGINAL option order ("canonical"), so reports/backups stay correct. */
@@ -4753,6 +4784,8 @@ function speak(raw,cb,pitch,langOv){
   const ua=navigator.userAgent;
   if(/Chrome/.test(ua)&&!/Android|Edg|OPR/.test(ua)&&v&&v.localService===false)
    keep=setInterval(()=>{if(!speechSynthesis.speaking){clearInterval(keep);return}speechSynthesis.pause();speechSynthesis.resume()},10000)};
+ const fam=!arabic&&window.S3A?S3A.fam(lang):null;
+ if(fam){S3A.stop();S3A.play(fam,text,Math.max(.5,Math.min(1.5,state.voiceRate||1)),()=>id===spkId,cb).then(ok=>{if(!ok&&id===spkId){if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(run,80)}else run()}});return}
  if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(run,80)}else run()}
 window.speakText=speak;
 function fillVoiceSel(){const s=$('s3-voice');vStatus();if(!s)return;const lang=state.voiceAccent||'en-US';
@@ -4792,13 +4825,38 @@ function statsFor(s){if(s.sum){const m=s.sum;return{s,p:{log:[],days:{},xp:m.xp|
  const real=p.log.filter(e=>e.k!=='srs'&&e.k!=='bonus'),ok=real.filter(e=>e.ok).length,wk=Date.now()-7*864e5;
  const mastered=Object.values(b.srsMap||{}).filter(x=>x.level===2).length;
  return{s,p,b,xp:p.xp||0,wxp:p.log.filter(e=>e.t>wk).reduce((a,e)=>a+e.xp,0),att:real.length,ok,acc:real.length?Math.round(ok/real.length*100):0,cur:p.cur||0,best:p.best||0,ds:dayStreak(p.days||{}),mastered,last:p.last||0}}
-const badges=x=>[x.best>=5&&'🔥 Streak 5+',x.ds>=3&&'📅 '+x.ds+'-day habit',x.att>=20&&x.acc>=90&&'🎯 Sharpshooter',x.mastered>=25&&'🏆 Master',x.att>=100&&'📚 Bookworm',x.xp>=500&&'⭐ 500 XP'].filter(Boolean);
+const RANKS=[[0,'🌱','Beginner'],[100,'📘','Learner'],[300,'🧭','Explorer'],[700,'🏅','Achiever'],[1500,'💎','Expert'],[3000,'👑','Master']];
+const rankOf=xp=>{let k=0;RANKS.forEach((r,i)=>{if(xp>=r[0])k=i});const r=RANKS[k],n=RANKS[k+1];return{i:k,ic:r[1],n:r[2],next:n?n[2]:null,need:n?n[0]-xp:0,pct:n?Math.round((xp-r[0])/(n[0]-r[0])*100):100}};
+const BDG=[['first','👣','First Steps','Answer 10 questions',x=>x.att>=10],['s5','🔥','Streak 5','5 correct answers in a row',x=>x.best>=5],['s10','⚡','Streak 10','10 correct in a row',x=>x.best>=10],['s20','🚀','Streak 20','20 correct in a row',x=>x.best>=20],
+['d3','📅','3-Day Habit','Practise 3 days in a row',x=>x.ds>=3],['d7','🗓️','Week Warrior','Practise 7 days in a row',x=>x.ds>=7],['d14','🏕️','Two Weeks Strong','Practise 14 days in a row',x=>x.ds>=14],
+['sh','🎯','Sharpshooter','90% accuracy after 20 answers',x=>x.att>=20&&x.acc>=90],['ace','🧠','Accuracy Ace','85% accuracy after 100 answers',x=>x.att>=100&&x.acc>=85],
+['m10','🌟','Mastery 10','Master 10 questions',x=>x.mastered>=10],['m25','🏆','Master','Master 25 questions',x=>x.mastered>=25],['m50','🎓','Grand Master','Master 50 questions',x=>x.mastered>=50],
+['a100','📚','Bookworm','Answer 100 questions',x=>x.att>=100],['a300','📖','Scholar','Answer 300 questions',x=>x.att>=300],['a600','🦉','Wise Owl','Answer 600 questions',x=>x.att>=600],
+['x500','⭐','500 XP','Earn 500 XP',x=>x.xp>=500],['x1000','✨','1000 XP','Earn 1000 XP',x=>x.xp>=1000],['x2500','🌠','2500 XP','Earn 2500 XP',x=>x.xp>=2500]];
+const badges=x=>BDG.filter(b=>b[4](x)).map(b=>b[1]+' '+b[2]);
+const ach=(function(){const sk=id=>'s3ach_'+id;
+ function pop(ic,t,s){const o=document.createElement('div');o.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%) scale(.6);z-index:99999;background:var(--surf,#fff);color:var(--tx,#111);border:2px solid var(--ac,#4f46e5);border-radius:20px;padding:18px 26px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);opacity:0;transition:all .35s cubic-bezier(.3,1.6,.5,1);max-width:86vw';o.innerHTML='<div style="font-size:46px">'+ic+'</div><div style="font-weight:800;font-size:17px">'+esc(t)+'</div><div style="font-size:13px;opacity:.75">'+esc(s)+'</div>';document.body.appendChild(o);requestAnimationFrame(()=>{o.style.opacity=1;o.style.transform='translateX(-50%) scale(1)'});setTimeout(()=>{o.style.opacity=0;setTimeout(()=>o.remove(),400)},3200);o.onclick=()=>o.remove()}
+ let q=[],busy=0;function run(){if(busy||!q.length)return;busy=1;const a=q.shift();pop(a[0],a[1],a[2]);setTimeout(()=>{busy=0;run()},3700)}
+ function check(){if(!isStudent())return;try{const x=statsFor({id:SESS.id,name:SESS.name}),id=SESS.id,k=sk(id),seen=ls.get(k,null),ids=BDG.filter(b=>b[4](x)).map(b=>b[0]),r=rankOf(x.xp).i;
+  if(!seen){ls.set(k,{b:ids,r});return}
+  const nb=ids.filter(i=>!seen.b.includes(i));
+  if(nb.length||r!==seen.r){ls.set(k,{b:ids,r:Math.max(r,seen.r)});
+   if(nb.length<=3){if(r>seen.r)q.push([rankOf(x.xp).ic,'Rank up: '+rankOf(x.xp).n+'!','Great work. Keep going!']);nb.forEach(i=>{const b=BDG.find(z=>z[0]===i);q.push([b[1],'Badge: '+b[2],b[3]])});run()}}}catch(e){}}
+ function panel(){if(!isStudent())return;const x=statsFor({id:SESS.id,name:SESS.name}),r=rankOf(x.xp);const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99998;display:flex;align-items:flex-end;justify-content:center';
+  o.onclick=e=>{if(e.target===o)o.remove()};
+  o.innerHTML='<div style="background:var(--surf,#fff);color:var(--tx,#111);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🏅 My rank and badges</b><button class="s3btn ghost" id="s3ach-x">Close</button></div>'+
+  '<div style="text-align:center;margin:14px 0"><div style="font-size:54px">'+r.ic+'</div><div style="font-size:22px;font-weight:800">'+r.n+'</div><div class="s3sub">'+x.xp+' XP'+(r.next?' · '+r.need+' XP to '+r.next:' · top rank!')+'</div><div class="lsbar" style="height:12px;margin:8px 20px"><i style="width:'+r.pct+'%"></i></div></div>'+
+  '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px">'+RANKS.map((z,i)=>'<span class="s3pill" style="opacity:'+(i<=r.i?1:.4)+'">'+z[1]+' '+z[2]+' '+z[0]+'</span>').join('')+'</div>'+
+  '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'+BDG.map(b=>{const ok=b[4](x);return '<div style="border:1px solid var(--bd);border-radius:14px;padding:10px 6px;text-align:center;'+(ok?'background:var(--okbg)':'opacity:.5;filter:grayscale(1)')+'"><div style="font-size:28px">'+(ok?b[1]:'🔒')+'</div><div style="font-weight:700;font-size:12px">'+b[2]+'</div><div style="font-size:10px;opacity:.75">'+b[3]+'</div></div>'}).join('')+'</div><div class="s3sub" style="text-align:center;margin-top:10px">'+BDG.filter(b=>b[4](x)).length+' / '+BDG.length+' badges</div></div>';
+  document.body.appendChild(o);o.querySelector('#s3ach-x').onclick=()=>o.remove()}
+ return{check,panel}})();
+window.s3Ach=()=>ach.panel();
 const ago=t=>{if(!t)return'never';const m=(Date.now()-t)/6e4;return m<2?'just now':m<60?Math.round(m)+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'};
 
 /* ---------- CHIP / NAV ---------- */
 function refreshChip(){const c=$('s3-chip');if(!c)return;if(!SESS){c.innerHTML='';return}
- let xp='';if(isStudent()){const p=getProg(SESS.id);xp='<span class="s3pill">'+(p.avatar||'🙂')+' Lv '+(Math.floor(Math.sqrt((p.xp||0)/50))+1)+' · ⭐ '+(p.xp||0)+' XP</span><span class="s3pill">🔥 '+(state.streak||0)+'</span>'}
- c.innerHTML=xp+'<span class="s3pill">'+(isTeacher()?'👩‍🏫 Teacher':'🎓 '+esc(SESS.name))+'</span><button class="s3pill" onclick="s3Logout()" style="cursor:pointer">Log out</button>'}
+ let xp='';if(isStudent()){const p=getProg(SESS.id);const rk=rankOf(p.xp||0);xp='<button class="s3pill s3rk" style="cursor:pointer" onclick="s3Ach()">'+(p.avatar||'🙂')+' '+rk.ic+' '+rk.n+' · '+(p.xp||0)+'</button><span class="s3pill">🔥 '+(state.streak||0)+'</span>'}
+ setTimeout(()=>ach.check(),50);if(window.s3Game)xp+='<button class="s3pill" style="cursor:pointer" onclick="s3Game.open()">🎮</button><button class="s3pill" style="cursor:pointer" onclick="s3Game.place()">🧭 Level</button>';c.innerHTML=xp+'<span class="s3pill">'+(isTeacher()?'👩‍🏫 Teacher':'🎓 '+esc(SESS.name))+'</span><button class="s3pill" onclick="s3Logout()" style="cursor:pointer">Log out</button>'}
 const TABS=['bank','quiz','read','write','exam','play','listen','notebook','srs','reference','worksheet','add','board','report','students'];
 const LABEL={bank:'📝 Question Bank',quiz:'🎓 Exam',read:'📖 Reading',write:'✍️ Writing',exam:'✍️ Rewrite & Translation',play:'🎯 Challenges',listen:'🎧 Listening',notebook:'📓 Notebook',srs:'🧠 Mastery',reference:'📚 Study Guide',worksheet:'🖨️ Worksheets',add:'➕ Add Questions',board:'🏆 Leaderboard',report:'📊 Reports',students:'👥 Students'};
 function allowed(t){if(!SESS)return false;if(t==='add'||t==='students')return isTeacher();return true}
@@ -4869,7 +4927,7 @@ function renderBoard(){const v=$('view-board');if(window.S3CLOUD&&S3CLOUD.on&&!S
  const pod=[1,0,2].filter(i=>rows[i]).map(i=>'<div class="pod p'+(i+1)+'"><div style="font-size:26px">'+['🥇','🥈','🥉'][i]+'</div><b>'+esc(rows[i].s.name)+'</b><span>'+val(rows[i])+' XP</span><div style="font-size:11px">🔥 '+rows[i].best+' best</div></div>').join('');
  v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="s3h">🏆 Class Leaderboard</div><div class="s3sub">+10 XP per correct answer · +5 streak bonus · +20 when you master a question · +15 rewrite · +10 translation</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+clsSel()+'<button class="s3btn '+(boardMode==='all'?'':'ghost')+'" onclick="s3Board(\'all\')">All time</button><button class="s3btn '+(boardMode==='week'?'':'ghost')+'" onclick="s3Board(\'week\')">This week</button></div></div>'+
  (rows.length?'<div class="podium" style="margin:18px 0">'+pod+'</div><div style="overflow-x:auto"><table class="s3tbl"><tr><th>#</th><th>Student</th><th>XP</th><th>🔥 Streak</th><th>Best</th><th>📅 Days</th><th>Accuracy</th><th>Mastered</th><th>Badges</th></tr>'+
- rows.map((x,i)=>'<tr style="'+(x.s.id===me?'background:var(--acs)':'')+'"><td>'+(i+1)+'</td><td><b>'+esc(x.s.name)+'</b>'+(x.s.cls?' <span class="s3sub">'+esc(x.s.cls)+'</span>':'')+(x.s.id===me?' (you)':'')+'</td><td><b>'+val(x)+'</b></td><td>'+x.cur+'</td><td>'+x.best+'</td><td>'+x.ds+'</td><td>'+x.acc+'%</td><td>'+x.mastered+'</td><td style="font-size:11px">'+badges(x).join(' · ')+'</td></tr>').join('')+'</table></div>':'<p class="s3sub" style="margin-top:14px">No students yet — the teacher can add them in the Students tab.</p>')+'</div>'}
+ rows.map((x,i)=>'<tr style="'+(x.s.id===me?'background:var(--acs)':'')+'"><td>'+(i+1)+'</td><td>'+rankOf(x.xp).ic+' <b>'+esc(x.s.name)+'</b>'+(x.s.cls?' <span class="s3sub">'+esc(x.s.cls)+'</span>':'')+(x.s.id===me?' (you)':'')+'</td><td><b>'+val(x)+'</b></td><td>'+x.cur+'</td><td>'+x.best+'</td><td>'+x.ds+'</td><td>'+x.acc+'%</td><td>'+x.mastered+'</td><td style="font-size:13px" title="'+esc(badges(x).join(', '))+'">'+(badges(x).map(b=>b.split(' ')[0]).join(' ')||'—')+'</td></tr>').join('')+'</table></div>':'<p class="s3sub" style="margin-top:14px">No students yet — the teacher can add them in the Students tab.</p>')+'</div>'}
 
 /* ---------- REPORTS ---------- */
 let repId=null;window.s3ViewRep=id=>{repId=id;switchTab('report')};
@@ -4892,7 +4950,7 @@ function renderReport(){const v=$('view-report');if(window.S3CLOUD&&S3CLOUD.on&&
  const wrongHtml=wrong.length?'<ul style="margin:6px 0 0 16px;font-size:12px">'+wrong.map(q=>'<li style="margin-bottom:5px">'+esc(q.question)+' → <b style="color:var(--ok)">'+esc(q.options[q.answer])+'</b> <span class="s3sub">(Unit '+q.unit+')</span></li>').join('')+'</ul>':'<p class="s3sub">No wrong answers recorded 🎉</p>';
  const rank=CLS.students.map(statsFor).sort((a,b)=>b.xp-a.xp).findIndex(y=>y.s.id===s.id)+1;
  const note=isTeacher()?'<textarea id="rep-note" class="s3in" rows="2" placeholder="Teacher comment…" onchange="s3Note(\''+s.id+'\',this.value)">'+esc(x.p.note||'')+'</textarea>':(x.p.note?'<div style="border-left:4px solid var(--ac);padding-left:10px">'+esc(x.p.note)+'</div>':'<p class="s3sub">No teacher comment yet.</p>');
- v.innerHTML=tools+'<div id="report-sheet" class="bg-white rounded-2xl border p-6"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:2px solid var(--bd);padding-bottom:10px"><div><div class="s3h">Progress Report — '+esc(s.name)+(s.cls?' · Class '+esc(s.cls):'')+'</div><div class="s3sub">Secondary 3 English · Teacher: '+esc(CLS.teacher&&CLS.teacher.name)+' · '+new Date().toLocaleDateString()+'</div></div><div class="s3pill">Class rank #'+rank+' of '+CLS.students.length+'</div></div>'+
+ v.innerHTML=tools+'<div id="report-sheet" class="bg-white rounded-2xl border p-6"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;border-bottom:2px solid var(--bd);padding-bottom:10px"><div><div class="s3h">Progress Report — '+esc(s.name)+(s.cls?' · Class '+esc(s.cls):'')+'</div><div class="s3sub">Secondary 3 English · Teacher: '+esc(CLS.teacher&&CLS.teacher.name)+' · '+new Date().toLocaleDateString()+'</div></div><div class="s3pill">Class rank #'+rank+' of '+CLS.students.length+'</div></div>'+(window.s3PlBox&&x.p.place?s3PlBox(x.p.place):'')+
  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:14px 0"><div class="kpi"><b>'+x.xp+'</b><span>XP</span></div><div class="kpi"><b>'+x.acc+'%</b><span>Accuracy</span></div><div class="kpi"><b>'+x.att+'</b><span>Answered</span></div><div class="kpi"><b>'+x.mastered+'</b><span>Mastered</span></div><div class="kpi"><b>'+x.best+'</b><span>Best streak</span></div><div class="kpi"><b>'+x.ds+'</b><span>Day streak</span></div></div>'+
  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px"><div><div class="s3lbl">Accuracy by unit</div>'+unitRows+'</div><div><div class="s3lbl">Accuracy by skill</div>'+(catRows||'<p class="s3sub">—</p>')+'<div class="s3lbl" style="margin-top:14px">Activity (14 days)</div>'+act+'</div></div>'+
  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:16px"><div><div class="s3lbl">Needs revision</div><p style="font-size:13px">'+(weak.join(', ')||'Nothing flagged yet')+'</p><div class="s3lbl">Strengths</div><p style="font-size:13px">'+(strong.join(', ')||'Keep practising to find out!')+'</p><div class="s3lbl">Badges</div><p style="font-size:13px">'+(badges(x).join(' · ')||'—')+'</p><div class="s3lbl">Last active</div><p style="font-size:13px">'+ago(x.last)+'</p></div><div><div class="s3lbl">Questions to review</div>'+wrongHtml+'</div></div>'+
@@ -4900,7 +4958,7 @@ function renderReport(){const v=$('view-report');if(window.S3CLOUD&&S3CLOUD.on&&
 window.s3Note=(id,t)=>{const p=getProg(id);p.note=t;if(window.S3CLOUD&&S3CLOUD.on){S3CLOUD.saveNote(id,t)}else ls.set(progKey(id),p);toast('Comment saved')};
 window.s3PrintRep=()=>{document.body.classList.add('print-report');setTimeout(()=>{print();document.body.classList.remove('print-report')},120)};
 window.s3ClassCsv=()=>{const h=['Class','Name','XP','Weekly XP','Accuracy %','Answered','Mastered','Best streak','Day streak','Last active'];const r=CLS.students.map(statsFor).map(x=>[x.s.cls||'',x.s.name,x.xp,x.wxp,x.acc,x.att,x.mastered,x.best,x.ds,x.last?new Date(x.last).toLocaleString():''].map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(','));download('class_report.csv',[h.join(',')].concat(r).join('\n'),'text/csv')};
-window.s3Overview=()=>{const v=$('view-report');const rows=CLS.students.map(statsFor).sort((a,b)=>b.xp-a.xp);v.innerHTML='<div id="report-controls" style="margin-bottom:12px"><button class="s3btn ghost" onclick="renderReportBack()">← Back</button> <button class="s3btn" onclick="s3PrintRep()">🖨️ Print</button></div><div id="report-sheet" class="bg-white rounded-2xl border p-6" style="overflow-x:auto"><div class="s3h">Class overview — '+new Date().toLocaleDateString()+'</div><table class="s3tbl" style="margin-top:10px"><tr><th>Class</th><th>Student</th><th>XP</th><th>Accuracy</th><th>Answered</th><th>Mastered</th><th>Best streak</th><th>Last active</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.s.cls||'—')+'</td><td><b>'+esc(x.s.name)+'</b></td><td>'+x.xp+'</td><td>'+x.acc+'%</td><td>'+x.att+'</td><td>'+x.mastered+'</td><td>'+x.best+'</td><td>'+ago(x.last)+'</td></tr>').join('')+'</table></div>'};
+window.s3Overview=()=>{const v=$('view-report');const rows=CLS.students.map(statsFor).sort((a,b)=>b.xp-a.xp);v.innerHTML='<div id="report-controls" style="margin-bottom:12px"><button class="s3btn ghost" onclick="renderReportBack()">← Back</button> <button class="s3btn" onclick="s3PrintRep()">🖨️ Print</button></div><div id="report-sheet" class="bg-white rounded-2xl border p-6" style="overflow-x:auto"><div class="s3h">Class overview — '+new Date().toLocaleDateString()+'</div><table class="s3tbl" style="margin-top:10px"><tr><th>Class</th><th>Student</th><th>XP</th><th>Accuracy</th><th>Answered</th><th>Mastered</th><th>Best streak</th><th>Level</th><th>Last active</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.s.cls||'—')+'</td><td><b>'+esc(x.s.name)+'</b></td><td>'+x.xp+'</td><td>'+x.acc+'%</td><td>'+x.att+'</td><td>'+x.mastered+'</td><td>'+x.best+'</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td>'+ago(x.last)+'</td></tr>').join('')+'</table></div>'};
 window.renderReportBack=renderReport;
 window.s3Wa=()=>{const s=CLS.students.find(x=>x.id===repId);if(!s)return;const x=statsFor(s);const t='📘 Secondary 3 English — progress for '+s.name+'\n⭐ XP: '+x.xp+'\n🎯 Accuracy: '+x.acc+'% ('+x.att+' answered)\n🏆 Mastered: '+x.mastered+'\n🔥 Best streak: '+x.best+' · '+x.ds+'-day habit\n'+(x.p.note?'📝 Teacher: '+x.p.note:'');window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')};
 function addXP(n,label){if(!isStudent())return;const p=getProg(SESS.id);p.xp=(p.xp||0)+n;p.log.push({t:Date.now(),q:'bonus',u:0,c:label||'Bonus',ok:1,xp:n,k:'bonus'});p.last=Date.now();const d=dayKey();p.days[d]=(p.days[d]||0)+1;saveProg(p);refreshChip()}
@@ -4979,12 +5037,17 @@ const me=()=>S.SESS(),stu=()=>S.isStudent();
 const sorted=()=>state.allQuestions.slice().sort((a,b)=>String(a.id).localeCompare(String(b.id),undefined,{numeric:true}));
 function fmtT(s){s=Math.max(0,s);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 
+const cloudOn=()=>(window.S3CLOUD&&S3CLOUD.on);
+function hwLoadOnce(){if(cloudOn()&&!S3CLOUD.offline&&S3CLOUD.hwStale()){S3CLOUD.hwLoad().then(()=>{if(!R)render()})}}
+function hwBanner(){hwLoadOnce();const A=(S.CLS().assignments||[]),pr=S.getProg(me().id).asg||{},td=S.dayKey(),open=A.filter(a=>!pr[a.id]);if(!A.length)return'';if(!open.length)return'<div style="margin-top:12px;font-size:13px">📋 Homework: all done ✅</div>';
+ return'<div style="margin-top:12px;border:1px solid var(--bd);border-radius:12px;padding:10px"><div class="s3h" style="font-size:14px">📋 Homework · '+open.length+' to do</div>'+open.slice(0,3).map(a=>{const late=a.due&&a.due<td;return'<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:8px"><div style="font-size:13px"><b>'+esc(a.title)+'</b><div class="s3sub">'+a.count+' questions · Due '+(a.due||'no deadline')+(late?' (overdue)':'')+'</div></div><button class="s3btn" onclick="s3Play.asgStart(\''+a.id+'\')">Start</button></div>'}).join('')+(open.length>3?'<div class="s3sub" style="margin-top:8px">+ '+(open.length-3)+' more in Assignments</div>':'')+'</div>'}
 function header(){
  let h='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:14px">';
  if(stu()){const p=S.getProg(me().id),l=level(p.xp),lo=nextAt(l-1),hi=nextAt(l),pc=Math.min(100,Math.round(((p.xp||0)-lo)/(hi-lo)*100));
   const goal=S.CLS().goal||200,wx=S.statsFor(S.CLS().students.find(s=>s.id===me().id)).wxp,gp=Math.min(100,Math.round(wx/goal*100));
   h+='<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center"><div style="font-size:44px">'+(p.avatar||'🙂')+'</div><div style="flex:1;min-width:200px"><div class="s3h" style="font-size:16px">Level '+l+' · '+TITLES[Math.min(TITLES.length-1,l-1)]+'</div><div class="s3sub">'+(p.xp||0)+' / '+hi+' XP to level '+(l+1)+'</div><div class="s3bar"><i style="width:'+pc+'%"></i></div><div class="s3sub" style="margin-top:8px">Weekly goal: '+wx+' / '+goal+' XP '+(gp>=100?'✅':'')+'</div><div class="s3bar"><i style="width:'+gp+'%"></i></div></div></div><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:10px">'+AVATARS.map(a=>'<button onclick="s3Play.avatar(\''+a+'\')" style="font-size:20px;border:1px solid var(--bd);background:var(--surf2);border-radius:10px;padding:2px 7px;cursor:pointer">'+a+'</button>').join('')+'</div>'
  }else h+='<div class="s3h" style="font-size:16px">🎯 Challenges</div><div class="s3sub">Teacher view: create assignments and set the weekly XP goal. Students see daily challenge, mock exams, dictation and assignments.</div>';
+ if(stu())h+=hwBanner();
  return h+'</div>'}
 function nav(){const t=[['daily','📅 Daily'],['dict','✍️ Dictation'],['asg','📋 Assignments']];
  return'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">'+t.map(x=>'<button class="s3btn '+(sub===x[0]?'':'ghost')+'" onclick="s3Play.go(\''+x[0]+'\')">'+x[1]+'</button>').join('')+'</div>'}
@@ -5019,10 +5082,18 @@ function drawResult(){const w=R.qs.map((q,i)=>[q,R.ans[i]]).filter(([q,a])=>a!==
 function back(){R=null;render()}
 
 /* ---- Daily ---- */
-function drawDaily(){const today=S.dayKey(),p=stu()?S.getProg(me().id):{};
- const done=p.daily&&p.daily.date===today;
- card('<div class="s3h" style="font-size:16px">📅 Daily Challenge</div><div class="s3sub">10 fresh questions every day (same set for the whole class). Finish for +30 XP bonus plus 5 XP per correct answer.</div>'+(done?'<p style="margin-top:12px"><b>✅ Done today:</b> '+p.daily.score+' / '+p.daily.n+'. Come back tomorrow!</p>':'<button class="s3btn" style="margin-top:12px" onclick="s3Play.daily()">Start today\'s challenge</button>'))}
-function daily(){const r=rng('daily'+S.dayKey());start({title:'Daily Challenge',kind:'daily',qs:pick(sorted(),10,r),immediate:true,xpEach:5,bonus:30,save:p=>{p.daily={date:S.dayKey(),score:R.score,n:R.qs.length}}})}
+function dstreakOf(dl){let n=0,t=Date.now();if(!dl[S.dayKey(t)])t-=864e5;while(dl[S.dayKey(t)]){n++;t-=864e5}return n}
+function calHtml(dl){const k=S.dayKey(),y=+k.slice(0,4),m=+k.slice(5,7),td=+k.slice(8,10),wd=new Date(Date.UTC(y,m-1,1)).getUTCDay(),off=(wd+1)%7,nd=new Date(Date.UTC(y,m,0)).getUTCDate();
+ let c=['S','S','M','T','W','T','F'].map(x=>'<div style="font-size:11px;opacity:.6;text-align:center">'+x+'</div>').join('');for(let i=0;i<off;i++)c+='<div></div>';
+ for(let d=1;d<=nd;d++){const key=k.slice(0,8)+String(d).padStart(2,'0'),ok=dl[key];c+='<div style="text-align:center;padding:6px 0;border-radius:10px;font-size:13px;'+(ok?'background:var(--okbg);border:1px solid var(--ok);font-weight:700':'border:1px solid var(--bd)')+(d===td?';outline:2px solid var(--ac)':'')+(d>td?';opacity:.4':'')+'">'+(ok?'✅':d)+'</div>'}
+ return '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px">'+c+'</div>'}
+function drawDaily(){const today=S.dayKey(),p=stu()?S.getProg(me().id):{};const dl=p.dl||{};
+ let out='';const cd=x=>'<div class="bg-white rounded-2xl border p-5" style="margin-bottom:12px">'+x+'</div>';const done=p.daily&&p.daily.date===today,qd=p.quick&&p.quick.date===today,st=dstreakOf(dl),next=[3,7,14,30].find(x=>x>st),days=Object.keys(dl).filter(x=>x.slice(0,7)===today.slice(0,7)).length;
+ out+=cd('<div class="s3h" style="font-size:16px">🔥 Daily streak: '+st+(st===1?' day':' days')+'</div><div class="s3sub">Do any daily challenge each day to keep your streak. Bonus XP every day (2 XP x streak, up to 14) plus rewards at 3 days (+15), 7 days (+40), 14 days (+80) and 30 days (+200).'+(next?' Next reward: day '+next+'.':' You reached the top reward!')+'</div>'+calHtml(dl)+'<div class="s3sub" style="margin-top:6px">'+days+' day'+(days===1?'':'s')+' this month. Best streak: '+(p.dbest||st)+'</div>');
+ out+=cd('<div class="s3h" style="font-size:16px">⚡ Quick 5</div><div class="s3sub">5 fresh questions, about 2 minutes. +10 XP bonus plus 5 XP per correct answer.</div>'+(qd?'<p style="margin-top:12px"><b>✅ Done today:</b> '+p.quick.score+' / '+p.quick.n+'</p>':'<button class="s3btn" style="margin-top:12px" onclick="s3Play.quick5()">Start Quick 5</button>'));
+ out+=cd('<div class="s3h" style="font-size:16px">📅 Daily Challenge</div><div class="s3sub">10 fresh questions every day (same set for the whole class). Finish for +30 XP bonus plus 5 XP per correct answer.</div>'+(done?'<p style="margin-top:12px"><b>✅ Done today:</b> '+p.daily.score+' / '+p.daily.n+'. Come back tomorrow!</p>':'<button class="s3btn" style="margin-top:12px" onclick="s3Play.daily()">Start today\'s challenge</button>'));$('play-root').innerHTML=out}
+function quick5(){const r=rng('quick'+S.dayKey());start({title:'Quick 5',kind:'daily',qs:pick(sorted(),5,r),immediate:true,xpEach:5,bonus:10,save:p=>{p.quick={date:S.dayKey(),score:R.score,n:R.qs.length};window.s3DailyHook&&s3DailyHook(p,R)}})}
+function daily(){const r=rng('daily'+S.dayKey());start({title:'Daily Challenge',kind:'daily',qs:pick(sorted(),10,r),immediate:true,xpEach:5,bonus:30,save:p=>{p.daily={date:S.dayKey(),score:R.score,n:R.qs.length};window.s3DailyHook&&s3DailyHook(p,R)}})}
 
 /* ---- Mock exam ---- */
 function drawMock(){const hist=stu()?(S.getProg(me().id).mocks||[]).slice(-5).reverse():[];
@@ -5046,22 +5117,24 @@ function dictNext(){D.i++;D.res=null;D.said=0;render()}
 
 /* ---- Assignments ---- */
 function asgQs(a){const pool=sorted().filter(q=>(!a.units.length||a.units.includes(q.unit))&&(a.cat==='all'||q.category===a.cat));return pick(pool,a.count,rng('asg'+a.id))}
-function drawAsg(){const C=S.CLS();C.assignments=C.assignments||[];const A=C.assignments;let h='';
- if(S.isTeacher()){h+='<div class="s3h" style="font-size:16px">📋 Create assignment</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:10px 0"><div><label class="s3lbl">Title</label><input id="a-t" class="s3in" placeholder="Unit 5 revision"></div><div><label class="s3lbl">Units</label><select id="a-u" class="s3in"><option value="all">All</option>'+[...Array(12)].map((_,i)=>'<option value="'+(i+1)+'">Unit '+(i+1)+'</option>').join('')+'</select></div><div><label class="s3lbl">Skill</label><select id="a-c" class="s3in"><option value="all">Mixed</option><option>Grammar</option><option>Main Vocabulary</option><option>Side Vocabulary</option><option>Expressions & Idioms</option></select></div><div><label class="s3lbl">Questions</label><select id="a-n" class="s3in"><option>10</option><option>15</option><option>20</option><option>30</option></select></div><div><label class="s3lbl">Due date</label><input id="a-d" type="date" class="s3in"></div></div><button class="s3btn" onclick="s3Play.asgAdd()">+ Assign to class</button>'+
+function drawAsg(){hwLoadOnce();const C=S.CLS();C.assignments=C.assignments||[];const A=C.assignments;let h='';
+ if(S.isTeacher()){h+='<div class="s3h" style="font-size:16px">📋 Create assignment</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:10px 0"><div><label class="s3lbl">Title</label><input id="a-t" class="s3in" placeholder="Unit 5 revision"></div><div><label class="s3lbl">Units</label><select id="a-u" class="s3in"><option value="all">All</option>'+[...Array(12)].map((_,i)=>'<option value="'+(i+1)+'">Unit '+(i+1)+'</option>').join('')+'</select></div><div><label class="s3lbl">Skill</label><select id="a-c" class="s3in"><option value="all">Mixed</option><option>Grammar</option><option>Main Vocabulary</option><option>Side Vocabulary</option><option>Expressions & Idioms</option></select></div><div><label class="s3lbl">Questions</label><select id="a-n" class="s3in"><option>10</option><option>15</option><option>20</option><option>30</option></select></div>'+(cloudOn()?'<div><label class="s3lbl">Class</label><select id="a-k" class="s3in"><option value="all">All classes</option>'+[...new Set(S.CLS().students.map(s=>s.cls).filter(Boolean))].sort().map(c=>'<option>'+esc(c)+'</option>').join('')+'</select></div>':'')+'<div><label class="s3lbl">Due date</label><input id="a-d" type="date" class="s3in"></div></div><button class="s3btn" onclick="s3Play.asgAdd()">+ Assign to class</button>'+
   '<div class="s3lbl" style="margin-top:18px">Weekly XP goal for every student</div><div style="display:flex;gap:8px;max-width:300px"><input id="goal" type="number" class="s3in" value="'+(C.goal||200)+'"><button class="s3btn ghost" onclick="s3Play.goal()">Save</button></div><hr style="border:0;border-top:1px solid var(--bd);margin:18px 0">'}
  h+='<div class="s3h" style="font-size:16px">Assignments</div>';
  if(!A.length)h+='<p class="s3sub">No assignments yet.</p>';
  A.slice().reverse().forEach(a=>{const late=a.due&&new Date(a.due+'T23:59:59')<new Date();
-  h+='<div style="border:1px solid var(--bd);border-radius:14px;padding:12px;margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><b>'+esc(a.title)+'</b><div class="s3sub">'+a.count+' questions · '+(a.units.length?'Unit '+a.units.join(','):'All units')+' · '+esc(a.cat)+' · Due '+(a.due||'no deadline')+(late?' (overdue)':'')+'</div></div>';
-  if(S.isTeacher()){const st=S.CLS().students.map(s=>{const r=(S.getProg(s.id).asg||{})[a.id];return'<tr><td>'+esc(s.name)+'</td><td>'+(r?'✅ '+r.score+'/'+r.n:'<span style="color:#e11d48">not done</span>')+'</td></tr>'}).join('');h+='<button class="s3btn danger" onclick="s3Play.asgDel(\''+a.id+'\')">Delete</button></div><table class="s3tbl" style="margin-top:8px">'+st+'</table></div>'}
+  h+='<div style="border:1px solid var(--bd);border-radius:14px;padding:12px;margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div><b>'+esc(a.title)+'</b><div class="s3sub">'+a.count+' questions · '+(a.units.length?'Unit '+a.units.join(','):'All units')+' · '+esc(a.cat)+(a.cls&&a.cls!=='all'?' · Class '+esc(a.cls):cloudOn()?' · All classes':'')+' · Due '+(a.due||'no deadline')+(late?' (overdue)':'')+'</div></div>';
+  if(S.isTeacher()){const st=S.CLS().students.filter(s=>!a.cls||a.cls==='all'||s.cls===a.cls).map(s=>{const r=(S.getProg(s.id).asg||{})[a.id];return'<tr><td>'+esc(s.name)+'</td><td>'+(r?'✅ '+r.score+'/'+r.n:'<span style="color:#e11d48">not done</span>')+'</td></tr>'}).join('');h+='<button class="s3btn danger" onclick="s3Play.asgDel(\''+a.id+'\')">Delete</button></div><table class="s3tbl" style="margin-top:8px">'+st+'</table></div>'}
   else{const r=(S.getProg(me().id).asg||{})[a.id];h+=(r?'<span class="s3pill">✅ '+r.score+'/'+r.n+'</span>':'<button class="s3btn" onclick="s3Play.asgStart(\''+a.id+'\')">Start</button>')+'</div></div>'}});
  card(h)}
-function asgAdd(){const t=$('a-t').value.trim();if(!t)return S.toast('Add a title');const C=S.CLS(),u=$('a-u').value;(C.assignments=C.assignments||[]).push({id:'a'+Date.now().toString(36),title:t,units:u==='all'?[]:[+u],cat:$('a-c').value,count:+$('a-n').value,due:$('a-d').value,created:Date.now()});S.saveCls();render();S.toast('Assignment created')}
-function asgDel(id){if(!confirm('Delete this assignment?'))return;const C=S.CLS();C.assignments=C.assignments.filter(a=>a.id!==id);S.saveCls();render()}
-function goal(){const C=S.CLS();C.goal=Math.max(10,+$('goal').value||200);S.saveCls();S.toast('Weekly goal saved')}
+function asgAdd(){const t=$('a-t').value.trim();if(!t)return S.toast('Add a title');const C=S.CLS(),u=$('a-u').value;const o={id:'a'+Date.now().toString(36),title:t,units:u==='all'?[]:[+u],cat:$('a-c').value,count:+$('a-n').value,due:$('a-d').value,created:Date.now()};
+ if(cloudOn()){o.cls=($('a-k')||{}).value||'all';S3CLOUD.hwAdd(o).then(ok=>{if(ok){render();S.toast('Homework sent to '+(o.cls==='all'?'all classes':o.cls))}});return}
+ (C.assignments=C.assignments||[]).push(o);S.saveCls();render();S.toast('Assignment created')}
+function asgDel(id){if(!confirm('Delete this assignment?'))return;if(cloudOn()){S3CLOUD.hwDel(id).then(()=>render());return}const C=S.CLS();C.assignments=C.assignments.filter(a=>a.id!==id);S.saveCls();render()}
+function goal(){const C=S.CLS();C.goal=Math.max(10,+$('goal').value||200);if(cloudOn())S3CLOUD.hwGoal(C.goal);S.saveCls();S.toast('Weekly goal saved')}
 function asgStart(id){const a=S.CLS().assignments.find(x=>x.id===id);start({title:a.title,kind:'asg',qs:asgQs(a),immediate:true,xpEach:4,bonus:25,save:p=>{(p.asg=p.asg||{})[id]={score:R.score,n:R.qs.length,t:Date.now()}}})}
 
-window.s3Play={render,go,pick:pickOpt,step,finish,back,avatar,daily,mock,dictStart,dictCheck,dictNext,say,asgAdd,asgDel,asgStart,goal};
+window.s3Play={quick5,render,go,pick:pickOpt,step,finish,back,avatar,daily,mock,dictStart,dictCheck,dictNext,say,asgAdd,asgDel,asgStart,goal};
 })();
 
 // ===== S3 UPGRADE 3: performance layer =====
@@ -5740,6 +5813,209 @@ window.s3RW={renderRead,renderWrite,openRead,pickRead,backRead,openWrite,backWri
 })();
 </script>
 
+<script id="s3-game">
+/* Placement test and mini games. Questions come only from the existing bank (state.allQuestions) and reading.json. */
+(function(){
+const S=window.S3,esc=S.esc,$=id=>document.getElementById(id);
+const uid=()=>{const s=S.SESS();return s?(s.id||'teacher'):'guest'};
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const Q=()=>(typeof state!=='undefined'&&state.allQuestions)||[];
+const ISVOC=q=>q.category==='Main Vocabulary'||q.category==='Side Vocabulary';
+const BLANK=/\.{3,}|_{3,}/;
+const full=q=>q.question.replace(BLANK,q.options[q.answer]);
+const norm=s=>String(s).toLowerCase().replace(/[\u2019]/g,"'").replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();
+function spread(list,n){const by={};shuf(list).forEach(q=>(by[q.unit]=by[q.unit]||[]).push(q));const us=shuf(Object.keys(by)),out=[];let k=0;while(out.length<n&&us.some(u=>by[u].length)){const u=us[k%us.length];if(by[u].length)out.push(by[u].pop());k++}return out}
+(function(){const st=document.createElement('style');st.textContent='#s3-chip{display:flex!important;flex-wrap:wrap!important;gap:5px!important;max-width:100%!important;min-width:0}#s3-chip .s3pill{max-width:100%}';document.head.appendChild(st)})();
+let timers=[],rec=null;
+function clean(){timers.forEach(clearInterval);timers=[];G=null;if(rec){try{rec.abort()}catch(e){}rec=null}try{speechSynthesis.cancel()}catch(e){}}
+function say(t){try{speakText(t)}catch(e){}}
+function ov(title,body){let o=$('s3g-ov');if(!o){o=document.createElement('div');o.id='s3g-ov';o.style.cssText='position:fixed;inset:0;z-index:99990;background:var(--bg,#f1f5f9);overflow:auto;-webkit-overflow-scrolling:touch';document.body.appendChild(o)}
+ o.innerHTML='<style>#s3g-ov *{box-sizing:border-box}#s3g-ov .rounded-2xl{background:var(--surf,#fff)}</style><div style="max-width:560px;margin:0 auto;padding:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:18px">'+title+'</b><button class="s3btn ghost" onclick="s3Game.close()">✕ Close</button></div>'+body+'</div>';o.scrollTop=0}
+function close(){clean();const o=$('s3g-ov');if(o)o.remove()}
+const card=h=>'<div class="bg-white rounded-2xl border p-5" style="margin-bottom:12px">'+h+'</div>';
+const btn=(t,f,g)=>'<button class="s3btn'+(g?' ghost':'')+'" style="margin:3px" onclick="'+f+'">'+t+'</button>';
+const optB=(o,j,fn,st)=>'<button '+(st?'disabled ':'')+'onclick="'+fn+'('+j+')" style="'+(st||'border:1px solid var(--bd);background:var(--surf2)')+';display:block;width:100%;text-align:left;padding:12px;border-radius:12px;margin-bottom:8px;cursor:pointer;color:var(--tx);font-size:15px"><b>'+'ABCD'[j]+'.</b> '+esc(o)+'</button>';
+const OKS='border:2px solid var(--ok);background:var(--okbg)',NOS='border:2px solid #e11d48;background:var(--nobg)';
+/* ---------- daily XP cap for games ---------- */
+function gx(n){if(!S.isStudent()||n<=0)return 0;const k='s3gx_'+uid()+'_'+S.dayKey();const used=S.ls.get(k,0),give=Math.max(0,Math.min(n,60-used));if(give){S.ls.set(k,used+give);S.addXP(give,'Game')}return give}
+const best=(k,v)=>{const kk='s3gb_'+uid()+'_'+k,o=S.ls.get(kk,0);if(v!==undefined&&v>o){S.ls.set(kk,v);return v}return o};
+/* ================= GAMES ================= */
+function menu(){clean();const b=best('speed'),l=best('lives'),m=best('match');
+ ov('🎮 Games',card('<div class="s3sub" style="margin-bottom:10px">Practise with fun games. Questions come from your question bank. Game XP is limited to 60 per day.</div>'+
+ '<button onclick="s3Game.speed()" class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left">⚡ Speed Round<br><span style="font-weight:400;font-size:12px">60 seconds, 3 lives, combo bonus · Best: '+b+'</span></button>'+
+ '<button onclick="s3Game.lives()" class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left">❤️ Lives Run<br><span style="font-weight:400;font-size:12px">No timer. Get harder every 5. 3 hearts · Best streak: '+l+'</span></button>'+
+ '<button onclick="s3Game.match()" class="s3btn" style="display:block;width:100%;padding:14px;text-align:left">🧩 Word Match<br><span style="font-weight:400;font-size:12px">Match 6 English words with their Arabic meaning · Best: '+(m?m+'s':'-')+'</span></button>'))}
+/* generic MCQ runner for speed and lives */
+let G=null;
+function gq(){const pool=G.pool();const q=pool[Math.floor(Math.random()*pool.length)];G.q=q;G.done=false;return q}
+function gdraw(){const q=G.q;ov(G.title,card('<div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px"><span>'+G.hud()+'</span><span id="g-t">'+(G.timed?G.left+'s':'')+'</span></div><div style="font-size:16px;font-weight:700;margin-bottom:10px;line-height:1.5">'+esc(q.question)+'</div>'+q.options.map((o,j)=>optB(o,j,'s3Game.ans',G.done?(j===q.answer?OKS:(j===G.pick?NOS:'border:1px solid var(--bd);background:var(--surf2);opacity:.6')):'')).join('')+(G.done&&G.msg?'<div class="s3sub">'+G.msg+'</div>':'')))}
+function gans(j){if(!G||G.done)return;const q=G.q;G.pick=j;G.done=true;const ok=j===q.answer;G.onAns(ok);gdraw();if(G.over()){setTimeout(gend,700)}else setTimeout(()=>{if(G&&G.q===q){gq();gdraw()}},ok?450:1100)}
+function gend(){const g=G;clean();const xp=gx(g.xp());const nb=best(g.key,g.score());ov(g.title,card('<div style="text-align:center"><div style="font-size:44px">'+(g.score()>=nb&&g.score()>0?'🏆':'👏')+'</div><div style="font-size:30px;font-weight:800;color:var(--ac)">'+g.res()+'</div><div class="s3sub">Best: '+best(g.key)+(xp?' · +'+xp+' XP':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3Game.'+g.key+'()')+btn('Games menu','s3Game.menu()',1)+'</div></div>'))}
+function speed(){clean();const P=Q().filter(q=>ISVOC(q)||q.category==='Grammar'||q.category.indexOf('Idiom')>=0);let sc=0,lives=3,combo=0,cor=0;
+ G={title:'⚡ Speed Round',key:'speed',timed:true,left:60,pool:()=>P,q:null,hud:()=>'⭐ '+sc+' · ❤️ '+lives+' · 🔥 x'+(1+Math.min(4,Math.floor(combo/3))),
+  onAns:ok=>{if(ok){combo++;cor++;sc+=10*(1+Math.min(4,Math.floor(combo/3)));G.msg=''}else{lives--;combo=0;G.msg=(G.q.explanation?esc(G.q.explanation):'')}},over:()=>lives<=0||G.left<=0,score:()=>sc,res:()=>sc+' points ('+cor+' correct)',xp:()=>Math.floor(sc/60)};
+ gq();gdraw();timers.push(setInterval(()=>{if(!G)return;G.left--;const t=$('g-t');if(t)t.textContent=G.left+'s';if(G.left<=0){clean();gend()}},1000))}
+function lives(){clean();const V=Q().filter(ISVOC),I=Q().filter(q=>q.category.indexOf('Idiom')>=0),Gr=Q().filter(q=>q.category==='Grammar');let h=3,run=0,tot=0;
+ G={title:'❤️ Lives Run',key:'lives',pool:()=>run<5?V:run<10?V.concat(I):run<15?I.concat(Gr):Gr,q:null,hud:()=>'❤️ '.repeat(h)+' · ✅ '+run+' · Level '+(1+Math.floor(run/5)),
+  onAns:ok=>{if(ok){run++;tot++;G.msg=''}else{h--;G.msg=G.q.explanation?esc(G.q.explanation):''}G.bestRun=Math.max(G.bestRun||0,run)},over:()=>h<=0,score:()=>Math.max(G.bestRun||0,run),res:()=>tot+' correct',xp:()=>Math.floor(tot/5)*3};
+ gq();gdraw()}
+function parsePairs(){const out=[],seen={};shuf(Q().filter(q=>q.category==='Main Vocabulary'&&q.arabicNote)).forEach(q=>{const m=q.arabicNote.match(/^\s*([A-Za-z][A-Za-z' \-\.]{1,24}?)\s*=\s*(.+)$/);if(!m)return;const w=m[1].trim().toLowerCase(),a=m[2].split(/\s*[\/،;]\s*/)[0].trim();if(!a||a.length>28||seen[w]||/[A-Za-z]{4,}/.test(a))return;seen[w]=1;out.push([w,a])});return out}
+function match(){clean();const P=parsePairs().slice(0,6);if(P.length<6){ov('🧩 Word Match',card('Not enough words found.'));return}
+ const M={P,L:shuf(P.map((p,i)=>i)),R:shuf(P.map((p,i)=>i)),sel:null,done:{},err:0,t0:Date.now()};window.__m=M;
+ function draw(){const colB=(arr,side)=>arr.map(i=>{const d=M.done[i],s=M.sel&&M.sel.side===side&&M.sel.i===i;return '<button '+(d?'disabled ':'')+'onclick="s3Game.mpick(\''+side+'\','+i+')" style="display:block;width:100%;padding:12px 6px;margin-bottom:8px;border-radius:12px;font-size:'+(side==='r'?'16':'15')+'px;cursor:pointer;color:var(--tx);'+(d?'border:2px solid var(--ok);background:var(--okbg);opacity:.7':s?'border:2px solid var(--ac);background:var(--acs)':'border:1px solid var(--bd);background:var(--surf2)')+(side==='r'?';direction:rtl;font-family:Cairo,sans-serif':'')+'">'+esc(side==='l'?M.P[i][0]:M.P[i][1])+'</button>'}).join('');
+  ov('🧩 Word Match',card('<div class="s3sub" style="margin-bottom:8px">Tap an English word, then its Arabic meaning. Mistakes: '+M.err+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+colB(M.L,'l')+'</div><div>'+colB(M.R,'r')+'</div></div>'))}
+ M.draw=draw;draw()}
+function mpick(side,i){const M=window.__m;if(!M)return;if(!M.sel||M.sel.side===side){M.sel={side,i};return M.draw()}
+ const a=side==='l'?i:M.sel.i,b=side==='r'?i:M.sel.i;M.sel=null;
+ if(a===b){M.done[a]=1;if(Object.keys(M.done).length===6){const s=Math.round((Date.now()-M.t0)/1000),stars=M.err===0&&s<60?3:M.err<=2?2:1,old=best('match');if(!old||s<old)S.ls.set('s3gb_'+uid()+'_match',s);const xp=gx(stars*2);ov('🧩 Word Match',card('<div style="text-align:center"><div style="font-size:44px">'+'⭐'.repeat(stars)+'</div><div style="font-size:28px;font-weight:800;color:var(--ac)">'+s+' seconds</div><div class="s3sub">Mistakes: '+M.err+(xp?' · +'+xp+' XP':'')+' · Best: '+best('match')+'s</div><div style="margin-top:12px">'+btn('Play again','s3Game.match()')+btn('Games menu','s3Game.menu()',1)+'</div></div>'));return}}
+ else{M.err++}M.draw()}
+/* ================= PLACEMENT TEST ================= */
+const SK=[['g','Grammar',12],['v','Vocabulary',10],['r','Reading',8],['l','Listening',8],['w','Writing skills',6],['s','Speaking',6]];
+const LINK=/\b(however|although|though|despite|in spite|because|therefore|moreover|besides|as a result|in addition|on the other hand|whereas|unless|in order to|so that|consequently|nevertheless)\b/i;
+let T=null;
+const pk=()=>'s3pl_p_'+uid();
+async function buildTest(){const bank=Q();if(bank.length<100)return null;let items=[];
+ const used=new Set(),take=(list,n)=>{const r=spread(list.filter(q=>!used.has(q.id)),n);r.forEach(q=>used.add(q.id));return r};
+ const isW=q=>q.category==='Grammar'&&(!BLANK.test(q.question)||LINK.test(q.options.join(' ')));take(bank.filter(q=>q.category==='Grammar'&&!isW(q)),12).forEach(q=>items.push({sk:'g',q}));
+ take(bank.filter(ISVOC),7).forEach(q=>items.push({sk:'v',q}));take(bank.filter(q=>q.category.indexOf('Idiom')>=0),3).forEach(q=>items.push({sk:'v',q}));
+ const wl=bank.filter(isW);take(wl,6).forEach(q=>items.push({sk:'w',q}));
+ let rd=[];try{rd=await s3RW.load('read')||[]}catch(e){}
+ shuf(rd.filter(p=>p.qs.length>=4)).slice(0,2).forEach(p=>{const idx=shuf(p.qs.map((q,i)=>i)).slice(0,4);items.push({sk:'r',p,qs:idx.map(i=>{const q=p.qs[i],o=shuf(q.o.map((_,j)=>j));return{q:q.q,options:o.map(j=>q.o[j]),answer:o.indexOf(q.a),unit:p.unit}})})});
+ const lis=bank.filter(q=>BLANK.test(q.question)&&(ISVOC(q)||q.category==='Grammar')&&full(q).split(' ').length<=18);
+ take(lis.filter(ISVOC),5).concat(take(lis.filter(q=>q.category==='Grammar'),3)).forEach(q=>items.push({sk:'l',q}));
+ const sp=lis.filter(q=>full(q).split(' ').length>=5&&full(q).split(' ').length<=12);take(sp,6).forEach(q=>items.push({sk:'s',q}));
+ const order={g:0,v:1,r:2,l:3,w:4,s:5};items.sort((a,b)=>order[a.sk]-order[b.sk]);
+ const cnt={};items.forEach(i=>cnt[i.sk]=(cnt[i.sk]||0)+(i.qs?i.qs.length:1));return{items,cnt}}
+function flat(){const f=[];T.items.forEach((it,ii)=>{if(it.qs)it.qs.forEach((q,qi)=>f.push({it,ii,qi,sk:it.sk}));else f.push({it,ii,sk:it.sk})});return f}
+function savePr(){S.ls.set(pk(),{ids:T.items.map(i=>i.q?i.q.id:i.p.id),a:T.a,i:T.i})}
+function placeStart(){clean();const old=readPlace();
+ if(old){return placeResult(old)}
+ const pr=S.ls.get(pk(),null);
+ ov('🧭 Placement test',card('<div class="s3sub" style="line-height:1.7">50 questions: Grammar, Vocabulary, Reading, Listening, Writing skills and Speaking.<br>It takes about 25 minutes. You can stop and continue later. Find your level in each skill and get a study plan.<br>Please use headphones for Listening and a quiet place for Speaking.</div><div style="margin-top:12px">'+btn(pr&&pr.i?'▶ Continue ('+pr.i+'/50)':'▶ Start the test','s3Game.placeGo()')+'</div>'));}
+async function placeGo(){ov('🧭 Placement test',card('Preparing…'));const t=await buildTest();if(!t){ov('🧭 Placement test',card('The question bank is not ready. Please try again.'));return}
+ T=t;T.a={};T.i=0;const pr=S.ls.get(pk(),null);if(pr&&pr.ids&&pr.ids.join()===t.items.map(i=>i.q?i.q.id:i.p.id).join())Object.assign(T,{a:pr.a,i:pr.i});
+ T.f=flat();T.total=T.f.length;if(T.i>=T.total)T.i=0;pdraw()}
+function qtxt(f){return f.it.qs?f.it.qs[f.qi].q:f.it.q.question}
+function pdraw(){clean();const f=T.f[T.i];if(!f){return pfinish()}const sk=SK.find(s=>s[0]===f.sk);const head='<div class="s3sub" style="display:flex;justify-content:space-between"><span>Question '+(T.i+1)+' / '+T.total+'</span><span>'+sk[1]+'</span></div><div class="lsbar" style="margin:6px 0 12px"><i style="width:'+Math.round(T.i/T.total*100)+'%"></i></div>';let body='';
+ const key=T.i;
+ if(f.sk==='r'){const q=f.it.qs[f.qi];body=(f.qi===0||true?'<details '+(f.qi===0?'open':'')+' style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">📖 '+esc(f.it.p.title)+'</summary>'+f.it.p.text.map(t=>'<p style="font-size:15px;line-height:1.7;margin:8px 0">'+esc(t)+'</p>').join('')+'</details>':'')+'<div style="font-weight:700;margin-bottom:10px">'+esc(q.q)+'</div>'+q.options.map((o,j)=>optB(o,j,'s3Game.pans')).join('')}
+ else if(f.sk==='l'){const q=f.it.q;body='<div style="text-align:center;margin-bottom:10px"><button class="s3btn" style="font-size:18px;padding:14px 22px" onclick="s3Game.hear()">🔊 Play the sentence</button><div class="s3sub" style="margin-top:6px">Listen. Choose the word or phrase you hear in the gap.</div></div>'+q.options.map((o,j)=>optB(o,j,'s3Game.pans')).join('');setTimeout(()=>say(full(q)),400)}
+ else if(f.sk==='s'){const q=f.it.q,txt=full(q);body='<div style="font-weight:700;margin-bottom:6px">🎤 Say this sentence aloud</div><div style="background:var(--surf2);border:1px solid var(--bd);border-radius:14px;padding:12px;font-size:16px;line-height:1.6;margin-bottom:10px">'+esc(txt)+'</div><button class="s3btn ghost" onclick="s3Game.hear()">🔊 Hear it</button> <button class="s3btn" id="sp-b" onclick="s3Game.speak()">🎤 Say it</button><div id="sp-r" class="s3sub" style="margin-top:10px"></div><div id="sp-s" style="margin-top:8px"></div>'}
+ else{const q=f.it.q;body='<div style="font-weight:700;margin-bottom:10px;line-height:1.5">'+esc(q.question)+'</div>'+q.options.map((o,j)=>optB(o,j,'s3Game.pans')).join('')}
+ ov('🧭 Placement test',card(head+body)+'<div style="text-align:center">'+btn('Pause and exit','s3Game.close()',1)+'</div>')}
+function hear(){const f=T.f[T.i];say(full(f.it.q))}
+function pans(j){const f=T.f[T.i];if(T.a[T.i]!==undefined)return;const q=f.it.qs?f.it.qs[f.qi]:f.it.q;T.a[T.i]=j===q.answer?1:0;savePr();T.i++;setTimeout(pdraw,150)}
+function spDone(ok){T.a[T.i]=ok?1:0;savePr();T.i++;pdraw()}
+function speak(){const f=T.f[T.i],txt=full(f.it.q),R=window.SpeechRecognition||window.webkitSpeechRecognition,r=$('sp-r'),s=$('sp-s');
+ const manual=msg=>{r.innerHTML=msg+'<br>Say the sentence aloud, then check yourself.';s.innerHTML=btn('✅ I said it clearly','s3Game.spDone(1)')+btn('Not yet','s3Game.spDone(0)',1)};
+ if(!R||!navigator.onLine){manual(!R?'Speech recognition is not available on this browser.':'You are offline.');return}
+ try{rec=new R();rec.lang='en-US';rec.interimResults=false;rec.maxAlternatives=3;$('sp-b').textContent='🎙️ Listening…';
+  rec.onresult=e=>{const heard=[...e.results[0]].map(a=>a.transcript);const tw=norm(txt).split(' ');let bestP=0,bh=heard[0];heard.forEach(h=>{const hw=norm(h).split(' ');const p=tw.filter(w=>hw.includes(w)).length/tw.length;if(p>bestP){bestP=p;bh=h}});const pc=Math.round(bestP*100);r.innerHTML='I heard: <b>'+esc(bh)+'</b><br>Match: '+pc+'% (approximate)';s.innerHTML=btn('Next ▶','s3Game.spDone('+(pc>=70?1:0)+')')+btn('Try again','s3Game.speak()',1)+'<div class="s3sub" style="margin-top:6px">Speech scoring is approximate. 70% or more counts as correct.</div>'};
+  rec.onerror=()=>manual('I could not hear you.');rec.onnomatch=()=>manual('I could not understand.');rec.onend=()=>{const b=$('sp-b');if(b)b.textContent='🎤 Say it'};rec.start()}catch(e){manual('Microphone is not available.')}}
+const LV=p=>p>=80?3:p>=50?2:1,LVN=['','Level 1 · Foundation','Level 2 · Developing','Level 3 · Strong'];
+function pfinish(){const sc={},n={};SK.forEach(s=>{sc[s[0]]=0;n[s[0]]=0});const wu={};
+ T.f.forEach((f,i)=>{n[f.sk]++;if(T.a[i])sc[f.sk]++;else{const u=f.it.qs?f.it.qs[f.qi].unit:f.it.q.unit;if(f.sk!=='s'&&u)wu[u]=(wu[u]||0)+1}});
+ const place={t:Date.now(),sk:{},wu:Object.entries(wu).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>+e[0]),tot:0};let s=0,m=0;SK.forEach(k=>{place.sk[k[0]]=[sc[k[0]],n[k[0]]];s+=sc[k[0]];m+=n[k[0]]});place.tot=Math.round(s/m*100);
+ if(S.isStudent()){const p=S.getProg(uid());const first=!p.place;p.place=place;if(!p.placeFirst)p.placeFirst=place;S.saveProg(p);if(first)S.addXP(20,'Placement test')}else S.ls.set('s3pl_r_'+uid(),place);
+ S.ls.set(pk(),null);placeResult(place)}
+function readPlace(){if(S.isStudent()){const p=S.getProg(uid());return p.place||null}return S.ls.get('s3pl_r_'+uid(),null)}
+function placeResult(P){const rows=SK.map(k=>{const [a,b]=P.sk[k[0]],pc=b?Math.round(a/b*100):0,lv=LV(pc);return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:14px"><b>'+k[1]+'</b><span>'+a+'/'+b+' · '+['','🔴','🟡','🟢'][lv]+' L'+lv+'</span></div><div class="lsbar"><i style="width:'+pc+'%"></i></div></div>'}).join('');
+ const arr=SK.map(k=>({k:k[1],id:k[0],pc:P.sk[k[0]][1]?P.sk[k[0]][0]/P.sk[k[0]][1]:0})).sort((a,b)=>a.pc-b.pc),weak=arr.slice(0,2).map(x=>x.k).join(' and ');
+ const dl=LV(Math.round((P.sk.g[0]+P.sk.w[0])/((P.sk.g[1]+P.sk.w[1])||1)*100)),dn=['','Easy','Medium','Hard'][dl];
+ ov('🧭 My level',card('<div style="text-align:center;margin-bottom:12px"><div style="font-size:44px">'+['','🌱','📈','🚀'][LV(P.tot)]+'</div><div style="font-size:20px;font-weight:800">'+LVN[LV(P.tot)]+'</div><div class="s3sub">Overall '+P.tot+'%</div></div>'+rows)+
+ card('<b>📌 Your study plan</b><ul style="margin:8px 0 0 18px;list-style:disc;font-size:14px;line-height:1.7"><li>Focus first on: <b>'+weak+'</b></li>'+(P.wu.length?'<li>Review units: <b>'+P.wu.join(', ')+'</b> (open the Question Bank and choose the unit)</li>':'')+'<li>Writing tab, Dialogue: start with <b>'+dn+'</b> dialogues</li><li>Reading: start with the first passage of each unit and aim for 3 correct in a row</li><li>Play 🎮 Speed Round and Word Match 10 minutes a day</li></ul><div class="s3sub" style="margin-top:8px">Writing skills tests sentence building and linkers, not free writing. Speaking is approximate.</div>')+
+ '<div style="text-align:center">'+btn('🎯 Practise my weak areas','s3Game.rec()')+btn('Open Question Bank','s3Game.close();switchTab(\'bank\')',1)+btn('Retake the test','s3Game.retake()',1)+'</div>')}
+function retake(){if(!confirm('Retake the placement test? Your first result is kept.'))return;if(S.isStudent()){const p=S.getProg(uid());delete p.place;S.saveProg(p)}else S.ls.set('s3pl_r_'+uid(),null);placeStart()}
+
+
+/* ---------- Recommended for me ---------- */
+function recBuild(){const P=S.isStudent()?S.getProg(uid()):{},log=(P.log||[]).filter(e=>typeof e.q==='number'||/^\d+$/.test(String(e.q)));const bank=Q(),by={};bank.forEach(q=>by[q.id]=q);
+ const wrong={},seen=new Set();log.forEach(e=>{seen.add(+e.q);if(!e.ok)wrong[+e.q]=(wrong[+e.q]||0)+1});
+ const right={};log.forEach(e=>{if(e.ok)right[+e.q]=(right[+e.q]||0)+1});
+ const pl=P.place||null,wu=new Set(pl?pl.wu:[]);const un={};log.forEach(e=>{if(!e.ok&&e.u)un[e.u]=(un[e.u]||0)+1});Object.keys(un).sort((a,b)=>un[b]-un[a]).slice(0,3).forEach(u=>wu.add(+u));
+ let weakCat=null;if(pl){const a=[['Grammar','g'],['Main Vocabulary','v']].map(c=>({c:c[0],pc:pl.sk[c[1]][1]?pl.sk[c[1]][0]/pl.sk[c[1]][1]:1})).sort((x,y)=>x.pc-y.pc)[0];weakCat=a.pc<.8?a.c:null}
+ const out=[],used=new Set();const add=(q)=>{if(q&&!used.has(q.id)&&out.length<10){used.add(q.id);out.push(q)}};
+ Object.keys(wrong).sort((a,b)=>(wrong[b]-(right[b]||0))-(wrong[a]-(right[a]||0))).forEach(id=>{if(wrong[id]>(right[id]||0)||true)add(by[id])});
+ out.splice(6);
+ shuf(bank.filter(q=>(wu.has(q.unit)||(weakCat&&q.category===weakCat))&&!seen.has(q.id))).forEach(add);
+ shuf(bank.filter(q=>!seen.has(q.id))).forEach(add);
+ return{list:out,wu:[...wu],weakCat,hasData:log.length>0||!!pl}}
+function recStart(){clean();const R=recBuild();if(!R.hasData||R.list.length<5){ov('🎯 Recommended for me',card('<div class="s3sub" style="line-height:1.7">Answer some questions in the Question Bank or take the placement test first. Then I will choose practice from your mistakes and weak areas.</div><div style="margin-top:10px">'+btn('🧭 Take the placement test','s3Game.place()')+'</div>'));return}
+ const list=R.list;let i=0,sc=0;const why='Chosen from your mistakes'+(R.wu.length?' and weak units '+R.wu.join(', '):'')+(R.weakCat?' ('+R.weakCat+')':'');
+ G={title:'🎯 Recommended for me',key:'rec',pool:()=>[list[i]],q:null,hud:()=>'Question '+(i+1)+' / '+list.length,
+  onAns:ok=>{const q=G.q;if(ok)sc++;if(S.isStudent())S.logEv(q,ok,ok?5:0,'rec');G.msg=(ok?'':(q.explanation?esc(q.explanation):''))+(i===0?' · '+why:'');i++},over:()=>i>=list.length,score:()=>sc,res:()=>sc+' / '+list.length,xp:()=>sc>=Math.ceil(list.length*.8)?10:0};
+ gq();gdraw()}
+window.s3DailyHook=function(p,Rn){const d=S.dayKey();p.dl=p.dl||{};const first=!p.dl[d];p.dl[d]={s:Rn.score,n:Rn.qs.length};if(!first)return;
+ let n=0,t=Date.now();while(p.dl[S.dayKey(t)]){n++;t-=864e5}
+ const M={3:15,7:40,14:80,30:200},b=Math.min(n,7)*2+(M[n]||0);p.dstreak=n;p.dbest=Math.max(p.dbest||0,n);
+ if(b){p.xp=(p.xp||0)+b;p.log.push({t:Date.now(),q:'bonus',u:0,c:'Daily streak '+n,ok:1,xp:b,k:'bonus'})}
+ try{S.toast('🔥 Daily streak: '+n+(n>1?' days':' day')+' · +'+b+' XP')}catch(e){}};
+window.s3PlBadge=P=>{if(!P)return '<span class="s3sub">-</span>';return '<b>L'+LV(P.tot)+'</b> <span class="s3sub">'+P.tot+'%</span>'};
+window.s3PlBox=P=>{if(!P)return '';return '<div style="margin:12px 0;padding:10px;border:1px solid var(--bd);border-radius:12px"><b>🧭 Placement level: '+LVN[LV(P.tot)]+' ('+P.tot+'%)</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+SK.map(k=>{const a=P.sk[k[0]];return '<span class="s3pill">'+k[1]+' '+a[0]+'/'+a[1]+'</span>'}).join('')+'</div>'+(P.wu&&P.wu.length?'<div class="s3sub" style="margin-top:6px">Weak units: '+P.wu.join(', ')+'</div>':'')+'<div class="s3sub">Taken '+new Date(P.t).toLocaleDateString()+'</div></div>'};
+window.s3Game={rec:recStart,open:menu,menu,close,speed,lives,match,ans:gans,mpick,place:placeStart,placeGo,pans,hear,speak,spDone,retake,placeInfo:()=>readPlace()};
+})();
+
+</script>
+<script id="s3-shell">
+/* Clean shell: one menu (hamburger) for all sections, one settings sheet. */
+(function(){
+const $=id=>document.getElementById(id);
+const css=document.createElement('style');css.textContent=`
+.s3nav,#tab-more{display:none!important}
+header #s3-theme,header #s3-bkbtn{display:none!important}
+header h1{font-size:15px!important;white-space:nowrap}
+#s3-chip .s3pill:not(.s3rk){display:none!important}
+#s3-chip .s3pill.s3rk{display:inline-flex!important;white-space:nowrap}
+#s3-chip button[onclick*="s3Logout"],#s3-chip button[onclick*="s3Game"]{display:none!important}
+.s3ib{border:1px solid var(--bd,#e2e8f0);background:var(--surf2,#f1f5f9);color:var(--tx,#0f172a);border-radius:12px;width:40px;height:40px;font-size:20px;cursor:pointer;flex:none;display:inline-flex;align-items:center;justify-content:center}
+#s3-drawer-bg,#s3-set-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99980;display:none}
+#s3-drawer{position:fixed;top:0;bottom:0;left:0;width:min(86vw,320px);background:var(--surf,#fff);color:var(--tx,#0f172a);z-index:99981;transform:translateX(-102%);transition:transform .25s;overflow:auto;padding:14px;box-sizing:border-box}
+#s3-drawer.open{transform:none}
+#s3-drawer h4{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin:14px 4px 6px}
+#s3-drawer button.it{display:flex;width:100%;align-items:center;gap:10px;text-align:left;border:0;background:none;color:inherit;padding:11px 10px;border-radius:12px;font-size:15px;cursor:pointer}
+#s3-drawer button.it.on{background:var(--acs,#eef2ff);font-weight:700}
+#s3-sheet{position:fixed;left:0;right:0;bottom:0;max-height:88vh;overflow:auto;background:var(--surf,#fff);color:var(--tx,#0f172a);border-radius:22px 22px 0 0;padding:16px;z-index:99981;max-width:560px;margin:0 auto;box-sizing:border-box;display:none}
+#s3-sheet .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd,#e2e8f0);font-size:15px}
+#s3-sheet select{max-width:55%}
+header h1{font-size:15px!important;line-height:1.15;white-space:normal!important;min-width:0}
+#s3-chip{padding:4px 8px!important;font-size:12px!important;white-space:nowrap}
+#stats-ribbon select,#stats-ribbon a[onclick*=eset],#stats-ribbon button[onclick*=eset]{display:none!important}
+`;document.head.appendChild(css);
+function boot(){if(!$('s3-chip')||!document.querySelector('header h1')){setTimeout(boot,100);return}
+const hdr=document.querySelector('header'),brand=hdr.querySelector('h1').parentNode.parentNode;
+const ham=document.createElement('button');ham.className='s3ib';ham.textContent='☰';ham.setAttribute('aria-label','Menu');ham.onclick=()=>openD();
+const gear=document.createElement('button');gear.className='s3ib';gear.textContent='⚙️';gear.setAttribute('aria-label','Settings');gear.onclick=()=>openS();
+brand.insertBefore(ham,brand.firstChild);brand.style.cssText+=';display:flex;align-items:center;gap:8px;min-width:0;flex:1 1 auto';
+const chip=$('s3-chip'),row=brand.parentNode,ctl=chip.parentNode;const right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:6px;margin-left:auto';right.append(chip,gear);row.appendChild(right);ctl.style.display='none';row.style.cssText+=';display:flex;align-items:center;gap:8px;width:100%';
+const dbg=document.createElement('div');dbg.id='s3-drawer-bg';const dr=document.createElement('div');dr.id='s3-drawer';
+const sbg=document.createElement('div');sbg.id='s3-set-bg';const sh=document.createElement('div');sh.id='s3-sheet';
+document.body.append(dbg,dr,sbg,sh);dbg.onclick=closeD;sbg.onclick=closeS;
+const GROUPS=[['Study',['bank','quiz','read','write','exam','listen','srs','notebook','reference']],['Play',['play']],['Class and tools',['worksheet','add','board','report','students']]];
+function vis(b){return b&&getComputedStyle(b).display!=='none'&&!b.hidden}
+function openD(){const cur=(document.querySelector('.s3nav button.active,.s3nav button.tab-active')||{}).id;let h='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">English · Secondary 3</b><button class="s3ib" onclick="s3Shell.closeD()">✕</button></div>';
+ const stu=window.S3&&S3.isStudent();
+ h+='<h4>Me</h4>'+(stu?'<button class="it" onclick="s3Shell.closeD();s3Ach()">🏅 My rank and badges</button><button class="it" onclick="s3Shell.closeD();s3Game.rec()">🎯 Recommended for me</button><button class="it" onclick="s3Shell.closeD();s3Game.place()">🧭 My level (placement test)</button>':'')+'<button class="it" onclick="s3Shell.closeD();s3Game.open()">🎮 Games</button>';
+ GROUPS.forEach(g=>{let items='';g[1].forEach(id=>{const b=$('tab-'+id);if(!b)return;if(false)return;
+  const hid=b.hasAttribute('data-s3hide')||b.style.display==='none'||b.classList.contains('hidden');if(hid)return;
+  items+='<button class="it" onclick="s3Shell.go(\''+id+'\')">'+b.innerHTML.replace(/id="[^"]*"/g,'')+'</button>'});if(items)h+='<h4>'+g[0]+'</h4>'+items});
+ dr.innerHTML=h;dbg.style.display='block';dr.classList.add('open')}
+function closeD(){dr.classList.remove('open');dbg.style.display='none'}
+function go(id){closeD();if(typeof switchTab==='function')switchTab(id)}
+const moved=[];
+function openS(){let h='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">⚙️ Settings</b><button class="s3ib" onclick="s3Shell.closeS()">✕</button></div>';
+ sh.innerHTML=h+'<div id="s3-set-body"></div>';const body=$('s3-set-body');
+ const add=(label,node)=>{if(!node)return;const r=document.createElement('div');r.className='row';r.innerHTML='<span>'+label+'</span>';node.style.display='';r.appendChild(node);body.appendChild(r)};
+ add('Theme',$('s3-theme'));add('Accent',$('voice-accent'));add('Speed',$('voice-rate'));
+ const bk=$('s3-bkbtn');if(bk){bk.style.display='';const r=document.createElement('div');r.className='row';r.appendChild(bk);body.appendChild(r)}
+ const rs=document.querySelector('#stats-ribbon [onclick*=eset]');const r2=document.createElement('div');r2.className='row';r2.innerHTML='<button class="s3btn ghost" onclick="s3Shell.closeS();(document.querySelector(\'#stats-ribbon [onclick*=eset]\')||{click(){}}).click()">♻️ Reset my progress</button>';if(rs)body.appendChild(r2);
+ const who=window.S3&&S3.SESS&&S3.SESS();const r3=document.createElement('div');r3.className='row';r3.innerHTML='<span>'+(who?(who.role==='teacher'?'👩‍🏫 Teacher':'🎓 '+(who.name||'')):'')+'</span><button class="s3btn" onclick="s3Shell.closeS();s3Logout()">Log out</button>';body.appendChild(r3);
+ sbg.style.display='block';sh.style.display='block'}
+function closeS(){sbg.style.display='none';sh.style.display='none';const body=$('s3-set-body');if(body){/* park moved controls back in the header so they keep working */const park=$('s3-park')||(()=>{const d=document.createElement('div');d.id='s3-park';d.style.display='none';document.body.appendChild(d);return d})();body.querySelectorAll('select,#s3-bkbtn').forEach(n=>park.appendChild(n))}}
+window.s3Shell={closeD,closeS,go};}
+boot();
+})();
+
+</script>
 <script id="s3-cloud">
 (function(){
 const CFG=window.S3_FB;const C={offline:false,on:!!(CFG&&CFG.apiKey&&CFG.projectId),mem:{}};window.S3CLOUD=C;if(!C.on)return;
@@ -5855,11 +6131,19 @@ C.cards=function(){const a=$('cards-area');a.style.display='block';const L=S().C
 C.renderStudents=function(v){if(!S().isTeacher()){v.innerHTML='';return}
  if(!C.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';C.loadTeacher().then(()=>{loadedAt=Date.now();C.renderStudents(v)});return}
  const L=S().CLS().students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name));
- const rows=L.map(s=>{const x=S().statsFor(s);return'<tr><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.un)+'</code></td><td><code>'+esc(s.pw)+'</code></td><td>'+x.xp+' XP</td><td>'+x.acc+'%</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="S3CLOUD.replace(\''+s.id+'\')">New login</button> <button class="s3btn ghost" onclick="S3CLOUD.reset(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="S3CLOUD.remove(\''+s.id+'\')">✕</button></td></tr>'}).join('');
+ const rows=L.map(s=>{const x=S().statsFor(s);return'<tr><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.un)+'</code></td><td><code>'+esc(s.pw)+'</code></td><td>'+x.xp+' XP</td><td>'+x.acc+'%</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="S3CLOUD.replace(\''+s.id+'\')">New login</button> <button class="s3btn ghost" onclick="S3CLOUD.reset(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="S3CLOUD.remove(\''+s.id+'\')">✕</button></td></tr>'}).join('');
  v.innerHTML='<div class="s3noprint" style="display:grid;gap:16px"><div class="bg-white rounded-2xl border p-5"><div class="s3h">👥 My Students · الطلاب</div><div class="s3sub">Paste one student per line as <b>Class, Name</b>. Each gets a username and a password. Students never register.</div>'+
  '<textarea id="stu-new" class="s3in" rows="4" style="margin-top:10px" placeholder="3A, Mohamed Eid&#10;3A, Mariam Ali"></textarea><button class="s3btn" style="margin-top:10px" onclick="S3CLOUD.create()">+ Create accounts</button> <label class="s3btn ghost" style="cursor:pointer;display:inline-block;margin-top:10px">📄 Load .txt / .csv<input type="file" accept=".csv,.txt" hidden onchange="S3CLOUD.file(event)"></label><div id="stu-prog" class="s3sub" style="margin-top:8px"></div></div>'+
  '<div class="bg-white rounded-2xl border p-5" style="overflow-x:auto"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div class="s3h" style="font-size:15px">Class list ('+L.length+')</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s3btn ghost" onclick="S3CLOUD.cards()">🖨️ Print login cards</button><button class="s3btn ghost" onclick="S3CLOUD.csv()">⬇ Logins (CSV)</button><button class="s3btn ghost" onclick="S3CLOUD.refresh()">🔄 Refresh</button></div></div>'+
- (L.length?'<table class="s3tbl"><tr><th>Class</th><th>Name</th><th>Username</th><th>Password</th><th>XP</th><th>Acc.</th><th></th></tr>'+rows+'</table>':'<p class="s3sub">No students yet.</p>')+'<p class="s3sub" style="margin-top:10px">Forgot a password? Press <b>New login</b>: it makes a new username and password and keeps the progress. Passwords shown here are the ones created for the student.</p></div></div><div id="cards-area" style="display:none"></div>'};
+ (L.length?'<table class="s3tbl"><tr><th>Class</th><th>Name</th><th>Username</th><th>Password</th><th>XP</th><th>Acc.</th><th>Level</th><th></th></tr>'+rows+'</table>':'<p class="s3sub">No students yet.</p>')+'<p class="s3sub" style="margin-top:10px">Forgot a password? Press <b>New login</b>: it makes a new username and password and keeps the progress. Passwords shown here are the ones created for the student.</p></div></div><div id="cards-area" style="display:none"></div>'};
+/* ---------- homework ---------- */
+let hwT=0;
+C.hwStale=()=>Date.now()-hwT>120000;
+C.hwLoad=async function(){hwT=Date.now();const CLS=S().CLS(),F=fb.F,me=S().SESS();try{const q=await F.getDocs(F.collection(fb.db,'homework'));const list=[];q.forEach(d=>{const x=d.data();if(d.id==='_goal'){if(x.goal)CLS.goal=x.goal;return}x.id=d.id;list.push(x)});
+ CLS.assignments=list.filter(a=>S().isTeacher()||!a.cls||a.cls==='all'||(me&&a.cls===me.cls)).sort((a,b)=>(a.created||0)-(b.created||0))}catch(e){console.warn('hw',e&&e.code)}};
+C.hwAdd=async function(o){try{await fb.F.setDoc(fb.F.doc(fb.db,'homework',o.id),o);await C.hwLoad();return true}catch(e){S().toast(msg(e));return false}};
+C.hwDel=async function(id){try{await fb.F.deleteDoc(fb.F.doc(fb.db,'homework',id));await C.hwLoad()}catch(e){S().toast(msg(e))}};
+C.hwGoal=async function(g){try{await fb.F.setDoc(fb.F.doc(fb.db,'homework','_goal'),{goal:g})}catch(e){}};
 C.refresh=async function(){loadedAt=0;C.renderStudents($('view-students'))};
 C.file=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('stu-new').value=String(r.result).trim();S().toast('File loaded. Press Create accounts')};r.readAsText(f,'utf-8');e.target.value=''};
 })();
