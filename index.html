@@ -5277,7 +5277,7 @@ const jget=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.par
 const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let R=jget(KR,[]);
 let S=jget(KS,null)||{cls:'',done:{},skip:{},pts:{},hist:[],usedQ:[],cur:null,proj:false,open:false};
-S.done=S.done||{};S.skip=S.skip||{};S.pts=S.pts||{};S.hist=S.hist||[];S.usedQ=S.usedQ||[];
+S.done=S.done||{};S.skip=S.skip||{};S.abs=S.abs||{};S.pts=S.pts||{};S.hist=S.hist||[];S.usedQ=S.usedQ||[];
 const save=()=>jset(KS,S);
 let spin=null,tick=null,msg='';
 const classes=()=>[...new Set(R.map(r=>r.c))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
@@ -5361,16 +5361,16 @@ window.s3Picker={
  saveImport(useEn){const x=pend;if(!x)return;const seen={},out=[];
   x.out.forEach(o=>{let n=useEn?(o.en||o.n):o.n,k=o.c+'|'+n,i=2;while(seen[k]){n=(useEn?(o.en||o.n):o.n)+' ('+(i++)+')';k=o.c+'|'+n}seen[k]=1;out.push({c:o.c,n,a:o.a||''})});
   if(R.length&&!confirm('Replace the current roster ('+R.length+' students) with '+out.length+' students? Points of students who keep the same name are kept.')){return}
-  R=out;jset(KR,R);const keep=new Set(R.map(r=>key(r.c,r.n)));Object.keys(S.pts).forEach(k=>{if(!keep.has(k))delete S.pts[k]});S.done={};S.skip={};S.cur=null;S.hist=[];S.cls='';save();
+  R=out;jset(KR,R);const keep=new Set(R.map(r=>key(r.c,r.n)));Object.keys(S.pts).forEach(k=>{if(!keep.has(k))delete S.pts[k]});S.done={};S.skip={};S.abs={};S.cur=null;S.hist=[];S.cls='';save();
   msg='✅ Saved '+out.length+' students in '+classes().length+' classes'+(x.dup?' ('+x.dup+' duplicates ignored)':'')+(x.bad?' ('+x.bad+' bad rows ignored)':'');pend=null;rev=null;s3Picker.render()},
  rename(c,old){const nn=(prompt('English name for this student:',old)||'').replace(/\s+/g,' ').trim();if(!nn||nn===old)return;
   if(R.some(r=>r.c===c&&r.n===nn)){alert('That name already exists in '+c+'.');return}
   R.forEach(r=>{if(r.c===c&&r.n===old)r.n=nn});jset(KR,R);const ok=key(c,old),nk=key(c,nn);if(S.pts[ok]!=null){S.pts[nk]=S.pts[ok];delete S.pts[ok]}
-  ['done','skip'].forEach(f=>{if(S[f][c])S[f][c]=S[f][c].map(n=>n===old?nn:n)});S.hist.forEach(h=>{if(h.c===c&&h.n===old)h.n=nn});save();s3Picker.render()},
+  ['done','skip','abs'].forEach(f=>{if(S[f]&&S[f][c])S[f][c]=S[f][c].map(n=>n===old?nn:n)});S.hist.forEach(h=>{if(h.c===c&&h.n===old)h.n=nn});save();s3Picker.render()},
  setClass(c){S.cls=c;S.cur=null;rev=null;save();s3Picker.render()},
  proj(){S.proj=!S.proj;save();s3Picker.render()},
  pick(){const c=S.cls;if(S.cur&&!confirm('The current student has not answered yet. Pick another anyway?'))return;
-  const all=members(c);if(!all.length)return;const done=S.done[c]||[],skip=S.skip[c]||[];
+  const abs=(S.abs&&S.abs[c])||[],all=members(c).filter(n=>!abs.includes(n));if(!all.length){msg='Everyone left is marked absent. Bring someone back from the points list.';save();s3Picker.render();return}const done=S.done[c]||[],skip=S.skip[c]||[];
   let pool=all.filter(n=>!done.includes(n)&&!skip.includes(n));
   if(!pool.length){pool=all.filter(n=>!done.includes(n));if(pool.length){S.skip[c]=[]}}
   let newRound=false;if(!pool.length){S.done[c]=[];S.skip[c]=[];pool=all.slice();newRound=true}
@@ -5380,7 +5380,10 @@ window.s3Picker={
   const box=$('pk-name');let n=0;clearInterval(spin);
   spin=setInterval(()=>{if(box)box.textContent=pool[Math.floor(Math.random()*pool.length)];if(++n>=14){clearInterval(spin);S.cur={name,qid:q.id,start:Date.now(),c};save();s3Picker.render()}},130);
   document.querySelectorAll('#pk-host .pkb').forEach(b=>b.disabled=true)},
- skip(){const c=S.cls;if(!S.cur)return;(S.skip[c]=S.skip[c]||[]).push(S.cur.name);S.cur=null;rev=null;msg='Skipped (absent). They stay in the round and can be picked later.';save();s3Picker.render()},
+ skip(){const c=S.cls;if(!S.cur)return;S.abs=S.abs||{};const n=S.cur.name;S.abs[c]=S.abs[c]||[];if(!S.abs[c].includes(n))S.abs[c].push(n);S.cur=null;rev=null;msg=n+' is marked absent and will not be picked. To bring them back, tap Back next to their name in the points list.';save();s3Picker.render()},
+ absent(n){const c=S.cls;S.abs=S.abs||{};S.abs[c]=S.abs[c]||[];if(!S.abs[c].includes(n))S.abs[c].push(n);if(S.cur&&S.cur.name===n){S.cur=null;rev=null}msg=n+' is marked absent.';save();s3Picker.render()},
+ back(n){const c=S.cls;S.abs=S.abs||{};S.abs[c]=(S.abs[c]||[]).filter(x=>x!==n);msg=n+' is back in the picker.';save();s3Picker.render()},
+ allPresent(){const c=S.cls;S.abs=S.abs||{};S.abs[c]=[];msg='Everyone is marked present.';save();s3Picker.render()},
  answer(i){const cu=S.cur,q=curQ();if(!cu||!q)return;s3Picker.judge(i===q.answer?'ok':'no',i)},
  giveUp(){s3Picker.judge('no',-1)},
  judge(kind,chosen){const cu=S.cur;if(!cu)return;const t=Math.min(TLIM,(Date.now()-cu.start)/1000);
@@ -5391,9 +5394,9 @@ window.s3Picker={
  partly(){if(!rev||rev.kind!=='no')return;const h=S.hist[S.hist.length-1];if(!h||h.n!==rev.name)return;const k=key(rev.c,rev.name);S.pts[k]=(S.pts[k]||0)-h.p+5;h.p=5;h.kind='part';rev.kind='part';rev.p=5;save();s3Picker.render()},
  undo(){const h=S.hist.pop();if(!h)return;const k=key(h.c,h.n);S.pts[k]=Math.max(0,(S.pts[k]||0)-h.p);S.done[h.c]=(S.done[h.c]||[]).filter(n=>n!==h.n);S.cur=null;rev=null;msg='↩️ Undid: '+h.n+' ('+h.p+' pts)';save();s3Picker.render()},
  newQ(){if(!S.cur)return;const q=nextQ();if(!q)return;S.cur.qid=q.id;S.cur.start=Date.now();save();s3Picker.render()},
- resetRound(){if(!confirm('Start a new round for '+S.cls+'? Everyone becomes available again.'))return;S.done[S.cls]=[];S.skip[S.cls]=[];S.cur=null;rev=null;save();s3Picker.render()},
+ resetRound(){if(!confirm('Start a new round for '+S.cls+'? Everyone present becomes available again (absent students stay out).'))return;S.done[S.cls]=[];S.skip[S.cls]=[];S.cur=null;rev=null;save();s3Picker.render()},
  resetPts(){if(!confirm('Reset ALL points for class '+S.cls+'?'))return;members(S.cls).forEach(n=>delete S.pts[key(S.cls,n)]);S.hist=S.hist.filter(h=>h.c!==S.cls);save();s3Picker.render()},
- clearRoster(){if(!confirm('Delete the imported roster and all picker points from this device?'))return;R=[];S={cls:'',done:{},skip:{},pts:{},hist:[],usedQ:[],cur:null,proj:false,open:true};rev=null;try{localStorage.removeItem(KR);localStorage.removeItem(KS)}catch(e){}msg='';s3Picker.render()},
+ clearRoster(){if(!confirm('Delete the imported roster and all picker points from this device?'))return;R=[];S={cls:'',done:{},skip:{},abs:{},pts:{},hist:[],usedQ:[],cur:null,proj:false,open:true};rev=null;try{localStorage.removeItem(KR);localStorage.removeItem(KS)}catch(e){}msg='';s3Picker.render()},
  importMore(){const v=host();v.innerHTML=importCard('replace')},
  exportCSV(){const rows=[['Class','Name','Points','Turns']];classes().forEach(c=>members(c).forEach(n=>rows.push([c,n,S.pts[key(c,n)]||0,S.hist.filter(h=>h.c===c&&h.n===n).length])));
   const csv='\uFEFF'+rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
@@ -5410,10 +5413,10 @@ function reviewUI(){const x=pend,n=x.out.length,g=x.out.filter(o=>o.guess).lengt
  return h+'</div><div style="margin-top:10px"><button class="pkb ok" onclick="s3Picker.saveImport(true)">✅ Save roster with English names</button>'+(conv?'<button class="pkb g" onclick="s3Picker.saveImport(false)">Keep Arabic names</button>':'')+'<button class="pkb g" onclick="s3Picker.cancelImport()">Cancel</button></div></div>'}
 function optsUI(q,chosen,locked){return q.options.map((o,i)=>{let cls='pkopt';if(locked){if(i===q.answer)cls+=' ans';else if(i===chosen)cls+=' bad'}
  return '<div class="'+cls+'" dir="auto" '+(locked?'':'style="cursor:pointer" onclick="s3Picker.answer('+i+')"')+'>'+'ABCD'[i]+') '+esc(o)+(locked&&i===q.answer?' ✓':'')+(locked&&i===chosen&&i!==q.answer?' ✗':'')+'</div>'}).join('')}
-function mainUI(cl){const c=S.cls,all=members(c),done=(S.done[c]||[]).length,pl=poolQ().length;
+function mainUI(cl){const c=S.cls,ab=(S.abs&&S.abs[c])||[],allM=members(c),all=allM.filter(n=>!ab.includes(n)),done=(S.done[c]||[]).filter(n=>!ab.includes(n)).length,pl=poolQ().length;
  let h='<div class="'+(S.proj?'pkproj':'')+'"><div class="pkc"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center"><b style="font-size:18px">🎲 Class mode</b><div><button class="pkb g" onclick="s3Picker.proj()">'+(S.proj?'Normal size':'🖥 Projector size')+'</button></div></div><div style="margin-top:8px">'+
   cl.map(x=>'<span class="pkchip '+(x===c?'on':'')+'" onclick="s3Picker.setClass(\''+esc(x)+'\')">'+esc(x)+' · '+(S.done[x]||[]).length+'/'+members(x).length+'</span>').join('')+'</div>'+
-  '<div style="margin:8px 0 4px;font-size:13px">Round: <b>'+done+' / '+all.length+'</b> students have had a turn</div><div class="pkbar"><i style="width:'+(all.length?done/all.length*100:0)+'%"></i></div>'+
+  '<div style="margin:8px 0 4px;font-size:13px">Round: <b>'+done+' / '+all.length+'</b> students have had a turn'+(ab.length?' · <span style="color:#e11d48">'+ab.length+' absent</span> <a style="cursor:pointer;font-weight:700" onclick="s3Picker.allPresent()">All present</a>':'')+'</div><div class="pkbar"><i style="width:'+(all.length?done/all.length*100:0)+'%"></i></div>'+
   '<div style="margin-top:8px;font-size:12px;opacity:.75">Questions come from the Question Bank filters above (Unit, Lesson, Category…): <b>'+pl+'</b> questions match.</div></div>';
  h+='<div class="pkc">'+(msg?'<div style="font-weight:700;margin-bottom:8px;font-size:14px">'+esc(msg)+'</div>':'');
  const nm=S.cur?S.cur.name:(rev?rev.name:'Ready');
@@ -5428,8 +5431,8 @@ function mainUI(cl){const c=S.cls,all=members(c),done=(S.done[c]||[]).length,pl=
    h+='<div style="margin-top:10px">'+(rev.kind==='no'?'<button class="pkb part" onclick="s3Picker.partly()">🟡 Count as partly correct (5)</button>':'')+'</div>'}
   h+='<div style="margin-top:12px;text-align:center"><button class="pkb" style="font-size:18px;padding:14px 26px" onclick="s3Picker.pick()">'+(rev?'➡️ Next student':'🎲 Pick a student')+'</button></div>'}
  h+='</div>';
- const rows=all.map(n=>({n,p:S.pts[key(c,n)]||0})).sort((a,b)=>b.p-a.p||a.n.localeCompare(b.n));
- h+='<div class="pkc"><b>🏆 Points · '+esc(c)+'</b><div style="margin-top:6px">'+rows.map((r,i)=>'<div class="pkrow"><span dir="auto">'+(i+1)+'. '+esc(r.n)+((S.done[c]||[]).includes(r.n)?' ✓':'')+' <a style="opacity:.5;cursor:pointer;font-size:12px" title="Edit name" onclick="s3Picker.rename(\''+esc(c).replace(/\\/g,'\\\\')+'\',this.dataset.n)" data-n="'+esc(r.n)+'">✏️</a></span><b>'+r.p+'</b></div>').join('')+'</div>'+
+ const rows=allM.map(n=>({n,p:S.pts[key(c,n)]||0})).sort((a,b)=>b.p-a.p||a.n.localeCompare(b.n));
+ h+='<div class="pkc"><b>🏆 Points · '+esc(c)+'</b><div style="margin-top:6px">'+rows.map((r,i)=>'<div class="pkrow"><span dir="auto">'+(i+1)+'. '+esc(r.n)+((S.done[c]||[]).includes(r.n)?' ✓':'')+(ab.includes(r.n)?' <span style="color:#e11d48;font-size:12px">(absent)</span> <a style="cursor:pointer;font-size:12px;font-weight:700" data-n="'+esc(r.n)+'" onclick="s3Picker.back(this.dataset.n)">↩ Back</a>':' <a style="opacity:.5;cursor:pointer;font-size:12px" title="Mark absent" data-n="'+esc(r.n)+'" onclick="s3Picker.absent(this.dataset.n)">🚫</a>')+' <a style="opacity:.5;cursor:pointer;font-size:12px" title="Edit name" onclick="s3Picker.rename(\''+esc(c).replace(/\\/g,'\\\\')+'\',this.dataset.n)" data-n="'+esc(r.n)+'">✏️</a></span><b>'+r.p+'</b></div>').join('')+'</div>'+
   '<div style="margin-top:10px"><button class="pkb g" onclick="s3Picker.undo()">↩️ Undo last</button><button class="pkb g" onclick="s3Picker.resetRound()">🔄 New round</button><button class="pkb g" onclick="s3Picker.exportCSV()">⬇️ Export points (CSV)</button><button class="pkb g" onclick="s3Picker.resetPts()">Reset points</button><button class="pkb g" onclick="s3Picker.importMore()">Import roster</button><button class="pkb g" onclick="s3Picker.clearRoster()">Delete roster</button></div></div></div>';
  return h}
 function tickStart(){clearInterval(tick);if(!S.cur)return;const f=()=>{const e=$('pk-t');if(!e){clearInterval(tick);return}const t=Math.round((Date.now()-S.cur.start)/1000);e.textContent='⏱️ '+t+'s'+(t>TLIM?' (over '+TLIM+'s)':'');e.style.color=t>TLIM?'#e11d48':''};f();tick=setInterval(f,500)}
