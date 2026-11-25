@@ -161,6 +161,7 @@ header h1{font-size:16px!important;white-space:nowrap}
 </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
+<script id="s3-fbconfig">window.S3_FB=null;</script>
 <script id="s3-shuf">
 /* Option shuffling: options are reordered in memory per question (new order on every login and every quiz start).
    Saved progress is stored in the ORIGINAL option order ("canonical"), so reports/backups stay correct. */
@@ -4687,7 +4688,7 @@ let CLS=ls.get(K_CLASS,{teacher:null,students:[]});let SESS=ls.get(K_SESS,null);
 const saveCls=()=>ls.set(K_CLASS,CLS);
 const blobKey=()=>SESS&&SESS.role==='student'?'sec3_qbank_v2_'+SESS.id:'sec3_qbank_v2_teacher';
 const progKey=id=>'s3_prog_'+id;
-const getProg=id=>ls.get(progKey(id),{log:[],xp:0,best:0,cur:0,days:{},last:0,note:''});
+const getProg=id=>(window.S3CLOUD&&S3CLOUD.mem['p'+id])||ls.get(progKey(id),{log:[],xp:0,best:0,cur:0,days:{},last:0,note:''});
 const saveProg=p=>ls.set(progKey(SESS.id),p);
 const isStudent=()=>SESS&&SESS.role==='student';
 const isTeacher=()=>SESS&&SESS.role==='teacher';window.s3IsTeacher=isTeacher;
@@ -4787,7 +4788,7 @@ const _tr=window.checkTranslationAnswer;window.checkTranslationAnswer=function(i
 
 /* ---------- STATS HELPERS ---------- */
 function dayStreak(days){let n=0,t=Date.now();if(!days[dayKey(t)])t-=864e5;while(days[dayKey(t)]){n++;t-=864e5}return n}
-function statsFor(s){const p=getProg(s.id),b=ls.get('sec3_qbank_v2_'+s.id,{})||{};
+function statsFor(s){if(s.sum){const m=s.sum;return{s,p:{log:[],days:{},xp:m.xp||0},b:{},xp:m.xp||0,wxp:m.wxp||0,att:m.att||0,ok:0,acc:m.acc||0,cur:m.cur||0,best:m.best||0,ds:m.ds||0,mastered:m.mastered||0,last:m.last||0}}const p=getProg(s.id),b=(window.S3CLOUD&&S3CLOUD.mem['b'+s.id])||ls.get('sec3_qbank_v2_'+s.id,{})||{};
  const real=p.log.filter(e=>e.k!=='srs'&&e.k!=='bonus'),ok=real.filter(e=>e.ok).length,wk=Date.now()-7*864e5;
  const mastered=Object.values(b.srsMap||{}).filter(x=>x.level===2).length;
  return{s,p,b,xp:p.xp||0,wxp:p.log.filter(e=>e.t>wk).reduce((a,e)=>a+e.xp,0),att:real.length,ok,acc:real.length?Math.round(ok/real.length*100):0,cur:p.cur||0,best:p.best||0,ds:dayStreak(p.days||{}),mastered,last:p.last||0}}
@@ -4813,7 +4814,7 @@ const byName=(a,b)=>a.name.localeCompare(b.name);
 const clsList=()=>[...new Set(CLS.students.map(s=>s.cls||''))].sort();
 const stuOptsFor=c=>CLS.students.filter(s=>(s.cls||'')===c).sort(byName).map(s=>'<option value="'+s.id+'">'+esc(s.name)+'</option>').join('');
 window.s3GateCls=c=>{$('g-sn').innerHTML=stuOptsFor(c)};
-function gate(){const g=$('s3-gate');if(SESS){g.style.display='none';return}g.style.display='flex';
+function gate(){const g=$('s3-gate');if(SESS){g.style.display='none';return}g.style.display='flex';if(window.S3CLOUD&&S3CLOUD.on){S3CLOUD.gate(g);return}
  const first=!CLS.teacher;
  const classes=clsList(),stuOpts=stuOptsFor(classes[0]||'');
  g.innerHTML='<div class="box"><div style="text-align:center;margin-bottom:14px"><div style="font-size:38px">🎓</div><div class="s3h">Secondary 3 English Prep</div><div class="s3sub">'+(first?'First-time setup: create the teacher account':'Sign in with the account your teacher created for you')+'</div></div>'+
@@ -4832,12 +4833,12 @@ window.s3Login=function(){
  if(gateMode==='teacher'){if(hash($('g-tp').value)!==CLS.teacher.pass)return err('Wrong passcode.');SESS={role:'teacher',name:CLS.teacher.name}}
  else{const s=CLS.students.find(x=>x.id===$('g-sn').value);if(!s||hash($('g-sp').value)!==s.pin)return err('Wrong PIN. Ask your teacher if you forgot it.');SESS={role:'student',id:s.id,name:s.name};const p=getProg(s.id);p.last=Date.now();ls.set(progKey(s.id),p)}
  ls.set(K_SESS,SESS);start()};
-window.s3Logout=function(){SESS=null;ls.set(K_SESS,null);resetState();gate()};
+window.s3Logout=function(){if(window.S3CLOUD&&S3CLOUD.on)S3CLOUD.beforeLogout();SESS=null;ls.set(K_SESS,null);resetState();gate()};
 function start(){gate();loadBlob();refreshAll();switchTab('bank');fillVoiceSel();toast('Welcome, '+SESS.name+'!')}
 
 /* ---------- TEACHER: STUDENTS ---------- */
 function randPin(){return String(Math.floor(1000+Math.random()*9000))}
-function renderStudents(){const v=$('view-students');if(!isTeacher()){v.innerHTML='';return}
+function renderStudents(){const v=$('view-students');if(!isTeacher()){v.innerHTML='';return}if(window.S3CLOUD&&S3CLOUD.on)return S3CLOUD.renderStudents(v);
  const rows=CLS.students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name)).map(s=>{const x=statsFor(s);return'<tr><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.pinPlain)+'</code></td><td>'+x.xp+' XP</td><td>'+x.acc+'%</td><td>'+ago(x.last)+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="s3Pin(\''+s.id+'\')">New PIN</button> <button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="s3ResetStu(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="s3DelStu(\''+s.id+'\')">✕</button></td></tr>'}).join('');
  v.innerHTML='<div id="stu-controls" class="s3noprint" style="display:grid;gap:16px"><div class="bg-white rounded-2xl border p-5"><div class="s3h">👥 My Students</div><div class="s3sub">Only students you add here can sign in. Each has their own PIN, saved progress and report.</div>'+
  '<label class="s3lbl" style="margin-top:12px">Paste your list — one student per line as <b>Class, Name</b> (e.g. 3A, Ahmed Hassan). A name alone also works. PINs are generated automatically.</label><textarea id="stu-new" class="s3in" rows="3" placeholder="3A, Ahmed Hassan&#10;3A, Mona Ali&#10;3B, Omar Said"></textarea><button class="s3btn" style="margin-top:10px" onclick="s3AddStu()">+ Add students</button> <label class="s3btn ghost" style="cursor:pointer;display:inline-block;margin-top:10px">📄 Load .csv / .txt<input type="file" accept=".csv,.txt" hidden onchange="s3StuFile(event)"></label></div>'+
@@ -4863,7 +4864,7 @@ function download(name,text,type){const a=document.createElement('a');a.href=URL
 /* ---------- LEADERBOARD ---------- */
 let boardMode='all',boardCls='all';window.s3BoardCls=c=>{boardCls=c;renderBoard()};
 window.s3Board=m=>{boardMode=m;renderBoard()};
-function renderBoard(){const v=$('view-board');const clsSel=()=>clsList().length>1?'<select class="s3in" style="width:auto" onchange="s3BoardCls(this.value)"><option value="all">All classes</option>'+clsList().map(c=>'<option value="'+esc(c)+'" '+(c===boardCls?'selected':'')+'>'+esc(c||'—')+'</option>').join('')+'</select>':'';const rows=CLS.students.filter(s=>boardCls==='all'||(s.cls||'')===boardCls).map(statsFor).sort((a,b)=>(boardMode==='week'?b.wxp-a.wxp:b.xp-a.xp)||b.acc-a.acc);
+function renderBoard(){const v=$('view-board');if(window.S3CLOUD&&S3CLOUD.on&&!S3CLOUD.offline&&!S3CLOUD.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';S3CLOUD.load().then(()=>renderBoard());return}const clsSel=()=>clsList().length>1?'<select class="s3in" style="width:auto" onchange="s3BoardCls(this.value)"><option value="all">All classes</option>'+clsList().map(c=>'<option value="'+esc(c)+'" '+(c===boardCls?'selected':'')+'>'+esc(c||'—')+'</option>').join('')+'</select>':'';const rows=CLS.students.filter(s=>boardCls==='all'||(s.cls||'')===boardCls).map(statsFor).sort((a,b)=>(boardMode==='week'?b.wxp-a.wxp:b.xp-a.xp)||b.acc-a.acc);
  const val=x=>boardMode==='week'?x.wxp:x.xp,me=isStudent()?SESS.id:null;
  const pod=[1,0,2].filter(i=>rows[i]).map(i=>'<div class="pod p'+(i+1)+'"><div style="font-size:26px">'+['🥇','🥈','🥉'][i]+'</div><b>'+esc(rows[i].s.name)+'</b><span>'+val(rows[i])+' XP</span><div style="font-size:11px">🔥 '+rows[i].best+' best</div></div>').join('');
  v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="s3h">🏆 Class Leaderboard</div><div class="s3sub">+10 XP per correct answer · +5 streak bonus · +20 when you master a question · +15 rewrite · +10 translation</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+clsSel()+'<button class="s3btn '+(boardMode==='all'?'':'ghost')+'" onclick="s3Board(\'all\')">All time</button><button class="s3btn '+(boardMode==='week'?'':'ghost')+'" onclick="s3Board(\'week\')">This week</button></div></div>'+
@@ -4872,7 +4873,7 @@ function renderBoard(){const v=$('view-board');const clsSel=()=>clsList().length
 
 /* ---------- REPORTS ---------- */
 let repId=null;window.s3ViewRep=id=>{repId=id;switchTab('report')};
-function renderReport(){const v=$('view-report');let list=isStudent()?CLS.students.filter(s=>s.id===SESS.id):CLS.students;
+function renderReport(){const v=$('view-report');if(window.S3CLOUD&&S3CLOUD.on&&!S3CLOUD.offline&&!S3CLOUD.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';S3CLOUD.load().then(()=>renderReport());return}let list=isStudent()?CLS.students.filter(s=>s.id===SESS.id):CLS.students;
  if(isStudent())repId=SESS.id;if(!repId||!list.some(s=>s.id===repId))repId=list[0]&&list[0].id;
  const sel=isTeacher()?'<select class="s3in" style="max-width:260px" onchange="s3ViewRep(this.value)">'+list.map(s=>'<option value="'+s.id+'" '+(s.id===repId?'selected':'')+'>'+esc((s.cls?s.cls+' – ':'')+s.name)+'</option>').join('')+'</select>':'';
  const tools='<div id="report-controls" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">'+sel+'<button class="s3btn" onclick="s3PrintRep()">🖨️ Print / PDF</button><button class="s3btn ghost" onclick="s3Wa()">📲 WhatsApp summary</button>'+(isTeacher()?'<button class="s3btn ghost" onclick="s3ClassCsv()">⬇ Class CSV</button><button class="s3btn ghost" onclick="s3Overview()">Class overview</button>':'')+'</div>';
@@ -4896,14 +4897,14 @@ function renderReport(){const v=$('view-report');let list=isStudent()?CLS.studen
  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px"><div><div class="s3lbl">Accuracy by unit</div>'+unitRows+'</div><div><div class="s3lbl">Accuracy by skill</div>'+(catRows||'<p class="s3sub">—</p>')+'<div class="s3lbl" style="margin-top:14px">Activity (14 days)</div>'+act+'</div></div>'+
  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:16px"><div><div class="s3lbl">Needs revision</div><p style="font-size:13px">'+(weak.join(', ')||'Nothing flagged yet')+'</p><div class="s3lbl">Strengths</div><p style="font-size:13px">'+(strong.join(', ')||'Keep practising to find out!')+'</p><div class="s3lbl">Badges</div><p style="font-size:13px">'+(badges(x).join(' · ')||'—')+'</p><div class="s3lbl">Last active</div><p style="font-size:13px">'+ago(x.last)+'</p></div><div><div class="s3lbl">Questions to review</div>'+wrongHtml+'</div></div>'+
  '<div class="s3lbl" style="margin-top:16px">Teacher comment</div>'+note+'</div>'}
-window.s3Note=(id,t)=>{const p=getProg(id);p.note=t;ls.set(progKey(id),p);toast('Comment saved')};
+window.s3Note=(id,t)=>{const p=getProg(id);p.note=t;if(window.S3CLOUD&&S3CLOUD.on){S3CLOUD.saveNote(id,t)}else ls.set(progKey(id),p);toast('Comment saved')};
 window.s3PrintRep=()=>{document.body.classList.add('print-report');setTimeout(()=>{print();document.body.classList.remove('print-report')},120)};
 window.s3ClassCsv=()=>{const h=['Class','Name','XP','Weekly XP','Accuracy %','Answered','Mastered','Best streak','Day streak','Last active'];const r=CLS.students.map(statsFor).map(x=>[x.s.cls||'',x.s.name,x.xp,x.wxp,x.acc,x.att,x.mastered,x.best,x.ds,x.last?new Date(x.last).toLocaleString():''].map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(','));download('class_report.csv',[h.join(',')].concat(r).join('\n'),'text/csv')};
 window.s3Overview=()=>{const v=$('view-report');const rows=CLS.students.map(statsFor).sort((a,b)=>b.xp-a.xp);v.innerHTML='<div id="report-controls" style="margin-bottom:12px"><button class="s3btn ghost" onclick="renderReportBack()">← Back</button> <button class="s3btn" onclick="s3PrintRep()">🖨️ Print</button></div><div id="report-sheet" class="bg-white rounded-2xl border p-6" style="overflow-x:auto"><div class="s3h">Class overview — '+new Date().toLocaleDateString()+'</div><table class="s3tbl" style="margin-top:10px"><tr><th>Class</th><th>Student</th><th>XP</th><th>Accuracy</th><th>Answered</th><th>Mastered</th><th>Best streak</th><th>Last active</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.s.cls||'—')+'</td><td><b>'+esc(x.s.name)+'</b></td><td>'+x.xp+'</td><td>'+x.acc+'%</td><td>'+x.att+'</td><td>'+x.mastered+'</td><td>'+x.best+'</td><td>'+ago(x.last)+'</td></tr>').join('')+'</table></div>'};
 window.renderReportBack=renderReport;
 window.s3Wa=()=>{const s=CLS.students.find(x=>x.id===repId);if(!s)return;const x=statsFor(s);const t='📘 Secondary 3 English — progress for '+s.name+'\n⭐ XP: '+x.xp+'\n🎯 Accuracy: '+x.acc+'% ('+x.att+' answered)\n🏆 Mastered: '+x.mastered+'\n🔥 Best streak: '+x.best+' · '+x.ds+'-day habit\n'+(x.p.note?'📝 Teacher: '+x.p.note:'');window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')};
 function addXP(n,label){if(!isStudent())return;const p=getProg(SESS.id);p.xp=(p.xp||0)+n;p.log.push({t:Date.now(),q:'bonus',u:0,c:label||'Bonus',ok:1,xp:n,k:'bonus'});p.last=Date.now();const d=dayKey();p.days[d]=(p.days[d]||0)+1;saveProg(p);refreshChip()}
-window.S3={ls,getProg,saveProg,logEv,addXP,isStudent,isTeacher,esc,toast,dayKey,statsFor,saveCls,refreshChip,CLS:()=>CLS,SESS:()=>SESS};
+window.S3={setSESS:s=>{SESS=s;ls.set(K_SESS,s)},start:()=>start(),gate:()=>gate(),ls,getProg,saveProg,logEv,addXP,isStudent,isTeacher,esc,toast,dayKey,statsFor,saveCls,refreshChip,CLS:()=>CLS,SESS:()=>SESS};
 
 /* ---------- WORKSHEET GENERATOR (rebuilt) ---------- */
 const WS={seed:'A1',cfg:{school:'Egyptian Secondary Language School',title:'Secondary 3 English Revision Worksheet',teacher:'',cls:'Secondary 3',date:'',time:'45 minutes',unit:'all',cat:'all',mcq:15,match:5,rw:4,tr:2,ver:'A',key:true,tags:false,cols:2,fs:13},
@@ -4959,7 +4960,7 @@ function boot(){
  const vr=$('voice-rate');if(vr){const sp=document.createElement('select');sp.id='s3-voice';sp.className='bg-transparent text-indigo-100 font-semibold focus:outline-none cursor-pointer';sp.style.maxWidth='170px';sp.onchange=e=>s3Voice(e.target.value);vr.parentElement.appendChild(sp);const st=document.createElement('span');st.id='s3-vstat';st.style.cssText='flex-basis:100%;font-size:11px;opacity:.9';vr.parentElement.appendChild(st)}
  if(window.__restoreAudUI)window.__restoreAudUI();fillVoiceSel();
  document.title='Secondary 3 English Exam Prep Suite — Pro';
- if(SESS&&((SESS.role==='teacher'&&CLS.teacher)||(SESS.role==='student'&&CLS.students.some(s=>s.id===SESS.id)))){gate();loadBlob();refreshAll();switchTab(state.currentTab||'bank')}else{SESS=null;gate();TABS.forEach(t=>{const b=$('tab-'+t);if(b)b.className='tabbtn'})}
+ if(window.S3CLOUD&&S3CLOUD.on){SESS=null;gate();S3CLOUD.init()}else if(SESS&&((SESS.role==='teacher'&&CLS.teacher)||(SESS.role==='student'&&CLS.students.some(s=>s.id===SESS.id)))){gate();loadBlob();refreshAll();switchTab(state.currentTab||'bank')}else{SESS=null;gate();TABS.forEach(t=>{const b=$('tab-'+t);if(b)b.className='tabbtn'})}
 }
 if(document.readyState==='loading')window.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0));else setTimeout(boot,0);
 })();
@@ -5347,6 +5348,7 @@ function mount(){const bank=$('view-bank');if(!bank)return;let w=$('pk-wrap');
  if(S.open)s3Picker.render()}
 window.s3Picker={
  mount,
+ syncRoster(list){const nr=list.map(x=>({c:x.c,n:x.n}));if(JSON.stringify(nr)===JSON.stringify(R))return;R=nr;jset(KR,R);const keep=new Set(R.map(r=>key(r.c,r.n)));Object.keys(S.pts).forEach(k=>{if(!keep.has(k))delete S.pts[k]});const cl=classes();if(!S.cls||!cl.includes(S.cls)){S.cls=cl[0]||''}save();if(S.open&&host())s3Picker.render()},
  toggle(){S.open=!S.open;save();mount()},
  render(){css();const v=host();if(!v)return;
   if(pend)return v.innerHTML=reviewUI();
@@ -5642,7 +5644,7 @@ const v=$('view-quiz');if(v){const r=document.createElement('div');r.id='ex-root
 /* Reading (comprehension) and Writing practice. Content is loaded on first use from reading.json and writing.json. */
 (function(){
 const S=window.S3,$=id=>document.getElementById(id),esc=S.esc;
-const D={read:null,write:null,err:{}};let cur=null,filt={unit:'all',type:'all'},open=null;
+const D={read:null,write:null,err:{}};let cur=null,filt={unit:'all',type:'all',lv:'all'},open=null;
 const UT={1:"Inside the World of Care",2:"The Power of Machines",3:"Protect Nature, Protect Future",4:"Marine Life",5:"From Muscles to Mindset",6:"Let's Hang Out!",7:"At the Airport",8:"A Journey Through Time",9:"The Universe's Mysteries",10:"People's Hospitality & Kindness",11:"Literature",12:"University Life & Career Choices"};
 const uid=()=>{const s=S.SESS();return s?(s.id||'teacher'):'guest'};
 const key=()=>'s3rw_'+uid();
@@ -5680,16 +5682,16 @@ function pickRead(qi,j){if(!open||open.ans[qi]!==undefined)return;open.ans[qi]=j
 function backRead(){open=null;renderRead()}
 
 /* ---------- Writing ---------- */
-const TYPES=['Paragraph','Email','Story','Article'];
+const TYPES=['Paragraph','Email','Story','Article','Dialogue'];const LV=['Easy','Medium','Hard'],LVI=['🟢','🟡','🔴'];
 function renderWrite(){const v=$('view-write');cur='write';if(!D.write){v.innerHTML=head('✍️ Writing','Write first, then compare with a model answer.')+notLoaded('write');load('write').then(()=>{if(cur==='write')renderWrite()});return}
  if(open&&open.kind==='write')return drawTask();
- const st=store().write,items=D.write.filter(t=>(filt.unit==='all'||String(t.unit)===String(filt.unit))&&(filt.type==='all'||t.type===filt.type));
+ const st=store().write,items=D.write.filter(t=>(filt.unit==='all'||String(t.unit)===String(filt.unit))&&(filt.type==='all'||t.type===filt.type)&&(filt.type!=='Dialogue'||filt.lv==='all'||t.level===filt.lv)).map((t,i)=>[t,i]).sort((a,b)=>{const la=a[0].level?LV.indexOf(a[0].level):-1,lb=b[0].level?LV.indexOf(b[0].level):-1;return (la-lb)||(a[1]-b[1])}).map(x=>x[0]);
  v.innerHTML=head('✍️ Writing','Choose a task, write your answer, then check it with the model answer and the checklist.')+
- '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+['all'].concat(TYPES).map(t=>'<button class="s3btn '+(filt.type===t?'':'ghost')+'" style="padding:5px 11px;font-size:12px" onclick="s3RW.setType(\''+t+'\')">'+(t==='all'?'All':t)+'</button>').join('')+'</div><div style="margin-bottom:12px">'+unitSel()+'</div>'+
- (items.length?items.map(t=>{const b=st[t.id];return '<button onclick="s3RW.openWrite(\''+t.id+'\')" class="bg-white rounded-2xl border p-4" style="display:block;width:100%;text-align:left;margin-bottom:10px;cursor:pointer;color:var(--tx)"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(t.title)+'</b>'+(b?'<span class="s3pill">✅ '+b.score+'/'+b.n+'</span>':'')+'</div><div class="s3sub">'+esc(t.type)+' · Unit '+t.unit+' · '+esc(t.range)+' words</div></button>'}).join(''):'<div class="bg-white rounded-2xl border p-5">No tasks for this choice yet. More are coming.</div>')}
-function openWrite(id){open={kind:'write',t:D.write.find(x=>x.id===id),shown:false};renderWrite()}
+ '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+['all'].concat(TYPES).map(t=>'<button class="s3btn '+(filt.type===t?'':'ghost')+'" style="padding:5px 11px;font-size:12px" onclick="s3RW.setType(\''+t+'\')">'+(t==='all'?'All':t)+'</button>').join('')+'</div>'+(filt.type==='Dialogue'?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+['all'].concat(LV).map(l=>'<button class="s3btn '+(filt.lv===l?'':'ghost')+'" style="padding:5px 11px;font-size:12px" onclick="s3RW.setLv(\''+l+'\')">'+(l==='all'?'All levels':LVI[LV.indexOf(l)]+' '+l)+'</button>').join('')+'</div>':'')+'<div style="margin-bottom:12px">'+unitSel()+'</div>'+
+ (items.length?items.map(t=>{const b=st[t.id];return '<button onclick="s3RW.openWrite(\''+t.id+'\')" class="bg-white rounded-2xl border p-4" style="display:block;width:100%;text-align:left;margin-bottom:10px;cursor:pointer;color:var(--tx)"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(t.title)+'</b>'+(b?'<span class="s3pill">✅ '+b.score+'/'+b.n+'</span>':'')+'</div><div class="s3sub">'+(t.type==='Dialogue'?LVI[LV.indexOf(t.level)]+' '+t.level+' · Dialogue · Unit '+t.unit+' · 6 missing lines':esc(t.type)+' · Unit '+t.unit+' · '+esc(t.range)+' words')+'</div></button>'}).join(''):'<div class="bg-white rounded-2xl border p-5">No tasks for this choice yet. More are coming.</div>')}
+function openWrite(id){open={kind:'write',t:D.write.find(x=>x.id===id),shown:false,chk:false,man:{}};renderWrite()}
 function wc(s){return (s.trim().match(/\S+/g)||[]).length}
-function drawTask(){const{t}=open,s=store(),draft=s.draft[t.id]||'',lo=+t.range.split('-')[0],hi=+t.range.split('-')[1];
+function drawTask(){if(open.t.type==='Dialogue')return drawDlg();const{t}=open,s=store(),draft=s.draft[t.id]||'',lo=+t.range.split('-')[0],hi=+t.range.split('-')[1];
  $('view-write').innerHTML='<div style="margin-bottom:10px"><button class="s3btn ghost" onclick="s3RW.backWrite()">← All tasks</button></div><div class="bg-white rounded-2xl border p-5" style="margin-bottom:14px"><div class="s3sub">'+esc(t.type)+' · Unit '+t.unit+': '+esc(UT[t.unit]||'')+'</div><div class="s3h" style="font-size:17px;margin:4px 0 8px">'+esc(t.title)+'</div><p style="font-size:15px;line-height:1.6">'+esc(t.prompt)+'</p><div class="s3lbl" style="margin-top:10px">Include</div><ul style="margin:4px 0 0 18px;font-size:14px;list-style:disc">'+t.points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul><div class="s3sub" style="margin-top:8px">Length: '+esc(t.range)+' words</div></div>'+
  '<div class="bg-white rounded-2xl border p-5" style="margin-bottom:14px"><div class="s3lbl">Your answer</div><textarea id="w-text" class="s3in" rows="9" style="width:100%;font-size:15px;line-height:1.6" oninput="s3RW.typing()" placeholder="Write here. Your draft is saved on this device.">'+esc(draft)+'</textarea><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:8px"><span id="w-count" class="s3pill"></span>'+(open.shown?'':'<button class="s3btn" onclick="s3RW.reveal()">Show model answer and checklist</button>')+'</div></div>'+
  (open.shown?model(t):'');typing()}
@@ -5704,16 +5706,165 @@ function finishWrite(){const t=open.t,ch=[...document.querySelectorAll('.w-chk')
  if(S.isStudent()&&!old&&e&&wc(e.value)>=30)S.addXP(10,'Writing: '+t.title);
  S.toast(sc+' of '+ch.length+' checks. '+(sc===ch.length?'Excellent!':'Compare again with the model answer and improve your draft.'))}
 function backWrite(){open=null;renderWrite()}
+/* ---------- Dialogue ---------- */
+const nz=s=>String(s).toLowerCase().replace(/[\u2019\u2018]/g,"'").replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();
+function dAns(){const s=store();return (s.draft[open.t.id]&&typeof s.draft[open.t.id]==='object')?s.draft[open.t.id]:{}}
+function dlgOk(t,k,v){return t.turns[k].accept.some(a=>nz(a)===nz(v))}
+function drawDlg(){const t=open.t,A=dAns(),chk=open.chk;let bi=0,first=t.turns[0].who,sc=0;
+ const rows=t.turns.map((r,i)=>{const right=r.who!==first;const wrap='display:flex;flex-direction:column;align-items:'+(right?'flex-end':'flex-start')+';margin-bottom:10px';
+  if(!r.blank)return '<div style="'+wrap+'"><div class="s3sub" style="margin-bottom:2px">'+esc(r.who)+'</div><div style="display:flex;gap:6px;align-items:center;max-width:92%"><div style="background:var(--surf2);border:1px solid var(--bd);border-radius:14px;padding:9px 12px;font-size:15px;line-height:1.5">'+esc(r.text)+'</div>'+sp('d',t.id,i)+'</div></div>';
+  const n=++bi,v=A[i]||'',ok=chk&&(dlgOk(t,i,v)||open.man[i]);if(ok)sc++;
+  return '<div style="'+wrap+'"><div class="s3sub" style="margin-bottom:2px">'+esc(r.who)+' · missing line '+n+'</div><div style="width:92%">'+
+  '<input class="s3in w-dl" data-i="'+i+'" value="'+esc(v)+'" '+(chk?'disabled ':'')+'oninput="s3RW.dtype(this)" placeholder="Write the missing sentence" style="width:100%;font-size:15px;border:2px dashed '+(chk?(ok?'var(--ok)':'#e11d48'):'var(--bd)')+'">'+
+  (chk?'<div style="margin-top:4px;font-size:13px">'+(ok?'✅ ':'❌ ')+'<b>Model:</b> '+esc(r.model)+' '+sp('d',t.id,i)+(ok?'':'<button class="s3btn ghost" style="padding:2px 8px;font-size:12px;margin-left:4px" onclick="s3RW.dman('+i+')">Mine is also correct</button>')+'</div>':'')+'</div></div>'}).join('');
+ const b=store().write[t.id];
+ $('view-write').innerHTML='<div style="margin-bottom:10px"><button class="s3btn ghost" onclick="s3RW.backWrite()">← All tasks</button></div><div class="bg-white rounded-2xl border p-5" style="margin-bottom:14px"><div class="s3sub">'+LVI[LV.indexOf(t.level)]+' '+t.level+' · Dialogue · Unit '+t.unit+': '+esc(UT[t.unit]||'')+'</div><div class="s3h" style="font-size:17px;margin:4px 0 8px">'+esc(t.title)+'</div><p style="font-size:14px;color:var(--mu)">'+esc(t.prompt)+' Write the 6 missing sentences. Each one answers or asks something from the lines around it.</p></div>'+
+ '<div class="bg-white rounded-2xl border p-5" style="margin-bottom:14px">'+rows+(chk?'<div style="text-align:center;margin-top:8px"><div style="font-size:28px;font-weight:800;color:var(--ac)">'+sc+' / 6</div><div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap"><button class="s3btn" onclick="s3RW.dsave()">Save my result</button><button class="s3btn ghost" onclick="s3RW.dretry()">Try again</button></div>'+(b?'<div class="s3sub" style="margin-top:6px">Best so far: '+b.score+'/'+b.n+'</div>':'')+'</div>':'<div style="text-align:center"><button class="s3btn" onclick="s3RW.dcheck()">Check my answers</button></div>')+'</div>'}
+function dtype(e){const s=store(),A=dAns();A[e.dataset.i]=e.value;s.draft[open.t.id]=A;save(s)}
+function dcheck(){const A=dAns(),t=open.t;const miss=t.turns.filter((r,i)=>r.blank&&!(A[i]||'').trim()).length;if(miss&&!confirm(miss+' line(s) are empty. Check anyway?'))return;open.chk=true;drawDlg()}
+function dman(i){open.man[i]=true;drawDlg()}
+function dretry(){const s=store();delete s.draft[open.t.id];save(s);open.chk=false;open.man={};drawDlg()}
+function dsave(){const t=open.t,A=dAns();let sc=0;t.turns.forEach((r,i)=>{if(r.blank&&(dlgOk(t,i,A[i]||'')||open.man[i]))sc++});const s=store(),old=s.write[t.id];
+ s.write[t.id]={score:Math.max(sc,old?old.score:0),n:6,t:Date.now()};save(s);
+ if(S.isStudent()&&!old)S.addXP(sc>=5?10:5,'Dialogue: '+t.title);
+ S.toast(sc+' of 6. '+(sc===6?'Excellent!':'Read the model lines and try again.'))}
+
 
 /* ---------- Used by the Exam tab ---------- */
 function examSet(units){if(!D.read)return[];const pool=D.read.filter(p=>!units||!units.length||units.includes(Number(p.unit)));if(!pool.length)return[];const p=shuffle(pool)[0];
  return shuffle(p.qs.map((q,i)=>q)).map((q,i)=>{const idx=shuffle(q.o.map((_,j)=>j));return{id:p.id+'-'+(p.qs.indexOf(q)+1),question:q.q,options:idx.map(j=>q.o[j]),answer:idx.indexOf(q.a),explanation:q.e,category:'Reading',unit:p.unit,passage:p.text,passageTitle:p.title}})}
 
 window.s3RW={renderRead,renderWrite,openRead,pickRead,backRead,openWrite,backWrite,typing,reveal,finishWrite,examSet,load,ready:()=>!!D.read,
- setUnit:v=>{filt.unit=v;cur==='read'?renderRead():renderWrite()},setType:t=>{filt.type=t;renderWrite()},
- say:(k,id,i)=>{if(k==='p')say(D.read.find(x=>x.id===id).text[i]);else if(k==='q')say(open.qs[i].q);else if(k==='m')say(D.write.find(x=>x.id===id).model.split(/\n\n/)[i])}};
+ setUnit:v=>{filt.unit=v;cur==='read'?renderRead():renderWrite()},setType:t=>{filt.type=t;renderWrite()},setLv:l=>{filt.lv=l;renderWrite()},dtype,dcheck,dman,dretry,dsave,
+ say:(k,id,i)=>{if(k==='p')say(D.read.find(x=>x.id===id).text[i]);else if(k==='q')say(open.qs[i].q);else if(k==='d'){const t=D.write.find(x=>x.id===id).turns[i];say(t.blank?t.model:t.text)}else if(k==='m')say(D.write.find(x=>x.id===id).model.split(/\n\n/)[i])}};
 })();
 </script>
 
+<script id="s3-cloud">
+(function(){
+const CFG=window.S3_FB;const C={offline:false,on:!!(CFG&&CFG.apiKey&&CFG.projectId),mem:{}};window.S3CLOUD=C;if(!C.on)return;
+const DOM=CFG.domain||'s3.example.com',TEACHER='teacher@'+DOM,V='10.14.1',BASE='https://www.gstatic.com/firebasejs/'+V+'/';
+const $=id=>document.getElementById(id),S=()=>window.S3,esc=s=>S().esc(s);
+let flushing=false,fb=null,user=null,syncT=null,lastH='',lastSum='',loadedAt=0,busy=false,gerr='',creating=false,fbFail='';
+const emailOf=u=>{u=String(u||'').trim().toLowerCase();return u.indexOf('@')>-1?u:u+'@'+DOM};
+async function sdk(){if(fb)return fb;const[A,Au,F]=await Promise.all([import(BASE+'firebase-app.js'),import(BASE+'firebase-auth.js'),import(BASE+'firebase-firestore.js')]);
+ const app=A.initializeApp(CFG),auth=Au.getAuth(app),db=F.getFirestore(app),emu=window.S3_EMU;
+ if(emu){Au.connectAuthEmulator(auth,emu.auth,{disableWarnings:true});F.connectFirestoreEmulator(db,emu.fsHost,emu.fsPort)}
+ fb={A,Au,F,app,auth,db};return fb}
+let second=null;
+async function creator(){if(second)return second;await sdk();const app2=fb.A.initializeApp(CFG,'creator'),auth2=fb.Au.getAuth(app2);if(window.S3_EMU)fb.Au.connectAuthEmulator(auth2,window.S3_EMU.auth,{disableWarnings:true});second={app2,auth2};return second}
+const msg=e=>{const c=(e&&e.code)||'';if(/invalid-credential|wrong-password|user-not-found|invalid-email|invalid-login/.test(c))return 'اسم المستخدم أو كلمة السر غلط · Wrong username or password';if(/too-many/.test(c))return 'محاولات كتير. استنى شوية وجرب تاني · Too many tries, wait a few minutes';if(/network/.test(c))return 'مفيش إنترنت · No internet connection';if(/permission/.test(c))return 'مفيش صلاحية (راجع قواعد Firestore) · Permission denied';return 'خطأ: '+(c||e&&e.message||e)};
+/* ---------- gate ---------- */
+C.gate=function(g){
+ const themes=''; 
+ g.innerHTML='<div class="box"><div style="text-align:center;margin-bottom:14px"><div style="font-size:38px">🎓</div><div class="s3h">Secondary 3 English Prep</div><div class="s3sub">سجّل دخولك بالحساب اللي المدرس عمله لك<br>Sign in with the account your teacher gave you</div></div>'+
+ (fbFail?'<p class="s3sub" style="text-align:center;color:#e11d48">'+esc(fbFail)+'</p><button class="s3btn" style="width:100%" onclick="location.reload()">Retry · حاول تاني</button>':
+ busy?'<p class="s3sub" style="text-align:center;margin:20px 0">⏳ …</p>':
+ '<label class="s3lbl">Username · اسم المستخدم</label><input id="g-u" class="s3in" autocapitalize="none" autocomplete="username" autocorrect="off" spellcheck="false" onkeydown="if(event.key===\'Enter\')document.getElementById(\'g-p\').focus()"><label class="s3lbl" style="margin-top:10px">Password · كلمة السر</label><input id="g-p" type="password" class="s3in" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')S3CLOUD.login()"><button class="s3btn" style="width:100%;margin-top:14px" onclick="S3CLOUD.login()">Sign in · دخول</button>')+
+ '<div id="g-err" style="color:#e11d48;font-size:12px;margin-top:10px;text-align:center">'+esc(gerr)+'</div></div>'};
+C.login=async function(){const u=$('g-u').value,p=$('g-p').value;if(!u.trim()||!p){gerr='اكتب اسم المستخدم وكلمة السر';return S().gate()}
+ gerr='';busy=true;S().gate();
+ try{await sdk();await fb.Au.signInWithEmailAndPassword(fb.auth,emailOf(u),p)}catch(e){busy=false;gerr=msg(e);S().gate()}};
+const LAST='s3_cloud_last';
+function resumeOffline(){const l=S().ls.get(LAST,null);if(!l||!l.uid)return false;const CLS=S().CLS();CLS.teacher={name:CFG.teacherName||'Teacher'};
+ if(l.teacher)S().setSESS({role:'teacher',name:CLS.teacher.name});else{CLS.students=[{id:l.uid,name:l.name,cls:l.cls}];S().setSESS({role:'student',id:l.uid,name:l.name,cls:l.cls})}
+ C.offline=true;S().start();setTimeout(()=>S().toast('📴 Offline mode: your progress is saved on this phone and will sync when the internet is back'),600);return true}
+function retryLater(){const t=()=>{sdk().then(()=>{C.offline=false;fb.Au.onAuthStateChanged(fb.auth,u=>{user=u;onUser(u)})}).catch(()=>{})};addEventListener('online',t,{once:true});setTimeout(t,45000)}
+C.init=async function(){try{await sdk()}catch(e){if(resumeOffline()){retryLater();return}fbFail='تعذر تحميل النظام. تأكد من الإنترنت وافتح الموقع مرة واحدة أونلاين · Could not load. Connect to the internet once';S().gate();return}
+ fb.Au.onAuthStateChanged(fb.auth,u=>{user=u;onUser(u)})};
+async function onUser(u){const CLS=S().CLS();
+ if(!u){stopSync();busy=false;if(S().SESS())S().setSESS(null);S().gate();return}
+ const cur=S().SESS();if(cur&&C.offline===false&&(cur.id===u.uid||(cur.role==='teacher'&&(u.email||'').toLowerCase()===TEACHER))){if(cur.role==='student')startSync();return}
+ try{
+  if((u.email||'').toLowerCase()===TEACHER){S().ls.set(LAST,{uid:u.uid,teacher:1});CLS.teacher={name:CFG.teacherName||'Teacher'};busy=false;S().setSESS({role:'teacher',name:CLS.teacher.name});S().start();C.loadTeacher().catch(()=>{});return}
+  const snap=await fb.F.getDoc(fb.F.doc(fb.db,'students',u.uid));
+  if(!snap.exists()){gerr='الحساب ده مش متفعّل. كلم المدرس · This account is not active';busy=false;await fb.Au.signOut(fb.auth);return}
+  const d=snap.data();S().ls.set(LAST,{uid:u.uid,name:d.name,cls:d.cls});pull(u.uid,d);CLS.teacher={name:CFG.teacherName||'Teacher'};CLS.students=[{id:u.uid,name:d.name,cls:d.cls}];
+  busy=false;S().setSESS({role:'student',id:u.uid,name:d.name,cls:d.cls});S().start();startSync()
+ }catch(e){busy=false;const l=S().ls.get(LAST,null);
+  if(l&&l.uid===u.uid&&(!navigator.onLine||/unavailable|network|offline/i.test((e&&e.code)||''))&&resumeOffline()){C.offline=false;if(!l.teacher)startSync();return}
+  gerr=msg(e);try{await fb.Au.signOut(fb.auth)}catch(x){}S().gate()}}
+/* ---------- student sync ---------- */
+const pk=id=>'s3_prog_'+id,bk=id=>'sec3_qbank_v2_'+id,tk=id=>'s3_cloud_ts_'+id;
+function parse(s,d){try{return JSON.parse(s)}catch(e){return d}}
+function pull(uid,d){const ls=S().ls,ts=ls.get(tk(uid),0),has=!!localStorage.getItem(pk(uid));
+ if(!has||(d.updated||0)>ts){const p=Object.assign({log:[],xp:0,best:0,cur:0,days:{},last:0},parse(d.prog,{}));p.note=d.note||'';ls.set(pk(uid),p);ls.set(bk(uid),parse(d.blob,{}));ls.set(tk(uid),d.updated||0);lastH=''}
+ else{const p=S().getProg(uid);p.note=d.note||'';ls.set(pk(uid),p)}
+ const cur=snapshotOf(uid).js,hk='s3_cloud_h_'+uid;if(!has||(d.updated||0)>ts){ls.set(hk,hs(cur));lastH=cur}else lastH=(ls.get(hk,'')===hs(cur))?cur:''}
+const hs=t=>{let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))>>>0;return h.toString(36)+t.length}
+function snapshotOf(uid){const p=Object.assign({},S().getProg(uid));delete p.note;if(p.log&&p.log.length>1500)p.log=p.log.slice(-1500);const b=S().ls.get(bk(uid),{})||{};return{p,b,js:JSON.stringify([p,b])}}
+async function flush(){const ss=S().SESS();if(!ss||ss.role!=='student'||!fb||!user||user.uid!==ss.id)return;const uid=ss.id,{p,b,js}=snapshotOf(uid);
+ if(js===lastH||js.length>900000)return;if(flushing||!navigator.onLine)return;flushing=true;const ts=Date.now(),prev=lastH;lastH=js;
+ try{await Promise.race([fb.F.updateDoc(fb.F.doc(fb.db,'students',uid),{prog:JSON.stringify(p),blob:JSON.stringify(b),updated:ts}),new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),20000))]);S().ls.set(tk(uid),ts);S().ls.set('s3_cloud_h_'+uid,hs(js));
+  const x=S().statsFor({id:uid}),sum={xp:x.xp,wxp:x.wxp,cur:x.cur,best:x.best,ds:x.ds,acc:x.acc,att:x.att,mastered:x.mastered,last:x.last},sj=JSON.stringify(sum);
+  if(sj!==lastSum){await fb.F.updateDoc(fb.F.doc(fb.db,'board',uid),sum);lastSum=sj}}catch(e){lastH=prev;console.warn('sync failed',e&&e.code)}flushing=false}
+C.flush=flush;
+function startSync(){stopSync();syncT=setInterval(flush,90000);addEventListener('online',flush);document.addEventListener('visibilitychange',vis);addEventListener('pagehide',flush)}
+function stopSync(){clearInterval(syncT);syncT=null;document.removeEventListener('visibilitychange',vis)}
+const vis=()=>{if(document.visibilityState==='hidden')flush()};
+C.beforeLogout=function(){S().ls.set(LAST,null);C.offline=false;const done=()=>fb&&fb.Au.signOut(fb.auth);flush().then(done,done);stopSync()};
+/* ---------- data for dashboard / leaderboard ---------- */
+C.fresh=()=>Date.now()-loadedAt<60000;
+C.load=function(){return S().isTeacher()?C.loadTeacher():C.loadBoard()};
+C.loadBoard=async function(){const CLS=S().CLS(),me=S().SESS();try{const q=await fb.F.getDocs(fb.F.collection(fb.db,'board'));const list=[];q.forEach(d=>{const x=d.data();if(me&&d.id===me.id)list.push({id:d.id,name:x.name,cls:x.cls});else list.push({id:d.id,name:x.name,cls:x.cls,sum:{xp:x.xp,wxp:x.wxp,cur:x.cur,best:x.best,ds:x.ds,acc:x.acc,att:x.att,mastered:x.mastered,last:x.last}})});
+ CLS.students=list;loadedAt=Date.now();if(!C._bc&&me){C._bc=1;if(me.cls&&window.s3BoardCls)window.s3BoardCls(me.cls)}}catch(e){loadedAt=Date.now();S().toast(msg(e))}};
+C.loadTeacher=async function(){const CLS=S().CLS(),F=fb.F;try{const[ss,sc]=await Promise.all([F.getDocs(F.collection(fb.db,'students')),F.getDocs(F.collection(fb.db,'secrets'))]);const secs={};sc.forEach(d=>secs[d.id]=d.data());const list=[],mem={};
+ ss.forEach(d=>{const x=d.data(),p=Object.assign({log:[],xp:0,best:0,cur:0,days:{},last:0},parse(x.prog,{}));p.note=x.note||'';mem['p'+d.id]=p;mem['b'+d.id]=parse(x.blob,{});const c=secs[d.id]||{};list.push({id:d.id,name:x.name,cls:x.cls,un:x.username||c.username||'',pw:c.pw||'',created:x.created||0})});
+ C.mem=mem;CLS.students=list;loadedAt=Date.now();syncPicker(list)}catch(e){loadedAt=Date.now();S().toast(msg(e))}};
+function syncPicker(list){try{if(window.s3Picker&&s3Picker.syncRoster)s3Picker.syncRoster(list.map(s=>({c:s.cls||'',n:s.name})))}catch(e){}}
+C.saveNote=async function(id,t){try{await fb.F.updateDoc(fb.F.doc(fb.db,'students',id),{note:t})}catch(e){S().toast(msg(e))}};
+/* ---------- teacher: accounts ---------- */
+const ALPH='abcdefghjkmnpqrstuvwxyz23456789';
+const genPw=()=>{let s='';const a=crypto.getRandomValues(new Uint32Array(7));for(const n of a)s+=ALPH[n%ALPH.length];return s};
+const slug=n=>((String(n).trim().split(/\s+/)[0]||'').toLowerCase().replace(/[^a-z]/g,'').slice(0,10))||'user';
+const EMPTYP=JSON.stringify({log:[],xp:0,best:0,cur:0,days:{},last:0});
+function uniqueUser(base,taken){for(let i=0;i<200;i++){const u=base+String(Math.floor(10+Math.random()*90)+(i>40?i:0));if(!taken.has(u)){taken.add(u);return u}}return base+Date.now().toString(36)}
+async function makeAccount(name,cls,taken){const F=fb.F,Au=fb.Au,{auth2}=await creator();let un,pw=genPw(),uid=null,tries=0;
+ while(!uid&&tries++<6){un=uniqueUser(slug(name),taken);try{const cr=await Au.createUserWithEmailAndPassword(auth2,un+'@'+DOM,pw);uid=cr.user.uid}catch(e){if(e&&e.code==='auth/email-already-in-use')continue;throw e}}
+ if(!uid)throw new Error('username');await Au.signOut(auth2);
+ const now=Date.now();
+ await F.setDoc(F.doc(fb.db,'students',uid),{name,cls,username:un,created:now,prog:EMPTYP,blob:'{}',updated:0,note:''});
+ await F.setDoc(F.doc(fb.db,'board',uid),{name,cls,xp:0,wxp:0,cur:0,best:0,ds:0,acc:0,att:0,mastered:0,last:0});
+ await F.setDoc(F.doc(fb.db,'secrets',uid),{username:un,pw});
+ return{id:uid,name,cls,un,pw,created:now}}
+function parseList(txt){const out=[];String(txt||'').split('\n').map(x=>x.trim()).filter(Boolean).forEach(l=>{const f=l.split(/\t|;|,|\|/).map(x=>x.trim()).filter(Boolean);if(!f.length)return;if(f.length>=2&&/^(class|section|grade|name)$/i.test(f[0]))return;out.push(f.length>=2?{cls:f[0],name:f.slice(1).join(' ')}:{cls:'',name:f[0]})});return out}
+C.create=async function(){if(creating)return;const list=parseList($('stu-new').value);if(!list.length)return S().toast('Paste at least one student.');
+ const CLS=S().CLS(),have=new Set(CLS.students.map(s=>(s.cls||'').toLowerCase()+'|'+s.name.toLowerCase())),taken=new Set(CLS.students.map(s=>s.un));
+ const todo=list.filter(x=>!have.has(x.cls.toLowerCase()+'|'+x.name.toLowerCase()));const st=$('stu-prog');creating=true;let ok=0,fail=[];
+ for(const x of todo){st.textContent='⏳ '+(ok+fail.length+1)+' / '+todo.length+' …';try{const r=await makeAccount(x.name,x.cls,taken);CLS.students.push(r);ok++}catch(e){fail.push(x.name+' ('+msg(e)+')');if(e&&e.code==='auth/too-many-requests')break}}
+ creating=false;S().toast('✅ '+ok+' accounts created'+(list.length-todo.length?' · '+(list.length-todo.length)+' already existed':'')+(fail.length?' · '+fail.length+' failed':''));
+ await C.loadTeacher();C.renderStudents($('view-students'));if(fail.length){const e=$('stu-prog');if(e)e.innerHTML='<div style="color:#e11d48;font-size:12px">Failed:<br>'+fail.map(esc).join('<br>')+'<br>Paste the failed lines again and press Create (if it says too many requests, wait an hour).</div>'}};
+C.replace=async function(id){const CLS=S().CLS(),s=CLS.students.find(x=>x.id===id);if(!s||!confirm('Replace the account of '+s.name+'?\nA new username and password are created and the progress is copied. The old login stops working.'))return;
+ const F=fb.F;try{const taken=new Set(CLS.students.map(x=>x.un));const old=await F.getDoc(F.doc(fb.db,'students',id)),ob=await F.getDoc(F.doc(fb.db,'board',id));
+  const r=await makeAccount(s.name,s.cls||'',taken);const d=old.data()||{};
+  await F.setDoc(F.doc(fb.db,'students',r.id),Object.assign({},d,{username:r.un,created:Date.now(),updated:Date.now()}));
+  if(ob.exists())await F.setDoc(F.doc(fb.db,'board',r.id),ob.data());
+  await Promise.all(['students','board','secrets'].map(c=>F.deleteDoc(F.doc(fb.db,c,id))));S().toast('New login for '+s.name+': '+r.un+' / '+r.pw)}catch(e){S().toast(msg(e))}
+ await C.loadTeacher();C.renderStudents($('view-students'))};
+C.reset=async function(id){const s=S().CLS().students.find(x=>x.id===id);if(!s||!confirm('Reset all progress and XP for '+s.name+'? (Do it when the student is logged out.)'))return;const F=fb.F;
+ try{await F.updateDoc(F.doc(fb.db,'students',id),{prog:EMPTYP,blob:'{}',updated:Date.now()});await F.updateDoc(F.doc(fb.db,'board',id),{xp:0,wxp:0,cur:0,best:0,ds:0,acc:0,att:0,mastered:0,last:0});S().toast('Progress reset')}catch(e){S().toast(msg(e))}
+ await C.loadTeacher();C.renderStudents($('view-students'))};
+C.remove=async function(id){const s=S().CLS().students.find(x=>x.id===id);if(!s||!confirm('Delete '+s.name+' and all their data? This cannot be undone.'))return;const F=fb.F;
+ try{await Promise.all(['students','board','secrets'].map(c=>F.deleteDoc(F.doc(fb.db,c,id))));S().toast('Deleted')}catch(e){S().toast(msg(e))}
+ await C.loadTeacher();C.renderStudents($('view-students'))};
+const dl=(name,text)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+text],{type:'text/csv'}));a.download=name;document.body.appendChild(a);a.click();a.remove()};
+C.csv=function(){const rows=S().CLS().students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name)).map(s=>[s.cls,s.name,s.un,s.pw].map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(','));dl('student_logins.csv',['Class,Name,Username,Password'].concat(rows).join('\n'))};
+C.cards=function(){const a=$('cards-area');a.style.display='block';const L=S().CLS().students.slice().sort((x,y)=>(x.cls||'').localeCompare(y.cls||'')||x.name.localeCompare(y.name));
+ a.innerHTML='<div class="paper" style="max-width:none"><h1>Login cards · بطاقات الدخول</h1><div class="s3sub">'+esc(location.href.split('?')[0].split('#')[0])+'</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px">'+L.map(s=>'<div style="border:1.5px dashed #333;padding:10px;break-inside:avoid"><b>'+esc(s.name)+'</b> · '+esc(s.cls||'')+'<br>Username: <b style="font-size:16px">'+esc(s.un)+'</b><br>Password: <b style="font-size:16px">'+esc(s.pw)+'</b></div>').join('')+'</div></div>';
+ document.body.classList.add('print-cards');setTimeout(()=>{print();document.body.classList.remove('print-cards');a.style.display='none'},150)};
+C.renderStudents=function(v){if(!S().isTeacher()){v.innerHTML='';return}
+ if(!C.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';C.loadTeacher().then(()=>{loadedAt=Date.now();C.renderStudents(v)});return}
+ const L=S().CLS().students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name));
+ const rows=L.map(s=>{const x=S().statsFor(s);return'<tr><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.un)+'</code></td><td><code>'+esc(s.pw)+'</code></td><td>'+x.xp+' XP</td><td>'+x.acc+'%</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="S3CLOUD.replace(\''+s.id+'\')">New login</button> <button class="s3btn ghost" onclick="S3CLOUD.reset(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="S3CLOUD.remove(\''+s.id+'\')">✕</button></td></tr>'}).join('');
+ v.innerHTML='<div class="s3noprint" style="display:grid;gap:16px"><div class="bg-white rounded-2xl border p-5"><div class="s3h">👥 My Students · الطلاب</div><div class="s3sub">Paste one student per line as <b>Class, Name</b>. Each gets a username and a password. Students never register.</div>'+
+ '<textarea id="stu-new" class="s3in" rows="4" style="margin-top:10px" placeholder="3A, Mohamed Eid&#10;3A, Mariam Ali"></textarea><button class="s3btn" style="margin-top:10px" onclick="S3CLOUD.create()">+ Create accounts</button> <label class="s3btn ghost" style="cursor:pointer;display:inline-block;margin-top:10px">📄 Load .txt / .csv<input type="file" accept=".csv,.txt" hidden onchange="S3CLOUD.file(event)"></label><div id="stu-prog" class="s3sub" style="margin-top:8px"></div></div>'+
+ '<div class="bg-white rounded-2xl border p-5" style="overflow-x:auto"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div class="s3h" style="font-size:15px">Class list ('+L.length+')</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s3btn ghost" onclick="S3CLOUD.cards()">🖨️ Print login cards</button><button class="s3btn ghost" onclick="S3CLOUD.csv()">⬇ Logins (CSV)</button><button class="s3btn ghost" onclick="S3CLOUD.refresh()">🔄 Refresh</button></div></div>'+
+ (L.length?'<table class="s3tbl"><tr><th>Class</th><th>Name</th><th>Username</th><th>Password</th><th>XP</th><th>Acc.</th><th></th></tr>'+rows+'</table>':'<p class="s3sub">No students yet.</p>')+'<p class="s3sub" style="margin-top:10px">Forgot a password? Press <b>New login</b>: it makes a new username and password and keeps the progress. Passwords shown here are the ones created for the student.</p></div></div><div id="cards-area" style="display:none"></div>'};
+C.refresh=async function(){loadedAt=0;C.renderStudents($('view-students'))};
+C.file=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('stu-new').value=String(r.result).trim();S().toast('File loaded. Press Create accounts')};r.readAsText(f,'utf-8');e.target.value=''};
+})();
+
+</script>
+<script id="s3-sw">if("serviceWorker"in navigator&&/^https?:$/.test(location.protocol))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
 </body>
 </html>
