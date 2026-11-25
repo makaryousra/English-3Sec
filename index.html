@@ -4760,11 +4760,11 @@ function prep(t){return String(t).replace(/\.{3,}|_{2,}/g,' blank ').replace(/\b
 const AUD_K='s3_audio';
 function saveAud(){ls.set(AUD_K,{accent:state.voiceAccent,rate:state.voiceRate})}
 function vStatus(){const s=document.getElementById('s3-vstat');if(!s)return;const lang=state.voiceAccent||'en-US';
- if(!window.speechSynthesis){s.textContent='⚠️ المتصفح ده مش بيدعم الصوت. استخدم Chrome أو Safari أو Edge';return}
+ if(!window.speechSynthesis){s.textContent='⚠️ This browser does not support audio. Use Chrome, Safari or Edge';return}
  const v=bestVoice(lang),uk=nl(lang)==='en-gb';
  if(v)s.textContent='✅ '+(uk?'UK':'US')+': '+v.name.replace(/^Microsoft |^Google /,'');
- else if(!VOICES.length)s.textContent=vTries<25?'⏳ جاري تحميل الأصوات...':'⚠️ مفيش أصوات إنجليزي على الجهاز. ثبّت صوت من إعدادات الجهاز (Text-to-speech)';
- else s.textContent='⚠️ مفيش صوت '+(uk?'بريطاني':'أمريكي')+' على الجهاز ده، هيستخدم أقرب صوت متاح'}
+ else if(!VOICES.length)s.textContent=vTries<25?'⏳ Loading voices...':'⚠️ No English voices on this device. Install one in the device settings (Text-to-speech)';
+ else s.textContent='⚠️ No '+(uk?'British':'American')+' voice on this device. The closest available voice will be used'}
 let spkId=0,keep=null,pending=null;
 function speak(raw,cb,pitch,langOv){
  if(!raw||!String(raw).trim())return;
@@ -4857,14 +4857,14 @@ const ago=t=>{if(!t)return'never';const m=(Date.now()-t)/6e4;return m<2?'just no
 function refreshChip(){const c=$('s3-chip');if(!c)return;if(!SESS){c.innerHTML='';return}
  let xp='';if(isStudent()){const p=getProg(SESS.id);const rk=rankOf(p.xp||0);xp='<button class="s3pill s3rk" style="cursor:pointer" onclick="s3Ach()">'+(p.avatar||'🙂')+' '+rk.ic+' '+rk.n+' · '+(p.xp||0)+'</button><span class="s3pill">🔥 '+(state.streak||0)+'</span>'}
  setTimeout(()=>ach.check(),50);if(window.s3Game)xp+='<button class="s3pill" style="cursor:pointer" onclick="s3Game.open()">🎮</button><button class="s3pill" style="cursor:pointer" onclick="s3Game.place()">🧭 Level</button>';c.innerHTML=xp+'<span class="s3pill">'+(isTeacher()?'👩‍🏫 Teacher':'🎓 '+esc(SESS.name))+'</span><button class="s3pill" onclick="s3Logout()" style="cursor:pointer">Log out</button>'}
-const TABS=['bank','quiz','read','write','exam','play','listen','notebook','srs','reference','worksheet','add','board','report','students'];
-const LABEL={bank:'📝 Question Bank',quiz:'🎓 Exam',read:'📖 Reading',write:'✍️ Writing',exam:'✍️ Rewrite & Translation',play:'🎯 Challenges',listen:'🎧 Listening',notebook:'📓 Notebook',srs:'🧠 Mastery',reference:'📚 Study Guide',worksheet:'🖨️ Worksheets',add:'➕ Add Questions',board:'🏆 Leaderboard',report:'📊 Reports',students:'👥 Students'};
-function allowed(t){if(!SESS)return false;if(t==='add'||t==='students')return isTeacher();return true}
+const TABS=['bank','quiz','read','write','exam','play','listen','notebook','srs','reference','worksheet','add','board','report','students','attend'];
+const LABEL={bank:'📝 Question Bank',quiz:'🎓 Exam',read:'📖 Reading',write:'✍️ Writing',exam:'✍️ Rewrite & Translation',play:'🎯 Challenges',listen:'🎧 Listening',notebook:'📓 Notebook',srs:'🧠 Mastery',reference:'📚 Study Guide',worksheet:'🖨️ Worksheets',add:'➕ Add Questions',board:'🏆 Leaderboard',report:'📊 Reports',students:'👥 Students',attend:'🏫 Classroom mode'};
+function allowed(t){if(!SESS)return false;if(t==='add'||t==='students'||t==='attend')return isTeacher();return true}
 window.switchTab=function(tab){if(!allowed(tab))tab='bank';state.currentTab=tab;
  TABS.forEach(t=>{const b=$('tab-'+t);if(b){b.className='tabbtn'+(t===tab?' active':'');b.style.display=allowed(t)?'':'none'}const v=$('view-'+t);if(v)v.classList.toggle('hidden',t!==tab)});
  $('filter-section').classList.toggle('hidden',tab!=='bank');
  if(tab==='quiz'&&window.s3Exam)s3Exam.render();if(tab==='read')s3RW.renderRead();if(tab==='write')s3RW.renderWrite();if(tab==='exam')renderExamDrills();if(tab==='srs')renderSRSDashboard();if(tab==='worksheet')WS.render();if(tab==='add')renderCustomQuestionsList();
- if(tab==='play'&&window.s3Play)s3Play.render();if(tab==='listen'&&window.s3Listen)s3Listen.render();if(tab==='bank'&&window.s3Picker)s3Picker.mount();if(tab==='notebook'&&window.s3Nb)s3Nb.render();if(tab==='reference'){renderReferenceSheets();renderFlashcard()}if(tab==='board')renderBoard();if(tab==='report')renderReport();if(tab==='students')renderStudents();window.scrollTo({top:0})};
+ if(tab==='play'&&window.s3Play)s3Play.render();if(tab==='listen'&&window.s3Listen)s3Listen.render();if(tab==='bank'&&window.s3Picker)s3Picker.mount();if(tab==='notebook'&&window.s3Nb)s3Nb.render();if(tab==='reference'){renderReferenceSheets();renderFlashcard()}if(tab==='board')renderBoard();if(tab==='report')renderReport();if(tab==='students')renderStudents();if(tab==='attend'&&window.s3Att)s3Att.render();window.scrollTo({top:0})};
 
 /* ---------- GATE (login) ---------- */
 let gateMode='student';
@@ -5012,7 +5012,7 @@ function boot(){
  nav.innerHTML=TABS.map(t=>'<button onclick="switchTab(\''+t+'\')" id="tab-'+t+'" class="tabbtn">'+LABEL[t]+(t==='srs'?' <span id="srs-due-badge" class="px-1.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold">0</span>':'')+'</button>').join('');nav.insertAdjacentHTML('beforeend','<button type="button" id="tab-more" class="tabbtn" onclick="this.parentNode.classList.toggle(\'open\')">More ▾</button>');
  const chip=document.createElement('div');chip.className='s3chip';chip.innerHTML='<select id="s3-theme" class="s3pill" style="cursor:pointer" onchange="s3Theme(this.value)">'+THEMES.map(t=>'<option value="'+t[0]+'">🎨 '+t[1]+'</option>').join('')+'</select><span id="s3-chip" class="s3chip"></span>';
  nav.parentElement.insertBefore(chip,nav);$('s3-theme').value=document.documentElement.getAttribute('data-theme');
- const main=document.querySelector('main');['board','report','students','play','listen','notebook'].forEach(t=>{const s=document.createElement('section');s.id='view-'+t;s.className='hidden space-y-4';main.appendChild(s)});
+ const main=document.querySelector('main');['board','report','students','attend','play','listen','notebook'].forEach(t=>{const s=document.createElement('section');s.id='view-'+t;s.className='hidden space-y-4';main.appendChild(s)});
  const g=document.createElement('div');g.id='s3-gate';g.className='no-print';document.body.appendChild(g);
  // voice picker in ribbon
  const vr=$('voice-rate');if(vr){const sp=document.createElement('select');sp.id='s3-voice';sp.className='bg-transparent text-indigo-100 font-semibold focus:outline-none cursor-pointer';sp.style.maxWidth='170px';sp.onchange=e=>s3Voice(e.target.value);vr.parentElement.appendChild(sp);const st=document.createElement('span');st.id='s3-vstat';st.style.cssText='flex-basis:100%;font-size:11px;opacity:.9';vr.parentElement.appendChild(st)}
@@ -5275,9 +5275,9 @@ const api=window.s3Listen={
  go(m,u,kind){try{window.scrollTo({top:0})}catch(e){}stop();clearInterval(timer);playing=false;mode=m;if(u!=null)cur=LESSONS.find(l=>l.unit===u);if(kind)api.start(kind);else api.render()},
 };
 function home(){const b=best();const v=view();
- v.innerHTML='<div class="lsc"><b style="font-size:18px">🎧 Listening Games</b><p style="font-size:13px;margin:6px 0">Lesson 2 listening texts from the Student\'s Book. Listen, then play: match words, fill the gaps, listen &amp; choose, and a timed round.</p><p class="lsar" style="font-size:13px;margin:6px 0">دروس الاستماع (Lesson 2) من كتاب الطالب. اسمع النص ثم العب: توصيل الكلمات، ملء الفراغات، اسمع واختار، وتحدي بالوقت.</p></div><div class="lsgrid">'+
+ v.innerHTML='<div class="lsc"><b style="font-size:18px">🎧 Listening Games</b><p style="font-size:13px;margin:6px 0">Lesson 2 listening texts from the Student\'s Book. Listen, then play: match words, fill the gaps, listen &amp; choose, and a timed round.</p></div><div class="lsgrid">'+
   LESSONS.map(L=>'<div class="lsc" style="margin:0"><div style="font-size:12px;font-weight:800;opacity:.7">UNIT '+L.unit+'</div><div style="font-weight:800;margin:2px 0">'+esc(L.title)+'</div><div style="font-size:12px;opacity:.7;margin-bottom:8px">'+L.vocab.length+' words'+(b[L.unit]?' · best ⏱️ '+b[L.unit]:'')+'</div><button class="lsb" onclick="s3Listen.go(\'listen\','+L.unit+')">Open</button></div>').join('')+
-  [7,8,9,10,11,12].map(u=>'<div class="lsc" style="margin:0;opacity:.55"><div style="font-size:12px;font-weight:800">UNIT '+u+'</div><div style="margin-top:4px;font-size:13px">Coming soon / قريباً</div></div>').join('')+'</div>'}
+  [7,8,9,10,11,12].map(u=>'<div class="lsc" style="margin:0;opacity:.55"><div style="font-size:12px;font-weight:800">UNIT '+u+'</div><div style="margin-top:4px;font-size:13px">Coming soon</div></div>').join('')+'</div>'}
 /* ---- Listen ---- */
 function sentHtml(L){let last=null,h='';L.sents.forEach((s,i)=>{if(s.sp&&s.sp!==last){h+='<div class="lsp" style="margin-top:8px">'+esc(s.sp)+'</div>';}last=s.sp;
  const t=hide?esc(s.plain).replace(/\S/g,m=>'•'):esc(s.raw).replace(/\{([^|}]+)\|(\d+)\}/g,(m,w,n)=>'<span class="lsw" data-n="'+n+'" onclick="event.stopPropagation();s3Listen.word('+n+')">'+w+'<sup style="font-size:9px">'+n+'</sup></span>');
@@ -5299,7 +5299,7 @@ api.playFrom=i=>{playing=true;setBtn();playSeq(cur.sents[i].ti)};
 /* ---- Match ---- */
 function match(){const L=cur;const pairs=shuf(L.vocab).slice(0,6);M={L,pairs,en:shuf(pairs),ar:shuf(pairs),sel:null,done:{},miss:0,ok:0};drawMatch()}
 function drawMatch(){const m=M;const col=(arr,k)=>arr.map(w=>{const id=k+w.n;const d=m.done[w.n];const s=m.sel&&m.sel.id===id;return '<button class="lsm '+(k==='a'?'lsar ':'')+(d?'done':s?'sel':'')+'" onclick="s3Listen.pick(\''+k+'\','+w.n+')">'+esc(k==='e'?w.en:w.ar)+'</button>'}).join('');
- view().innerHTML=head(m.L,'Match')+'<div class="lsc"><div style="font-size:13px;margin-bottom:8px">Tap an English word, then its Arabic meaning. <span class="lsar">اضغط الكلمة ثم معناها.</span> Mistakes: <b>'+m.miss+'</b></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+col(m.en,'e')+'</div><div>'+col(m.ar,'a')+'</div></div>'+
+ view().innerHTML=head(m.L,'Match')+'<div class="lsc"><div style="font-size:13px;margin-bottom:8px">Tap an English word, then its Arabic meaning. Mistakes: <b>'+m.miss+'</b></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+col(m.en,'e')+'</div><div>'+col(m.ar,'a')+'</div></div>'+
  (m.ok===m.pairs.length?'<div style="margin-top:12px;font-weight:800;color:#16a34a">🎉 Done! '+m.miss+' mistake(s).</div><button class="lsb" onclick="s3Listen.go(\'match\','+m.L.unit+')">Play again (new words)</button>':'')+'</div>'}
 api.pick=(k,n)=>{const m=M;if(m.done[n])return;const id=k+n;
  if(k==='e')sp(m.pairs.find(w=>w.n===n).en);
@@ -5326,7 +5326,7 @@ function quizUI(){const q0=Q,L=Q.L;const v=view();
  const q=Q.qs[Q.i];let prompt='';
  if(q.t==='gap')prompt='<div style="font-size:17px;line-height:1.7;font-weight:600">'+esc(q.gap).replace('_____','<span style="border-bottom:3px solid var(--ac,#4f46e5);padding:0 18px">&nbsp;</span>')+'</div><button class="lsb g" onclick="s3Listen.say()">🔊 Hear the speaker</button>';
  if(q.t==='ear')prompt='<div style="font-weight:700">👂 Listen and choose the word you hear</div><button class="lsb" onclick="s3Listen.say()">🔊 Play word</button>';
- if(q.t==='m1')prompt='<div style="font-size:12px;opacity:.7">What does it mean? <span class="lsar">إيه معنى الكلمة؟</span></div><div style="font-size:24px;font-weight:800;margin:6px 0" dir="ltr">'+esc(q.w.en)+' <button class="lsb g" style="padding:4px 10px" onclick="s3Listen.say()">🔊</button></div>';
+ if(q.t==='m1')prompt='<div style="font-size:12px;opacity:.7">What does it mean?</div><div style="font-size:24px;font-weight:800;margin:6px 0" dir="ltr">'+esc(q.w.en)+' <button class="lsb g" style="padding:4px 10px" onclick="s3Listen.say()">🔊</button></div>';
  if(q.t==='m2')prompt='<div style="font-size:12px;opacity:.7">Choose the English word</div><div class="lsar" style="font-size:22px;font-weight:800;margin:6px 0">'+esc(q.w.ar)+'</div>';
  const head2=Q.kind==='timed'?'<div class="lsbar"><i id="ls-tb" style="width:'+Q.t/60*100+'%"></i></div><div style="display:flex;justify-content:space-between;font-weight:800;margin:6px 0"><span>⏱️ <span id="ls-time">'+Q.t+'s</span></span><span>✅ '+Q.score+' · 🔥 '+Q.streak+'</span></div>':'<div class="lsbar"><i style="width:'+(Q.i/Q.qs.length*100)+'%"></i></div><div style="font-size:12px;opacity:.7;margin:4px 0">Question '+(Q.i+1)+' / '+Q.qs.length+' · ✅ '+Q.score+'</div>';
  v.innerHTML=head(L,TITLE[Q.kind])+'<div class="lsc">'+head2+prompt+audioBar()+q.o.map((o,i)=>'<button class="lsopt '+(q.ar?'ar':'')+'" onclick="s3Listen.ans('+i+')">'+esc(o)+'</button>').join('')+'<div id="ls-fb" style="min-height:24px;margin-top:6px;font-weight:700"></div></div>'}
@@ -5592,20 +5592,20 @@ window.s3Backup={
  open(){css();let o=$('s3-bk');if(o)o.remove();o=document.createElement('div');o.id='s3-bk';o.className='no-print';
   const last=+localStorage.getItem('s3_lastbackup')||0,sv=+localStorage.getItem('s3_lastsave')||0,n=KEYS().length;
   o.innerHTML='<div class="bx"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">💾 Save &amp; Backup</b><button class="b g" onclick="s3Backup.close()">✕</button></div>'+
-  '<p class="ar">تقدمك بيتحفظ <b>تلقائيًا</b> في المتصفح ده بس على الجهاز ده. لو مسحت بيانات المتصفح أو غيرت الموبايل/الجهاز، التقدم هيضيع. خد نسخة احتياطية كل فترة.</p>'+
+  '<p class="ar">Your progress is saved <b>automatically</b> in this browser on this device only. If you clear browser data or change phone, it will be lost. Download a backup now and then.</p>'+
   '<p>Progress is saved automatically in <b>this browser on this device only</b>. Clearing browser data or switching device will lose it. Download a backup file from time to time.</p>'+
   '<p>Last auto-save: <b>'+fmt(sv)+'</b><br>Last backup file: <b>'+(last?fmt(last):'never')+'</b><br>Saved items: <b>'+n+'</b></p>'+
-  '<button class="b" onclick="s3Backup.download()">⬇️ Download backup / تنزيل نسخة</button><button class="b g" onclick="document.getElementById(\'s3-bk-file\').click()">⬆️ Restore from file / استرجاع</button><input id="s3-bk-file" type="file" accept=".json,application/json" style="display:none" onchange="s3Backup.restore(this.files[0])">'+
+  '<button class="b" onclick="s3Backup.download()">⬇️ Download backup</button><button class="b g" onclick="document.getElementById(\'s3-bk-file\').click()">⬆️ Restore from file</button><input id="s3-bk-file" type="file" accept=".json,application/json" style="display:none" onchange="s3Backup.restore(this.files[0])">'+
   '<p style="font-size:11px;opacity:.75">The file contains accounts, progress and any imported class roster (student names) for everyone on this device. Keep it private. Restoring replaces current data.</p><div id="s3-bk-msg" style="font-size:13px;font-weight:700;margin-top:6px"></div></div>';
   document.body.appendChild(o);o.addEventListener('click',e=>{if(e.target===o)s3Backup.close()})},
  close(){const o=$('s3-bk');if(o)o.remove()},
  download(){const data={app:'s3-english-prep',version:1,exported:new Date().toISOString(),items:{}};KEYS().forEach(k=>data.items[k]=localStorage.getItem(k));
   const blob=new Blob([JSON.stringify(data)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='s3-english-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
-  localStorage.setItem('s3_lastbackup',String(Date.now()));const m=$('s3-bk-msg');if(m)m.textContent='✅ Backup downloaded / تم تنزيل النسخة';banner()},
+  localStorage.setItem('s3_lastbackup',String(Date.now()));const m=$('s3-bk-msg');if(m)m.textContent='✅ Backup downloaded';banner()},
  restore(f){if(!f)return;const m=$('s3-bk-msg');const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.app!=='s3-english-prep'||!d.items)throw 0;
-   if(!confirm('Replace current data with this backup? / استبدال البيانات الحالية بالنسخة؟'))return;
+   if(!confirm('Replace current data with this backup?'))return;
    KEYS().forEach(k=>localStorage.removeItem(k));Object.entries(d.items).forEach(([k,v])=>{if(/^(s3_|sec3_qbank)/.test(k))localStorage.setItem(k,v)});
-   if(m)m.textContent='✅ Restored. Reloading... / تم الاسترجاع';setTimeout(()=>location.reload(),900)}catch(e){if(m)m.textContent='❌ Not a valid backup file / الملف غير صالح'}};r.readAsText(f)}
+   if(m)m.textContent='✅ Restored. Reloading...';setTimeout(()=>location.reload(),900)}catch(e){if(m)m.textContent='❌ Not a valid backup file'}};r.readAsText(f)}
 };
 function banner(){const old=$('s3-bk-ban');if(old)old.remove();
  let sess=null;try{sess=JSON.parse(localStorage.getItem('s3_session_v1'))}catch(e){}
@@ -5614,7 +5614,7 @@ function banner(){const old=$('s3-bk-ban');if(old)old.remove();
  b.innerHTML='⚠️ No backup in the last 7 days. Student progress lives only in this browser. <a href="#" style="text-decoration:underline" onclick="s3Backup.open();return false">Back up now</a>';
  const h=document.querySelector('header');if(h)h.parentNode.insertBefore(b,h)}
 function init(){const chip=document.querySelector('div.s3chip');if(chip&&!$('s3-bkbtn')){const b=document.createElement('button');b.id='s3-bkbtn';b.textContent='💾 Backup';b.onclick=()=>s3Backup.open();chip.appendChild(b)}
- const h=document.querySelector('header .max-w-7xl p');if(false&&h&&!h.dataset.ar){h.dataset.ar=1;h.insertAdjacentHTML('afterend','<p class="font-ar" dir="rtl" style="font-size:12px;opacity:.8;margin:2px 0 0">مراجعة اللغة الإنجليزية - ثالثة ثانوي (الثانوية العامة)</p>')}
+ const h=document.querySelector('header .max-w-7xl p');if(false&&h&&!h.dataset.ar){h.dataset.ar=1;h.insertAdjacentHTML('afterend','')}
  banner();setInterval(banner,60000)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,200));else setTimeout(init,200);
 window.addEventListener('beforeunload',()=>{});
@@ -6019,6 +6019,84 @@ window.s3Game={spk:spMenu,spStart,spHear,spRec,spNext,spSelf,rec:recStart,open:m
 })();
 
 </script>
+<script id="s3-att">
+/* Attendance (teacher only). Cloud: Firestore "attendance" docs, one per class and date. Local fallback: localStorage. */
+(function(){
+const S=window.S3,esc=S.esc,$=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>ymd(new Date());
+const cloud=()=>!!(window.S3CLOUD&&S3CLOUD.on);
+const LK='s3_att_v1';
+const RK='s3_rnd_v1';let RN=S.ls.get(RK,null)||{picked:{}};RN.picked=RN.picked||{};let spinT=null,rcur=null,rmsg='';
+const st={mode:'att',cls:'',date:today(),abs:new Set(),dirty:false,rec:{},loaded:'',saving:false,msg:'',busy:false};
+const clsList=()=>[...new Set(S.CLS().students.map(s=>s.cls).filter(Boolean))].sort();
+const stuList=()=>S.CLS().students.filter(s=>s.cls===st.cls).sort((a,b)=>a.name.localeCompare(b.name));
+function dnice(d){const x=new Date(d+'T12:00:00');return x.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}
+/* ---- storage ---- */
+async function loadCls(cls){if(cloud())return S3CLOUD.attLoad(cls);const all=S.ls.get(LK,{});return all[cls]||{}}
+async function saveDay(cls,date,absent){if(cloud())return S3CLOUD.attSave(cls,date,absent);const all=S.ls.get(LK,{});(all[cls]=all[cls]||{})[date]={absent,n:0};S.ls.set(LK,all)}
+async function delDay(cls,date){if(cloud())return S3CLOUD.attDel(cls,date);const all=S.ls.get(LK,{});if(all[cls])delete all[cls][date];S.ls.set(LK,all)}
+/* ---- logic ---- */
+function counts(){const c={};Object.values(st.rec).forEach(r=>(r.absent||[]).forEach(id=>c[id]=(c[id]||0)+1));return c}
+async function pick(cls,date){st.cls=cls;st.date=date;st.msg='';st.busy=true;draw();
+ try{st.rec=await loadCls(cls)}catch(e){st.rec={};st.msg='⚠️ Could not load history. Check the internet.'}
+ st.busy=false;applyDay();draw()}
+function applyDay(){const r=st.rec[st.date];st.abs=new Set(r?(r.absent||[]):[]);st.dirty=false;st.loaded=r?'saved':''}
+function tog(id){if(st.abs.has(id))st.abs.delete(id);else st.abs.add(id);st.dirty=true;st.msg='';draw(true)}
+function allPresent(){st.abs.clear();st.dirty=true;st.msg='';draw(true)}
+async function save(){if(st.saving)return;st.saving=true;draw(true);const ids=new Set(stuList().map(s=>s.id)),ab=[...st.abs].filter(i=>ids.has(i));
+ try{await saveDay(st.cls,st.date,ab);st.rec[st.date]={absent:ab,n:ids.size};st.dirty=false;st.loaded='saved';st.msg='✅ Saved '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+ catch(e){st.msg='⚠️ Not saved. Check the internet and press Save again.'}
+ st.saving=false;draw(true)}
+function shift(n){if(st.dirty&&!confirm('You have unsaved changes. Leave this date?'))return;const d=new Date(st.date+'T12:00:00');d.setDate(d.getDate()+n);setDate(ymd(d))}
+function setDate(v){if(!v)return;if(st.dirty&&v!==st.date&&!confirm('You have unsaved changes. Leave this date?')){draw(true);return}st.date=v;applyDay();st.msg='';draw()}
+function setCls(c){if(st.dirty&&c!==st.cls&&!confirm('You have unsaved changes. Leave this class?'))return;rcur=null;rmsg='';pick(c,st.date)}
+function open(d){if(st.dirty&&!confirm('You have unsaved changes. Leave this date?'))return;st.date=d;applyDay();st.msg='';draw();window.scrollTo({top:0})}
+function wa(){const L=stuList(),ab=L.filter(s=>st.abs.has(s.id));const t='✅ Attendance · Class '+st.cls+'\n'+dnice(st.date)+'\nPresent: '+(L.length-ab.length)+' / '+L.length+'\n'+(ab.length?'Absent ('+ab.length+'):\n'+ab.map((s,i)=>(i+1)+'. '+s.name).join('\n'):'No absentees 🎉');window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
+function csvCell(x){return '"'+String(x==null?'':x).replace(/"/g,'""')+'"'}
+function csvFor(cls,rec,L){const dates=Object.keys(rec).sort();const head=['Class','Student','Absences','Days taken'].concat(dates);const rows=[head.map(csvCell).join(',')];
+ L.forEach(s=>{const a=dates.filter(d=>(rec[d].absent||[]).includes(s.id)).length;rows.push([cls,s.name,a,dates.length].concat(dates.map(d=>(rec[d].absent||[]).includes(s.id)?'A':'P')).map(csvCell).join(','))});return rows.join('\n')}
+function download(name,text){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+text],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+function csv(){if(!Object.keys(st.rec).length)return S.toast('No saved days yet');download('attendance_'+st.cls+'_'+today()+'.csv',csvFor(st.cls,st.rec,stuList()))}
+async function csvAll(){S.toast('Preparing…');const parts=[];for(const c of clsList()){let r={};try{r=await loadCls(c)}catch(e){S.toast('Could not load class '+c);return}if(Object.keys(r).length)parts.push(csvFor(c,r,S.CLS().students.filter(s=>s.cls===c).sort((a,b)=>a.name.localeCompare(b.name))))}
+ if(!parts.length)return S.toast('No saved days yet');download('attendance_all_classes_'+today()+'.csv',parts.join('\n\n'))}
+async function delRec(){if(!st.rec[st.date]||!confirm('Delete the saved record for '+dnice(st.date)+'?'))return;try{await delDay(st.cls,st.date);delete st.rec[st.date];applyDay();st.msg='Record deleted';draw()}catch(e){st.msg='⚠️ Could not delete.';draw()}}
+/* ---- view ---- */
+function draw(keepScroll){const v=$('view-attend');if(!v)return;if(!S.isTeacher()){v.innerHTML='';return}
+ const cl=clsList();if(!cl.length){v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div class="s3h">✅ Attendance</div><div class="s3sub" style="margin-top:6px">No students yet. Create accounts in the Students tab first.</div></div>';return}
+ if(!st.cls||!cl.includes(st.cls)){st.cls=cl[0];pick(st.cls,st.date);return}
+ const L=stuList(),cnt=counts(),days=Object.keys(st.rec).length,nAbs=L.filter(s=>st.abs.has(s.id)).length,y=window.scrollY;
+ let h='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div class="s3h" style="font-size:17px">🏫 Classroom mode</div><div style="display:flex;gap:6px;margin-top:10px"><button class="s3btn'+(st.mode==='att'?'':' ghost')+'" style="flex:1" onclick="s3Att.mode(\'att\')">✅ Attendance</button><button class="s3btn'+(st.mode==='rnd'?'':' ghost')+'" style="flex:1" onclick="s3Att.mode(\'rnd\')">🎲 Random student</button></div>'+
+ '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+cl.map(c=>'<button class="s3btn'+(c===st.cls?'':' ghost')+'" onclick="s3Att.cls(\''+esc(c).replace(/'/g,"\\'")+'\')">'+esc(c)+'</button>').join('')+'</div>'+
+ (st.mode==='rnd'?'':'<div style="display:flex;gap:6px;align-items:center"><button class="s3btn ghost" onclick="s3Att.shift(-1)" aria-label="Previous day">◀</button><input type="date" class="s3in" style="flex:1;min-width:0" value="'+st.date+'" onchange="s3Att.date(this.value)"><button class="s3btn ghost" onclick="s3Att.shift(1)" aria-label="Next day">▶</button></div>'+
+ '<div class="s3sub" style="margin-top:6px">'+dnice(st.date)+(st.date===today()?' · Today':'')+(st.loaded==='saved'?' · <b style="color:var(--ok,#16a34a)">Saved before, you can edit</b>':' · Not saved yet')+'</div>')+'</div>';
+ if(st.mode==='rnd'){v.innerHTML=h+rndHtml();return}
+ if(st.busy)h+='<div class="s3sub" style="padding:20px;text-align:center">Loading… ⏳</div>';
+ else{h+='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px"><div><b style="color:var(--ok,#16a34a)">Present '+(L.length-nAbs)+'</b> · <b style="color:#e11d48">Absent '+nAbs+'</b> <span class="s3sub">of '+L.length+'</span></div><button class="s3btn ghost" onclick="s3Att.all()">Mark all present</button></div>'+
+ '<div class="s3sub" style="margin-bottom:8px">Tap a name to mark absent. Tap again to undo.</div>'+
+ L.map(s=>{const a=st.abs.has(s.id),n=cnt[s.id]||0;return '<button onclick="s3Att.tog(\''+s.id+'\')" style="display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;padding:13px 12px;margin-bottom:6px;border-radius:12px;font-size:15px;cursor:pointer;color:var(--tx);border:2px solid '+(a?'#e11d48':'var(--bd)')+';background:'+(a?'var(--nobg,#fee2e2)':'var(--surf2,#f1f5f9)')+'"><span style="min-width:0"><b>'+esc(s.name)+'</b>'+(n?'<span class="s3sub" style="display:block;font-size:11px">Absent '+n+(n===1?' time':' times')+' of '+days+' days</span>':'')+'</span><span style="font-weight:800;white-space:nowrap;color:'+(a?'#e11d48':'var(--ok,#16a34a)')+'">'+(a?'✗ Absent':'✓ Present')+'</span></button>'}).join('')+'</div>'+
+ '<div style="position:sticky;bottom:0;z-index:5;background:var(--bg,#f1f5f9);padding:8px 0 10px"><button class="s3btn" style="width:100%;padding:14px;font-size:16px" onclick="s3Att.save()" '+(st.saving?'disabled':'')+'>'+(st.saving?'Saving…':st.dirty?'💾 Save attendance':'💾 Save attendance')+'</button>'+(st.msg?'<div style="text-align:center;margin-top:6px;font-size:13px">'+st.msg+'</div>':st.dirty?'<div class="s3sub" style="text-align:center;margin-top:6px">Unsaved changes</div>':'')+'</div>'+
+ '<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s3btn ghost" onclick="s3Att.wa()">💬 WhatsApp absentees</button><button class="s3btn ghost" onclick="s3Att.csv()">⬇ Excel (this class)</button><button class="s3btn ghost" onclick="s3Att.csvAll()">⬇ Excel (all classes)</button></div>'+(st.rec[st.date]?'<div style="margin-top:8px"><button class="s3btn ghost" style="font-size:12px" onclick="s3Att.del()">Delete this day\'s record</button></div>':'')+'</div>'+
+ '<div class="bg-white rounded-2xl border p-4"><div class="s3h" style="font-size:15px">History · Class '+esc(st.cls)+' ('+days+' days)</div>'+(days?'<div style="margin-top:8px">'+Object.keys(st.rec).sort().reverse().slice(0,60).map(d=>{const n=(st.rec[d].absent||[]).length;return '<button onclick="s3Att.open(\''+d+'\')" style="display:flex;justify-content:space-between;width:100%;padding:10px 4px;border:0;border-bottom:1px solid var(--bd);background:none;color:var(--tx);font-size:14px;text-align:left;cursor:pointer"><span'+(d===st.date?' style="font-weight:800"':'')+'>'+dnice(d)+'</span><span style="color:'+(n?'#e11d48':'var(--ok,#16a34a)')+'">'+(n?n+' absent':'all present')+'</span></button>'}).join('')+'</div>':'<div class="s3sub" style="margin-top:6px">No saved days yet.</div>')+'</div>'}
+ v.innerHTML=h;if(keepScroll)window.scrollTo(0,y)}
+function absToday(){const t=today();return new Set(st.date===t?[...st.abs]:((st.rec[t]||{}).absent||[]))}
+function rndHtml(){const L=stuList(),ab=absToday(),pk=(RN.picked[st.cls]||[]).filter(id=>L.some(s=>s.id===id)),avail=L.filter(s=>!ab.has(s.id)),left=avail.filter(s=>!pk.includes(s.id)).length;const cur=rcur&&L.find(s=>s.id===rcur);
+ return '<div class="bg-white rounded-2xl border p-4"><div class="s3sub" style="text-align:center">Class '+esc(st.cls)+' · '+left+' of '+avail.length+' not picked yet'+(ab.size?' · '+[...ab].filter(i=>L.some(s=>s.id===i)).length+' absent skipped':'')+'</div><div id="rnd-name" style="font-size:34px;font-weight:800;text-align:center;padding:26px 8px;margin:12px 0;border-radius:16px;background:var(--acs,#e0e7ff);color:var(--acink,#3730a3);min-height:100px;display:flex;align-items:center;justify-content:center;line-height:1.3">'+(cur?esc(cur.name):'?')+'</div>'+(rmsg?'<div class="s3sub" style="text-align:center;margin-bottom:8px">'+rmsg+'</div>':'')+'<button class="s3btn" style="width:100%;padding:16px;font-size:17px" onclick="s3Att.pickRnd()">🎲 Pick a student</button><div style="text-align:center;margin-top:10px"><button class="s3btn ghost" onclick="s3Att.resetRnd()">↺ Start over</button></div><div class="s3sub" style="text-align:center;margin-top:10px">Nobody is picked twice until everyone has had a turn. Students marked absent today in Attendance are skipped.</div></div>'}
+function pickRnd(){if(spinT)return;const L=stuList(),ab=absToday(),avail=L.filter(s=>!ab.has(s.id));if(!avail.length){rmsg='No students to pick.';draw(true);return}
+ let pk=(RN.picked[st.cls]||[]).filter(id=>avail.some(s=>s.id===id));rmsg='';let pool=avail.filter(s=>!pk.includes(s.id));if(!pool.length){pk=[];pool=avail.slice();rmsg='🔄 Everyone has been picked. New round.'}
+ const win=pool[Math.floor(crypto.getRandomValues(new Uint32Array(1))[0]/4294967296*pool.length)];let n=0;const el=()=>document.getElementById('rnd-name');
+ spinT=setInterval(()=>{n++;const e=el();if(e)e.textContent=avail[Math.floor(Math.random()*avail.length)].name;if(n>=14){clearInterval(spinT);spinT=null;pk.push(win.id);RN.picked[st.cls]=pk;S.ls.set(RK,RN);rcur=win.id;draw(true)}},70)}
+function resetRnd(){RN.picked[st.cls]=[];S.ls.set(RK,RN);rcur=null;rmsg='';draw(true)}
+function setMode(m){if(m==='att'&&spinT)return;st.mode=m;rmsg='';draw()}
+function render(){if(!S.isTeacher())return;const v=$('view-attend');if(!v)return;
+ if(cloud()&&S3CLOUD.offline){v.innerHTML='<div class="bg-white rounded-2xl border p-5 s3sub">Attendance needs the internet. Try again when you are online.</div>';return}
+ if(cloud()&&!S3CLOUD.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';S3CLOUD.loadTeacher().then(()=>{st.cls='';draw()});return}
+ st.cls='';st.date=today();draw()}
+window.s3Att={mode:setMode,pickRnd,resetRnd,render,tog,save,all:allPresent,shift,date:setDate,cls:setCls,open,wa,csv,csvAll,del:delRec};
+})();
+
+</script>
 <script id="s3-shell">
 /* Clean shell: one menu (hamburger) for all sections, one settings sheet. */
 (function(){
@@ -6053,7 +6131,7 @@ const chip=$('s3-chip'),row=brand.parentNode,ctl=chip.parentNode;const right=doc
 const dbg=document.createElement('div');dbg.id='s3-drawer-bg';const dr=document.createElement('div');dr.id='s3-drawer';
 const sbg=document.createElement('div');sbg.id='s3-set-bg';const sh=document.createElement('div');sh.id='s3-sheet';
 document.body.append(dbg,dr,sbg,sh);dbg.onclick=closeD;sbg.onclick=closeS;
-const GROUPS=[['Study',['bank','quiz','read','write','exam','listen','srs','notebook','reference']],['Play',['play']],['Class and tools',['worksheet','add','board','report','students']]];
+const GROUPS=[['Study',['bank','quiz','read','write','exam','listen','srs','notebook','reference']],['Play',['play']],['Class and tools',['worksheet','add','board','report','students','attend']]];
 function vis(b){return b&&getComputedStyle(b).display!=='none'&&!b.hidden}
 function openD(){const cur=(document.querySelector('.s3nav button.active,.s3nav button.tab-active')||{}).id;let h='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">English · Secondary 3</b><button class="s3ib" onclick="s3Shell.closeD()">✕</button></div>';
  const stu=window.S3&&S3.isStudent();
@@ -6092,16 +6170,16 @@ async function sdk(){if(fb)return fb;const[A,Au,F]=await Promise.all([import(BAS
  fb={A,Au,F,app,auth,db};return fb}
 let second=null;
 async function creator(){if(second)return second;await sdk();const app2=fb.A.initializeApp(CFG,'creator'),auth2=fb.Au.getAuth(app2);if(window.S3_EMU)fb.Au.connectAuthEmulator(auth2,window.S3_EMU.auth,{disableWarnings:true});second={app2,auth2};return second}
-const msg=e=>{const c=(e&&e.code)||'';if(/invalid-credential|wrong-password|user-not-found|invalid-email|invalid-login/.test(c))return 'اسم المستخدم أو كلمة السر غلط · Wrong username or password';if(/too-many/.test(c))return 'محاولات كتير. استنى شوية وجرب تاني · Too many tries, wait a few minutes';if(/network/.test(c))return 'مفيش إنترنت · No internet connection';if(/permission/.test(c))return 'مفيش صلاحية (راجع قواعد Firestore) · Permission denied';return 'خطأ: '+(c||e&&e.message||e)};
+const msg=e=>{const c=(e&&e.code)||'';if(/invalid-credential|wrong-password|user-not-found|invalid-email|invalid-login/.test(c))return 'Wrong username or password';if(/too-many/.test(c))return 'Too many tries, wait a few minutes';if(/network/.test(c))return 'No internet connection';if(/permission/.test(c))return 'Permission denied';return 'Error: '+(c||e&&e.message||e)};
 /* ---------- gate ---------- */
 C.gate=function(g){
  const themes=''; 
- g.innerHTML='<div class="box"><div style="text-align:center;margin-bottom:14px"><div style="font-size:38px">🎓</div><div class="s3h">Secondary 3 English Prep</div><div class="s3sub">سجّل دخولك بالحساب اللي المدرس عمله لك<br>Sign in with the account your teacher gave you</div></div>'+
- (fbFail?'<p class="s3sub" style="text-align:center;color:#e11d48">'+esc(fbFail)+'</p><button class="s3btn" style="width:100%" onclick="location.reload()">Retry · حاول تاني</button>':
+ g.innerHTML='<div class="box"><div style="text-align:center;margin-bottom:14px"><div style="font-size:38px">🎓</div><div class="s3h">Secondary 3 English Prep</div><div class="s3sub">Sign in with the account your teacher gave you</div></div>'+
+ (fbFail?'<p class="s3sub" style="text-align:center;color:#e11d48">'+esc(fbFail)+'</p><button class="s3btn" style="width:100%" onclick="location.reload()">Retry</button>':
  busy?'<p class="s3sub" style="text-align:center;margin:20px 0">⏳ …</p>':
- '<label class="s3lbl">Username · اسم المستخدم</label><input id="g-u" class="s3in" autocapitalize="none" autocomplete="username" autocorrect="off" spellcheck="false" onkeydown="if(event.key===\'Enter\')document.getElementById(\'g-p\').focus()"><label class="s3lbl" style="margin-top:10px">Password · كلمة السر</label><input id="g-p" type="password" class="s3in" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')S3CLOUD.login()"><button class="s3btn" style="width:100%;margin-top:14px" onclick="S3CLOUD.login()">Sign in · دخول</button>')+
+ '<label class="s3lbl">Username</label><input id="g-u" class="s3in" autocapitalize="none" autocomplete="username" autocorrect="off" spellcheck="false" onkeydown="if(event.key===\'Enter\')document.getElementById(\'g-p\').focus()"><label class="s3lbl" style="margin-top:10px">Password</label><input id="g-p" type="password" class="s3in" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')S3CLOUD.login()"><button class="s3btn" style="width:100%;margin-top:14px" onclick="S3CLOUD.login()">Sign in</button>')+
  '<div id="g-err" style="color:#e11d48;font-size:12px;margin-top:10px;text-align:center">'+esc(gerr)+'</div></div>'};
-C.login=async function(){const u=$('g-u').value,p=$('g-p').value;if(!u.trim()||!p){gerr='اكتب اسم المستخدم وكلمة السر';return S().gate()}
+C.login=async function(){const u=$('g-u').value,p=$('g-p').value;if(!u.trim()||!p){gerr='Enter your username and password';return S().gate()}
  gerr='';busy=true;S().gate();
  try{await sdk();await fb.Au.signInWithEmailAndPassword(fb.auth,emailOf(u),p)}catch(e){busy=false;gerr=msg(e);S().gate()}};
 const LAST='s3_cloud_last';
@@ -6109,7 +6187,7 @@ function resumeOffline(){const l=S().ls.get(LAST,null);if(!l||!l.uid)return fals
  if(l.teacher)S().setSESS({role:'teacher',name:CLS.teacher.name});else{CLS.students=[{id:l.uid,name:l.name,cls:l.cls}];S().setSESS({role:'student',id:l.uid,name:l.name,cls:l.cls})}
  C.offline=true;S().start();setTimeout(()=>S().toast('📴 Offline mode: your progress is saved on this phone and will sync when the internet is back'),600);return true}
 function retryLater(){const t=()=>{sdk().then(()=>{C.offline=false;fb.Au.onAuthStateChanged(fb.auth,u=>{user=u;onUser(u)})}).catch(()=>{})};addEventListener('online',t,{once:true});setTimeout(t,45000)}
-C.init=async function(){try{await sdk()}catch(e){if(resumeOffline()){retryLater();return}fbFail='تعذر تحميل النظام. تأكد من الإنترنت وافتح الموقع مرة واحدة أونلاين · Could not load. Connect to the internet once';S().gate();return}
+C.init=async function(){try{await sdk()}catch(e){if(resumeOffline()){retryLater();return}fbFail='Could not load. Connect to the internet once';S().gate();return}
  fb.Au.onAuthStateChanged(fb.auth,u=>{user=u;onUser(u)})};
 async function onUser(u){const CLS=S().CLS();
  if(!u){stopSync();busy=false;if(S().SESS())S().setSESS(null);S().gate();return}
@@ -6117,7 +6195,7 @@ async function onUser(u){const CLS=S().CLS();
  try{
   if((u.email||'').toLowerCase()===TEACHER){S().ls.set(LAST,{uid:u.uid,teacher:1});CLS.teacher={name:CFG.teacherName||'Teacher'};busy=false;S().setSESS({role:'teacher',name:CLS.teacher.name});S().start();C.loadTeacher().catch(()=>{});return}
   const snap=await fb.F.getDoc(fb.F.doc(fb.db,'students',u.uid));
-  if(!snap.exists()){gerr='الحساب ده مش متفعّل. كلم المدرس · This account is not active';busy=false;await fb.Au.signOut(fb.auth);return}
+  if(!snap.exists()){gerr='This account is not active';busy=false;await fb.Au.signOut(fb.auth);return}
   const d=snap.data();S().ls.set(LAST,{uid:u.uid,name:d.name,cls:d.cls});pull(u.uid,d);CLS.teacher={name:CFG.teacherName||'Teacher'};CLS.students=[{id:u.uid,name:d.name,cls:d.cls}];
   busy=false;S().setSESS({role:'student',id:u.uid,name:d.name,cls:d.cls});S().start();startSync()
  }catch(e){busy=false;const l=S().ls.get(LAST,null);
@@ -6189,13 +6267,13 @@ C.remove=async function(id){const s=S().CLS().students.find(x=>x.id===id);if(!s|
 const dl=(name,text)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+text],{type:'text/csv'}));a.download=name;document.body.appendChild(a);a.click();a.remove()};
 C.csv=function(){const rows=S().CLS().students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name)).map(s=>[s.cls,s.name,s.un,s.pw].map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(','));dl('student_logins.csv',['Class,Name,Username,Password'].concat(rows).join('\n'))};
 C.cards=function(){const a=$('cards-area');a.style.display='block';const L=S().CLS().students.slice().sort((x,y)=>(x.cls||'').localeCompare(y.cls||'')||x.name.localeCompare(y.name));
- a.innerHTML='<div class="paper" style="max-width:none"><h1>Login cards · بطاقات الدخول</h1><div class="s3sub">'+esc(location.href.split('?')[0].split('#')[0])+'</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px">'+L.map(s=>'<div style="border:1.5px dashed #333;padding:10px;break-inside:avoid"><b>'+esc(s.name)+'</b> · '+esc(s.cls||'')+'<br>Username: <b style="font-size:16px">'+esc(s.un)+'</b><br>Password: <b style="font-size:16px">'+esc(s.pw)+'</b></div>').join('')+'</div></div>';
+ a.innerHTML='<div class="paper" style="max-width:none"><h1>Login cards</h1><div class="s3sub">'+esc(location.href.split('?')[0].split('#')[0])+'</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px">'+L.map(s=>'<div style="border:1.5px dashed #333;padding:10px;break-inside:avoid"><b>'+esc(s.name)+'</b> · '+esc(s.cls||'')+'<br>Username: <b style="font-size:16px">'+esc(s.un)+'</b><br>Password: <b style="font-size:16px">'+esc(s.pw)+'</b></div>').join('')+'</div></div>';
  document.body.classList.add('print-cards');setTimeout(()=>{print();document.body.classList.remove('print-cards');a.style.display='none'},150)};
 C.renderStudents=function(v){if(!S().isTeacher()){v.innerHTML='';return}
  if(!C.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';C.loadTeacher().then(()=>{loadedAt=Date.now();C.renderStudents(v)});return}
  const L=S().CLS().students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name));
  const rows=L.map(s=>{const x=S().statsFor(s);return'<tr><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.un)+'</code></td><td><code>'+esc(s.pw)+'</code></td><td>'+x.xp+' XP</td><td>'+x.acc+'%</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',0)">📋 Copy</button> <button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',1)">💬 WhatsApp</button> <button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="S3CLOUD.replace(\''+s.id+'\')">New login</button> <button class="s3btn ghost" onclick="S3CLOUD.reset(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="S3CLOUD.remove(\''+s.id+'\')">✕</button></td></tr>'}).join('');
- v.innerHTML='<div class="s3noprint" style="display:grid;gap:16px"><div class="bg-white rounded-2xl border p-5"><div class="s3h">👥 My Students · الطلاب</div><div class="s3sub">Paste one student per line as <b>Class, Name</b>. Each gets a username and a password. Students never register.</div>'+
+ v.innerHTML='<div class="s3noprint" style="display:grid;gap:16px"><div class="bg-white rounded-2xl border p-5"><div class="s3h">👥 My Students</div><div class="s3sub">Paste one student per line as <b>Class, Name</b>. Each gets a username and a password. Students never register.</div>'+
  '<textarea id="stu-new" class="s3in" rows="4" style="margin-top:10px" placeholder="3A, Mohamed Eid&#10;3A, Mariam Ali"></textarea><button class="s3btn" style="margin-top:10px" onclick="S3CLOUD.create()">+ Create accounts</button> <label class="s3btn ghost" style="cursor:pointer;display:inline-block;margin-top:10px">📄 Load .txt / .csv<input type="file" accept=".csv,.txt" hidden onchange="S3CLOUD.file(event)"></label><div id="stu-prog" class="s3sub" style="margin-top:8px"></div></div>'+
  '<div class="bg-white rounded-2xl border p-5" style="overflow-x:auto"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div class="s3h" style="font-size:15px">Class list ('+L.length+')</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s3btn ghost" onclick="S3CLOUD.cards()">🖨️ Print login cards</button><button class="s3btn ghost" onclick="S3CLOUD.csv()">⬇ Logins (CSV)</button><button class="s3btn ghost" onclick="S3CLOUD.refresh()">🔄 Refresh</button></div></div>'+
  (L.length?'<table class="s3tbl"><tr><th>Class</th><th>Name</th><th>Username</th><th>Password</th><th>XP</th><th>Acc.</th><th>Level</th><th></th></tr>'+rows+'</table>':'<p class="s3sub">No students yet.</p>')+'<p class="s3sub" style="margin-top:10px">Forgot a password? Press <b>New login</b>: it makes a new username and password and keeps the progress. Passwords shown here are the ones created for the student.</p></div></div><div id="cards-area" style="display:none"></div>'};
@@ -6207,11 +6285,16 @@ C.hwLoad=async function(){hwT=Date.now();const CLS=S().CLS(),F=fb.F,me=S().SESS(
 C.hwAdd=async function(o){try{await fb.F.setDoc(fb.F.doc(fb.db,'homework',o.id),o);await C.hwLoad();return true}catch(e){S().toast(msg(e));return false}};
 C.hwDel=async function(id){try{await fb.F.deleteDoc(fb.F.doc(fb.db,'homework',id));await C.hwLoad()}catch(e){S().toast(msg(e))}};
 C.hwGoal=async function(g){try{await fb.F.setDoc(fb.F.doc(fb.db,'homework','_goal'),{goal:g})}catch(e){}};
-C.shareText=function(s){const url=location.href.split('?')[0].split('#')[0];return 'أهلاً '+s.name+' 👋\nبيانات دخولك لموقع مراجعة الإنجليزي (تانية ثانوي):\nاسم المستخدم: '+s.un+'\nكلمة السر: '+s.pw+'\nالرابط: '+url+'\n\nHi '+s.name+'! Your login for the Secondary 3 English Prep site:\nUsername: '+s.un+'\nPassword: '+s.pw+'\nLink: '+url+'\nPlease keep it private.'};
+C.shareText=function(s){const url=location.href.split('?')[0].split('#')[0];return 'Hi '+s.name+'! Your login for the Secondary 3 English Prep site:\nUsername: '+s.un+'\nPassword: '+s.pw+'\nLink: '+url+'\nPlease keep it private.'};
 C.share=function(id,mode){const s=S().CLS().students.find(x=>x.id===id);if(!s||!s.un||!s.pw)return S().toast('No login saved for this student');const t=C.shareText(s);
  if(mode){window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');return}
  const ok=()=>S().toast('✅ Copied login for '+s.name),fb2=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok()}catch(e){S().toast('Could not copy')}ta.remove()};
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb2);else fb2()};
+/* ---------- attendance (teacher) ---------- */
+const attId=(cls,date)=>String(cls).replace(/[\/\s]+/g,'_')+'_'+date;
+C.attLoad=async function(cls){const F=fb.F,q=await F.getDocs(F.query(F.collection(fb.db,'attendance'),F.where('cls','==',cls)));const o={};q.forEach(d=>{const x=d.data();if(x.date)o[x.date]={absent:x.absent||[],n:x.n||0}});return o};
+C.attSave=async function(cls,date,absent){const F=fb.F;await Promise.race([F.setDoc(F.doc(fb.db,'attendance',attId(cls,date)),{cls,date,absent,n:0,updated:Date.now()}),new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),20000))])};
+C.attDel=async function(cls,date){await fb.F.deleteDoc(fb.F.doc(fb.db,'attendance',attId(cls,date)))};
 C.refresh=async function(){loadedAt=0;C.renderStudents($('view-students'))};
 C.file=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('stu-new').value=String(r.result).trim();S().toast('File loaded. Press Create accounts')};r.readAsText(f,'utf-8');e.target.value=''};
 })();
