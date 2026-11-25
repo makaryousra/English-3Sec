@@ -141,6 +141,32 @@ section[id^=view-]:not(.hidden){animation:none!important}
   </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
+<script id="s3-shuf">
+/* Option shuffling: options are reordered in memory per question (new order on every login and every quiz start).
+   Saved progress is stored in the ORIGINAL option order ("canonical"), so reports/backups stay correct. */
+(function(){
+const REF=/\b(all|none|neither|both)\s+of\s+(the\s+)?(above|these|them|those|the\s+options)\b|\babove\b|\b(both|either|neither)\s+\(?[A-D]\)?\s*(and|or|&|nor)\s*\(?[A-D]\)?\b|^\(?[A-D]\)?\s*(and|&|\+)\s*\(?[A-D]\)?\W*$|\b(option|choice)s?\s*\(?[A-D]\b|^(All|None) of them\b|^(Both|Neither)\b/i;
+const def=(q,k,v)=>Object.defineProperty(q,k,{value:v,writable:true,enumerable:false,configurable:true});
+function ok(q){return q&&!q.isCustom&&Array.isArray(q.options)&&q.options.length>=2&&Number.isInteger(q.answer)&&!q.options.some(o=>REF.test(String(o)))}
+function init(q){if(q._p)return;def(q,'_o',q.options.slice());def(q,'_a',q.answer);def(q,'_p',q.options.map((_,i)=>i))}
+function perm(n){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function one(q,live,map){if(!ok(q))return;if(live){map=map||byId();if(map[q.id]!==q)return}init(q);const old=q._p,np=perm(old.length);
+  if(live&&typeof state!=='undefined'&&state.userAnswers[q.id]!==undefined){const c=old[state.userAnswers[q.id]];state.userAnswers[q.id]=np.indexOf(c)}
+  q.options=np.map(i=>q._o[i]);q.answer=np.indexOf(q._a);q._p=np;window.__s3stale=true}
+const byId=()=>{const m={};((typeof state!=='undefined'&&state.allQuestions)||[]).forEach(q=>m[q.id]=q);return m};
+window.s3Shuf={ok,
+ one:q=>one(q,true),
+ fresh:q=>{one(q,false);if(typeof state!=='undefined'&&q._p&&state.userAnswers[q.id]!==undefined){/* stored value is canonical (question was not loaded yet) */const c=state.userAnswers[q.id];state.userAnswers[q.id]=q._p.indexOf(c)}},
+ many:l=>{const m=byId();(l||[]).forEach(q=>one(q,true,m))},
+ /* called by loadBlob: state.userAnswers holds canonical indexes */
+ onLoad(){const m=byId(),ua=state.userAnswers||{};
+  state.allQuestions.forEach(q=>{if(!ok(q))return;init(q);const np=perm(q._o.length);q.options=np.map(i=>q._o[i]);q.answer=np.indexOf(q._a);q._p=np});
+  Object.keys(ua).forEach(id=>{const q=m[id];if(q&&q._p&&ok(q))ua[id]=q._p.indexOf(ua[id])});window.__s3stale=true},
+ toCanon(){const m=byId(),o={};Object.keys(state.userAnswers).forEach(id=>{const q=m[id],v=state.userAnswers[id];o[id]=(q&&q._p&&ok(q))?q._p[v]:v});return o},
+ canonAnswer:q=>(q&&q._a!=null)?q._a:(q?q.answer:null)};
+})();
+</script>
+
 
   <!-- Top Navigation Header -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs no-print">
@@ -3196,7 +3222,7 @@ section[id^=view-]:not(.hidden){animation:none!important}
                 #${displayNumber}
               </span>
               <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold">
-                Unit ${q.unit} • Lesson ${q.lesson}
+                Unit ${q.unit} • ${q.lesson?'Lesson '+q.lesson:(q.section||'')}
               </span>
               <span class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${getCategoryBadgeColor(q.category)}">
                 ${q.category}
@@ -3432,7 +3458,7 @@ section[id^=view-]:not(.hidden){animation:none!important}
 
       const q = state.quizSet[state.quizIndex];
       document.getElementById('quiz-counter').textContent = `Question ${state.quizIndex + 1} of ${state.quizSet.length}`;
-      document.getElementById('quiz-unit-tag').textContent = `Unit ${q.unit} • Lesson ${q.lesson} • ${q.category}`;
+      document.getElementById('quiz-unit-tag').textContent = `Unit ${q.unit} • ${q.lesson?'Lesson '+q.lesson:(q.section||'')} • ${q.category}`;
 
       let setCorrect = 0;
       let setAnswered = 0;
@@ -4110,7 +4136,7 @@ section[id^=view-]:not(.hidden){animation:none!important}
                 <div class="print-avoid-break text-sm">
                   <div class="font-semibold text-slate-900 mb-1.5">
                     <span class="font-bold">${i + 1}.</span> ${q.question}
-                    ${showTags ? `<span class="text-[10px] font-bold text-slate-500 ml-1">[U${q.unit}-L${q.lesson} • ${q.category}]</span>` : ''}
+                    ${showTags ? `<span class="text-[10px] font-bold text-slate-500 ml-1">[U${q.unit}${q.lesson?'-L'+q.lesson:''} • ${q.category}]</span>` : ''}
                   </div>
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-4 text-xs sm:text-sm text-slate-800">
                     ${q.options.map((opt, oIdx) => `<div><strong>${letters[oIdx]})</strong> ${opt}</div>`).join('')}
@@ -4352,7 +4378,7 @@ section[id^=view-]:not(.hidden){animation:none!important}
         <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
           <div class="flex items-center justify-between gap-2">
             <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800">
-              U${q.unit} • L${q.lesson} • ${q.category}
+              U${q.unit} • ${q.lesson?'L'+q.lesson:(q.section||'')} • ${q.category}
             </span>
             <div class="flex items-center gap-1.5">
               <button onclick="editCustomQuestion(${q.id})" class="text-xs font-semibold text-indigo-600 hover:underline">Edit</button>
@@ -4731,8 +4757,8 @@ function loadBlob(){resetState();const b=ls.get(blobKey(),null)||{};
  state.customQuestions=(b.customQuestions)||[];
  if(isStudent()){const t=ls.get('sec3_qbank_v2_teacher',null);state.customQuestions=(t&&t.customQuestions)||[]}
  ['userAnswers','bookmarks','srsMap','rewriteUserInputs','rewriteChecked','translationUserAnswers','translationChecked'].forEach(k=>{if(b[k]!=null)state[k]=b[k]});state.streak=b.streak||0;
- rebuildQuestionPool();}
-window.saveState=function(){if(!SESS)return;const o={userAnswers:state.userAnswers,bookmarks:state.bookmarks,streak:state.streak,srsMap:state.srsMap,rewriteUserInputs:state.rewriteUserInputs,rewriteChecked:state.rewriteChecked,translationUserAnswers:state.translationUserAnswers,translationChecked:state.translationChecked};
+ rebuildQuestionPool();window.s3Shuf&&s3Shuf.onLoad();}
+window.saveState=function(){if(!SESS)return;const o={userAnswers:(window.s3Shuf?s3Shuf.toCanon():state.userAnswers),bookmarks:state.bookmarks,streak:state.streak,srsMap:state.srsMap,rewriteUserInputs:state.rewriteUserInputs,rewriteChecked:state.rewriteChecked,translationUserAnswers:state.translationUserAnswers,translationChecked:state.translationChecked};
  if(!isStudent())o.customQuestions=state.customQuestions;ls.set(blobKey(),o)};
 function refreshAll(){try{updateStats();applyFilters();renderExamDrills();renderSRSDashboard();renderCustomQuestionsList();WS.render();}catch(e){console.warn(e)}refreshChip()}
 
@@ -4847,7 +4873,7 @@ function renderReport(){const v=$('view-report');let list=isStudent()?CLS.studen
  const strong=Object.keys(un).filter(u=>un[u].n>=4&&un[u].ok/un[u].n>=.85).map(u=>'Unit '+u);
  const days=[];for(let i=13;i>=0;i--){const t=Date.now()-i*864e5,n=(x.p.days||{})[dayKey(t)]||0;days.push([dayKey(t).slice(5),n])}const mx=Math.max(1,...days.map(d=>d[1]));
  const act='<div style="display:flex;align-items:flex-end;gap:4px;height:70px">'+days.map(d=>'<div title="'+d[0]+': '+d[1]+'" style="flex:1;background:var(--ac);opacity:'+(d[1]?1:.15)+';height:'+Math.max(4,d[1]/mx*66)+'px;border-radius:4px"></div>').join('')+'</div><div class="s3sub" style="display:flex;justify-content:space-between"><span>14 days ago</span><span>today</span></div>';
- const wrong=Object.keys(x.b.userAnswers||{}).map(id=>{const q=BASE_QUESTIONS.concat((ls.get('sec3_qbank_v2_teacher',{})||{}).customQuestions||[]).find(z=>String(z.id)===id);return q&&x.b.userAnswers[id]!==q.answer?q:null}).filter(Boolean).slice(0,12);
+ const wrong=Object.keys(x.b.userAnswers||{}).map(id=>{const q=BASE_QUESTIONS.concat((ls.get('sec3_qbank_v2_teacher',{})||{}).customQuestions||[]).find(z=>String(z.id)===id);return q&&x.b.userAnswers[id]!==s3Shuf.canonAnswer(q)?q:null}).filter(Boolean).slice(0,12);
  const wrongHtml=wrong.length?'<ul style="margin:6px 0 0 16px;font-size:12px">'+wrong.map(q=>'<li style="margin-bottom:5px">'+esc(q.question)+' → <b style="color:var(--ok)">'+esc(q.options[q.answer])+'</b> <span class="s3sub">(Unit '+q.unit+')</span></li>').join('')+'</ul>':'<p class="s3sub">No wrong answers recorded 🎉</p>';
  const rank=CLS.students.map(statsFor).sort((a,b)=>b.xp-a.xp).findIndex(y=>y.s.id===s.id)+1;
  const note=isTeacher()?'<textarea id="rep-note" class="s3in" rows="2" placeholder="Teacher comment…" onchange="s3Note(\''+s.id+'\',this.value)">'+esc(x.p.note||'')+'</textarea>':(x.p.note?'<div style="border-left:4px solid var(--ac);padding-left:10px">'+esc(x.p.note)+'</div>':'<p class="s3sub">No teacher comment yet.</p>');
@@ -4891,7 +4917,7 @@ const WS={seed:'A1',cfg:{school:'Egyptian Secondary Language School',title:'Seco
  shuffle(){this.seed=Math.random().toString(36).slice(2,6).toUpperCase();$('ws-seed').value=this.seed;this.render()},
  print(){this.force=1;this.render();this.force=0;setTimeout(()=>print(),100)},
  mount(){const v=$('view-worksheet');if(!v.dataset.up){v.dataset.up=1;v.innerHTML=this.ui()}},
- render(){this.mount();if(!$('ws-key')||(state.currentTab!=='worksheet'&&!this.force))return;this.read();const c=this.cfg,b=this.build(),L='abcd',tag=q=>c.tags?' <span class="tag">['+q.unit+'·L'+q.lesson+']</span>':'';let n=0,marks=0,h='';
+ render(){this.mount();if(!$('ws-key')||(state.currentTab!=='worksheet'&&!this.force))return;this.read();const c=this.cfg,b=this.build(),L='abcd',tag=q=>c.tags?' <span class="tag">['+q.unit+(q.lesson?'·L'+q.lesson:'')+']</span>':'';let n=0,marks=0,h='';
   h+='<div class="hd"><div class="row"><div><div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase">'+esc(c.school)+'</div><h1>'+esc(c.title)+'</h1></div><div style="text-align:right;font-size:12px"><b>'+esc(c.cls)+'</b> · Version '+c.ver+'<br>Time: '+esc(c.time)+'<br>Seed: '+esc(this.seed)+'</div></div><div class="row" style="margin-top:8px;font-size:12px"><span>Name: ............................................</span><span>Teacher: '+esc(c.teacher||(CLS.teacher&&CLS.teacher.name)||'..............')+'</span><span>Date: '+esc(c.date||'____ / ____ / ______')+'</span><span>Mark: ______ / @@TOT@@</span></div></div>';
   if(b.mcq.length){marks+=b.mcq.length;h+='<div class="sec"><span>A. Choose the correct answer.</span><span>('+b.mcq.length+' marks)</span></div>'+b.mcq.map((q,i)=>'<div class="q"><b>'+(i+1)+'.</b> '+esc(q.question)+tag(q)+'<div class="opts '+(c.cols===4?'c4':'')+'" style="'+(c.cols===1?'grid-template-columns:1fr':'')+'">'+q.options.map((o,j)=>'<div><b>'+L[j]+')</b> '+esc(o)+'</div>').join('')+'</div></div>').join('')}
   if(b.gl.length){marks+=b.gl.length;h+='<div class="sec"><span>B. Match each word with its meaning (write the letter).</span><span>('+b.gl.length+' marks)</span></div><table><tr><td style="width:40%">'+b.gl.map((q,i)=>'<div class="q"><b>'+(i+1)+'.</b> '+esc(q.question.replace(/^What does \u201C|\u201D mean\?$/g,''))+' ......</div>').join('')+'</td><td>'+b.defs.map((d,k)=>'<div class="q"><b>'+String.fromCharCode(65+k)+'.</b> '+esc(d.d)+'</div>').join('')+'</td></tr></table>'}
@@ -5296,7 +5322,7 @@ const host=()=>$('pk-host');
 function poolQ(){let p=[];try{p=getFilteredQuestions()}catch(e){p=(typeof state!=='undefined'&&state.allQuestions)||[]}return p.filter(q=>q.options&&q.options.length>1&&q.answer!=null)}
 function nextQ(){const pool=poolQ();if(!pool.length)return null;
  let fresh=pool.filter(q=>!S.usedQ.includes(q.id));if(!fresh.length){S.usedQ=S.usedQ.filter(id=>!pool.some(q=>q.id===id));fresh=pool}
- const q=fresh[Math.floor(Math.random()*fresh.length)];S.usedQ.push(q.id);if(S.usedQ.length>3000)S.usedQ=S.usedQ.slice(-1500);return q}
+ const q=fresh[Math.floor(Math.random()*fresh.length)];s3Shuf.one(q);S.usedQ.push(q.id);if(S.usedQ.length>3000)S.usedQ=S.usedQ.slice(-1500);return q}
 const allQ=()=>(typeof state!=='undefined'&&state.allQuestions)||[];
 const qById=id=>allQ().find(q=>q.id===id)||null;
 const curQ=()=>S.cur&&S.cur.qid!=null?qById(S.cur.qid):null;
@@ -5347,7 +5373,7 @@ window.s3Picker={
   const p=kind==='ok'?10+Math.round(10*Math.max(0,TLIM-t)/TLIM):kind==='part'?5:0;
   const k=key(cu.c,cu.name);S.pts[k]=(S.pts[k]||0)+p;(S.done[cu.c]=S.done[cu.c]||[]).push(cu.name);
   S.hist.push({c:cu.c,n:cu.name,p,kind,t:Math.round(t),qid:cu.qid,at:Date.now()});if(S.hist.length>2000)S.hist=S.hist.slice(-2000);
-  rev={name:cu.name,c:cu.c,qid:cu.qid,chosen,kind,p,t:Math.round(t)};S.cur=null;clearInterval(tick);save();s3Picker.render()},
+  const _q=qById(cu.qid);rev={name:cu.name,c:cu.c,qid:cu.qid,chosen,chosenTxt:(_q&&chosen>=0)?_q.options[chosen]:null,kind,p,t:Math.round(t)};S.cur=null;clearInterval(tick);save();s3Picker.render()},
  partly(){if(!rev||rev.kind!=='no')return;const h=S.hist[S.hist.length-1];if(!h||h.n!==rev.name)return;const k=key(rev.c,rev.name);S.pts[k]=(S.pts[k]||0)-h.p+5;h.p=5;h.kind='part';rev.kind='part';rev.p=5;save();s3Picker.render()},
  undo(){const h=S.hist.pop();if(!h)return;const k=key(h.c,h.n);S.pts[k]=Math.max(0,(S.pts[k]||0)-h.p);S.done[h.c]=(S.done[h.c]||[]).filter(n=>n!==h.n);S.cur=null;rev=null;msg='↩️ Undid: '+h.n+' ('+h.p+' pts)';save();s3Picker.render()},
  newQ(){if(!S.cur)return;const q=nextQ();if(!q)return;S.cur.qid=q.id;S.cur.start=Date.now();save();s3Picker.render()},
@@ -5384,7 +5410,7 @@ function mainUI(cl){const c=S.cls,all=members(c),done=(S.done[c]||[]).length,pl=
  else{
   if(rev){const q=qById(rev.qid);const lab=rev.kind==='ok'?'✅ Correct':rev.kind==='part'?'🟡 Partly correct':(rev.chosen===-1?'🤷 Could not answer':'❌ Wrong');
    h+='<div style="text-align:center;font-weight:800;font-size:20px;margin:8px 0">'+lab+' · +'+rev.p+' pts <span style="font-size:13px;opacity:.7">('+rev.t+'s)</span></div>';
-   if(q)h+='<div class="pkq" dir="auto">'+esc(q.question)+'</div>'+optsUI(q,rev.chosen,true)+(q.explanation?'<div style="font-size:13px;margin-top:6px" dir="auto">'+esc(q.explanation)+'</div>':'')+(q.arabicNote?'<div style="font-size:13px;margin-top:4px" dir="rtl">'+esc(q.arabicNote)+'</div>':'');
+   if(q)h+='<div class="pkq" dir="auto">'+esc(q.question)+'</div>'+optsUI(q,rev.chosenTxt==null?-1:q.options.indexOf(rev.chosenTxt),true)+(q.explanation?'<div style="font-size:13px;margin-top:6px" dir="auto">'+esc(q.explanation)+'</div>':'')+(q.arabicNote?'<div style="font-size:13px;margin-top:4px" dir="rtl">'+esc(q.arabicNote)+'</div>':'');
    h+='<div style="margin-top:10px">'+(rev.kind==='no'?'<button class="pkb part" onclick="s3Picker.partly()">🟡 Count as partly correct (5)</button>':'')+'</div>'}
   h+='<div style="margin-top:12px;text-align:center"><button class="pkb" style="font-size:18px;padding:14px 26px" onclick="s3Picker.pick()">'+(rev?'➡️ Next student':'🎲 Pick a student')+'</button></div>'}
  h+='</div>';
@@ -5393,11 +5419,13 @@ function mainUI(cl){const c=S.cls,all=members(c),done=(S.done[c]||[]).length,pl=
   '<div style="margin-top:10px"><button class="pkb g" onclick="s3Picker.undo()">↩️ Undo last</button><button class="pkb g" onclick="s3Picker.resetRound()">🔄 New round</button><button class="pkb g" onclick="s3Picker.exportCSV()">⬇️ Export points (CSV)</button><button class="pkb g" onclick="s3Picker.resetPts()">Reset points</button><button class="pkb g" onclick="s3Picker.importMore()">Import roster</button><button class="pkb g" onclick="s3Picker.clearRoster()">Delete roster</button></div></div></div>';
  return h}
 function tickStart(){clearInterval(tick);if(!S.cur)return;const f=()=>{const e=$('pk-t');if(!e){clearInterval(tick);return}const t=Math.round((Date.now()-S.cur.start)/1000);e.textContent='⏱️ '+t+'s'+(t>TLIM?' (over '+TLIM+'s)':'');e.style.color=t>TLIM?'#e11d48':''};f();tick=setInterval(f,500)}
-const _sw=window.switchTab;window.switchTab=function(t){_sw.apply(this,arguments);if(window.state&&state.currentTab==='bank')mount()};
+const _sw=window.switchTab;window.switchTab=function(t){_sw.apply(this,arguments);if(typeof state!=='undefined'&&state.currentTab==='bank'){if(window.__s3stale){window.__s3stale=false;try{applyFilters()}catch(e){}}mount()}};
+const _sfq=window.startFocusQuiz;window.startFocusQuiz=function(){try{s3Shuf.many(getFilteredQuestions())}catch(e){}return _sfq.apply(this,arguments)};
 })();
 </script>
 
 <script id="s3-notebook">
+
 (function(){
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -5410,7 +5438,7 @@ let open={},fUnit='all',fTag='all',fText='';
 /* snapshot on save so a Notebook entry survives bank updates */
 const _tb=window.toggleBookmark;
 window.toggleBookmark=function(id,quiz){const was=state.bookmarks.includes(id);_tb(id,quiz);load();
-  if(!was&&state.bookmarks.includes(id)){const q=byId(id);if(q){D.snap[id]={id:q.id,unit:q.unit,lesson:q.lesson,category:q.category,question:q.question,options:q.options,answer:q.answer,explanation:q.explanation,arabicNote:q.arabicNote||'',tags:q.tags||[]};save()}}
+  if(!was&&state.bookmarks.includes(id)){const q=byId(id);if(q){D.snap[id]={id:q.id,unit:q.unit,lesson:q.lesson,section:q.section,category:q.category,question:q.question,options:q.options,answer:q.answer,explanation:q.explanation,arabicNote:q.arabicNote||'',tags:q.tags||[]};save()}}
   if(state.currentTab==='notebook')s3Nb.render()};
 const qOf=id=>byId(id)||(D.snap||{})[id]||null;
 const tagsOf=q=>[q.category].concat(q.tags||[]).filter(Boolean);
@@ -5438,7 +5466,7 @@ window.s3Nb={
  tog(id){open[id]=!open[id];s3Nb.render()},
  note(id,t){load();if(t.trim())D.notes[id]=t.trim();else delete D.notes[id];save()},
  rm(id){if(!confirm('Remove this question from your notebook?'))return;load();state.bookmarks=state.bookmarks.filter(b=>b!==id);delete D.snap[id];save();saveState();updateStats();s3Nb.render()},
- practice(){const l=list();if(!l.length){showToast('Notebook is empty');return}state.quizSet=l.slice().sort(()=>Math.random()-.5);state.quizIndex=0;switchTab('quiz');state.quizSet=l.slice().sort(()=>Math.random()-.5);state.quizIndex=0;renderCurrentQuizCard()},
+ practice(){const l=list();if(!l.length){showToast('Notebook is empty');return}s3Shuf.many(l);state.quizSet=l.slice().sort(()=>Math.random()-.5);state.quizIndex=0;switchTab('quiz');state.quizSet=l.slice().sort(()=>Math.random()-.5);state.quizIndex=0;renderCurrentQuizCard()},
  exp(kind){const rows=filtered();const d=new Date().toISOString().slice(0,10);
   if(kind==='json')dl('notebook-'+d+'.json',JSON.stringify(rows.map(q=>Object.assign({},q,{note:D.notes[q.id]||''})),null,1),'application/json');
   else{const r=[['id','unit','category','question','A','B','C','D','answer','explanation','note']].concat(rows.map(q=>[q.id,q.unit,q.category||'',q.question,q.options[0]||'',q.options[1]||'',q.options[2]||'',q.options[3]||'','ABCD'[q.answer],q.explanation||'',D.notes[q.id]||'']));
@@ -5447,7 +5475,7 @@ window.s3Nb={
 /* ---------- scalable bank: bank/index.json + lazy chunks ---------- */
 window.s3Bank={loaded:{},status:'inline',
  async fetchJSON(u){const r=await fetch(u,{cache:'no-cache'});if(!r.ok)throw new Error(u+' '+r.status);return r.json()},
- add(rows){const have=new Set(BASE_QUESTIONS.map(q=>q.id).concat(state.customQuestions.map(q=>q.id)));let n=0;rows.forEach(q=>{if(q&&q.id!=null&&!have.has(q.id)&&Array.isArray(q.options)&&q.options.length>1&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length){have.add(q.id);BASE_QUESTIONS.push(q);n++}});
+ add(rows){const have=new Set(BASE_QUESTIONS.map(q=>q.id).concat(state.customQuestions.map(q=>q.id)));let n=0;rows.forEach(q=>{if(q&&q.id!=null&&!have.has(q.id)&&Array.isArray(q.options)&&q.options.length>1&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.options.length){have.add(q.id);BASE_QUESTIONS.push(q);window.s3Shuf&&s3Shuf.fresh(q);n++}});
   if(n){rebuildQuestionPool();updateStats&&updateStats();if(state.currentTab==='bank')applyFilters()}return n},
  async init(){if(!/^https?:/.test(location.protocol))return;try{const idx=await s3Bank.fetchJSON('bank_index.json');s3Bank.index=idx;s3Bank.status='index';
    const need=(idx.chunks||[]).slice();let total=0;
