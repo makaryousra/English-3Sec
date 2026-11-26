@@ -214,8 +214,9 @@ function unlock(){document.removeEventListener('touchend',unlock,true);document.
 document.addEventListener('touchend',unlock,true);document.addEventListener('click',unlock,true);
 function load(f,force){if(idx[f]&&!force)return Promise.resolve(idx[f]);if(pend[f]&&!force)return pend[f];
  var url='audio_index_'+f+'.json';
- var net=fetch(url,{cache:force?'reload':'no-cache'}).then(function(r){if(!r.ok)throw 0;try{var c=r.clone();if(window.caches)caches.open('s3-aidx').then(function(ch){return ch.put(url,c)}).catch(function(){})}catch(e){}return r.json()}).then(function(j){idx[f]=j;return j});
- var p=(!force&&window.caches?caches.open('s3-aidx').then(function(ch){return ch.match(url)}).then(function(m){if(!m)return net;return m.json().then(function(j){if(!idx[f])idx[f]=j;net.catch(function(){});return idx[f]})}).catch(function(){return net}):net).catch(function(){return idx[f]||null});
+ var LK='s3aix_'+f,last=0;try{last=+localStorage.getItem(LK)||0}catch(x){}var fresh=!force&&Date.now()-last<43200000;
+ var mkn=function(){return fetch(url,{cache:force?'reload':'no-cache'}).then(function(r){if(!r.ok)throw 0;try{var c=r.clone();if(window.caches)caches.open('s3-aidx').then(function(ch){return ch.put(url,c)}).catch(function(){})}catch(e){}return r.json()}).then(function(j){idx[f]=j;try{localStorage.setItem(LK,String(Date.now()))}catch(x){}return j})};
+ var p=(!force&&window.caches?caches.open('s3-aidx').then(function(ch){return ch.match(url)}).then(function(m){if(!m)return mkn();return m.json().then(function(j){if(!idx[f])idx[f]=j;if(!fresh)mkn().catch(function(){});return idx[f]})}).catch(function(){return mkn()}):mkn()).catch(function(){return idx[f]||null});
  pend[f]=p;p.then(function(j){if(!j&&pend[f]===p)delete pend[f]});return p}
 function waitIdx(f,ms){var p=load(f);return Promise.race([p,new Promise(function(r){setTimeout(function(){r(null)},ms)})])}
 var bad={},rangeBad=0,blocks={},bkeys=[],BLOCK=160000;
@@ -4919,7 +4920,7 @@ function fillVoiceSel(){const s=$('s3-voice');vStatus();if(!s)return;const lang=
 window.s3Voice=function(v){ls.set(K_VOICE+'_'+nl(state.voiceAccent||'en-US'),v);vStatus();speak(SAMPLE())};
 const SAMPLE=()=>nl(state.voiceAccent)==='en-gb'?'Hello! This is the British accent. Listen carefully, then choose the best answer.':'Hello! This is the American accent. Listen carefully, then choose the best answer.';
 window.updateSpeechSettings=function(){const r0=state.voiceRate;state.voiceAccent=$('voice-accent').value;state.voiceRate=parseFloat($('voice-rate').value)||1;saveAud();try{S3A.prefetch(S3A.fam(state.voiceAccent))}catch(e){}fillVoiceSel();if(state.voiceRate!==r0)speak(SAMPLE())};
-setTimeout(function(){try{S3A.prefetch(S3A.fam(state.voiceAccent||'en-US'))}catch(e){}},3000);(function restoreAud(){const a=ls.get(AUD_K,null);if(a){state.voiceAccent=a.accent==='en-GB'?'en-GB':'en-US';state.voiceRate=a.rate||1}
+(function restoreAud(){const a=ls.get(AUD_K,null);if(a){state.voiceAccent=a.accent==='en-GB'?'en-GB':'en-US';state.voiceRate=a.rate||1}
  const set=()=>{const sa=$('voice-accent'),sr=$('voice-rate');if(sa)sa.value=state.voiceAccent;if(sr)sr.value=String(state.voiceRate||1)};
  window.__restoreAudUI=set})();
 
