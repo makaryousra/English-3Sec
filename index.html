@@ -5046,14 +5046,14 @@ window.s3ImportClass=e=>{const f=e.target.files[0];if(!f)return;const r=new File
 function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:type||'text/plain'}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
 
 /* ---------- LEADERBOARD ---------- */
-let boardMode='all',boardCls='all';window.s3BoardCls=c=>{boardCls=c;renderBoard()};
+let boardMode='all',boardCls='all';window.s3BoardCls=c=>{boardCls=c;window.__s3bc=c;renderBoard()};
 window.s3Board=m=>{boardMode=m;renderBoard()};
-function renderBoard(){const v=$('view-board');if(window.S3CLOUD&&S3CLOUD.on&&!S3CLOUD.offline&&!S3CLOUD.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';S3CLOUD.load().then(()=>renderBoard());return}const clsSel=()=>clsList().length>1?'<select class="s3in" style="width:auto" onchange="s3BoardCls(this.value)"><option value="all">All classes</option>'+clsList().map(c=>'<option value="'+esc(c)+'" '+(c===boardCls?'selected':'')+'>'+esc(c||'—')+'</option>').join('')+'</select>':'';const rows=CLS.students.filter(s=>boardCls==='all'||(s.cls||'')===boardCls).map(statsFor).sort((a,b)=>(boardMode==='week'?b.wxp-a.wxp:b.xp-a.xp)||b.acc-a.acc);
+function renderBoard(){const v=$('view-board');if(window.S3CLOUD&&S3CLOUD.on&&!S3CLOUD.offline&&!S3CLOUD.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';S3CLOUD.load().then(()=>renderBoard());return}const clsSel=()=>(clsList().length>1||isStudent())?'<select class="s3in" style="width:auto" onchange="s3BoardCls(this.value)"><option value="all">All classes</option>'+(isStudent()?'<option value="@f" '+(boardCls==='@f'?'selected':'')+'>👥 Friends only</option>':'')+clsList().map(c=>'<option value="'+esc(c)+'" '+(c===boardCls?'selected':'')+'>'+esc(c||'—')+'</option>').join('')+'</select>':'';const rows=CLS.students.filter(s=>boardCls==='all'||(boardCls==='@f'?!!(window.s3Com&&(s3Com.isFriend(s.id)||(SESS&&s.id===SESS.id))):(s.cls||'')===boardCls)).map(statsFor).sort((a,b)=>(boardMode==='week'?b.wxp-a.wxp:b.xp-a.xp)||b.acc-a.acc);
  const val=x=>boardMode==='week'?x.wxp:x.xp,me=isStudent()?SESS.id:null;
- const pod=[1,0,2].filter(i=>rows[i]).map(i=>'<div class="pod p'+(i+1)+'"><div style="font-size:26px">'+['🥇','🥈','🥉'][i]+'</div><b>'+esc(rows[i].s.name)+'</b><span>'+val(rows[i])+' XP</span><div style="font-size:11px">🔥 '+rows[i].best+' best</div></div>').join('');
- v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="s3h">🏆 Class Leaderboard</div><div class="s3sub">+10 XP per correct answer · +5 streak bonus · +20 when you master a question · +15 rewrite · +10 translation</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+clsSel()+'<button class="s3btn '+(boardMode==='all'?'':'ghost')+'" onclick="s3Board(\'all\')">All time</button><button class="s3btn '+(boardMode==='week'?'':'ghost')+'" onclick="s3Board(\'week\')">This week</button></div></div>'+
+ const pod=[1,0,2].filter(i=>rows[i]).map(i=>'<div class="pod p'+(i+1)+'"><div style="font-size:26px">'+['🥇','🥈','🥉'][i]+'</div><b style="cursor:pointer" onclick="s3Com&&s3Com.open(\''+esc(rows[i].s.id)+'\')">'+esc(rows[i].s.name)+'</b><span>'+val(rows[i])+' XP</span><div style="font-size:11px">🔥 '+rows[i].best+' best</div></div>').join('');
+ v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="s3h">🏆 Class Leaderboard</div><div class="s3sub">+10 XP per correct answer · +5 streak bonus · +20 when you master a question · +15 rewrite · +10 translation</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+clsSel()+(window.s3Com?'<button class="s3btn ghost" onclick="s3Com.friends()">'+(isTeacher()?'👥 Friendships':'👥 Friends')+'</button>':'')+'<button class="s3btn '+(boardMode==='all'?'':'ghost')+'" onclick="s3Board(\'all\')">All time</button><button class="s3btn '+(boardMode==='week'?'':'ghost')+'" onclick="s3Board(\'week\')">This week</button></div></div>'+
  (rows.length?'<div class="podium" style="margin:18px 0">'+pod+'</div><div style="overflow-x:auto"><table class="s3tbl"><tr><th>#</th><th>Student</th><th>XP</th><th>🔥 Streak</th><th>Best</th><th>📅 Days</th><th>Accuracy</th><th>Mastered</th><th>Badges</th></tr>'+
- rows.map((x,i)=>'<tr style="'+(x.s.id===me?'background:var(--acs)':'')+'"><td>'+(i+1)+'</td><td>'+rankOf(x.xp).ic+' <b>'+esc(x.s.name)+'</b>'+(x.s.cls?' <span class="s3sub">'+esc(x.s.cls)+'</span>':'')+(x.s.id===me?' (you)':'')+'</td><td><b>'+val(x)+'</b></td><td>'+x.cur+'</td><td>'+x.best+'</td><td>'+x.ds+'</td><td>'+x.acc+'%</td><td>'+x.mastered+'</td><td style="font-size:13px" title="'+esc(badges(x).join(', '))+'">'+(badges(x).map(b=>b.split(' ')[0]).join(' ')||'—')+'</td></tr>').join('')+'</table></div>':'<p class="s3sub" style="margin-top:14px">No students yet — the teacher can add them in the Students tab.</p>')+'</div>'}
+ rows.map((x,i)=>'<tr style="'+(x.s.id===me?'background:var(--acs)':'')+'"><td>'+(i+1)+'</td><td>'+rankOf(x.xp).ic+' <b style="cursor:pointer;text-decoration:underline dotted" onclick="s3Com&&s3Com.open(\''+esc(x.s.id)+'\')">'+esc(x.s.name)+'</b>'+(x.s.cls?' <span class="s3sub">'+esc(x.s.cls)+'</span>':'')+(x.s.id===me?' (you)':'')+'</td><td><b>'+val(x)+'</b></td><td>'+x.cur+'</td><td>'+x.best+'</td><td>'+x.ds+'</td><td>'+x.acc+'%</td><td>'+x.mastered+'</td><td style="font-size:13px" title="'+esc(badges(x).join(', '))+'">'+(badges(x).map(b=>b.split(' ')[0]).join(' ')||'—')+'</td></tr>').join('')+'</table></div>':'<p class="s3sub" style="margin-top:14px">No students yet — the teacher can add them in the Students tab.</p>')+'</div>'}
 
 /* ---------- REPORTS ---------- */
 let repId=null;window.s3ViewRep=id=>{repId=id;switchTab('report')};
@@ -6744,7 +6744,7 @@ function openD(){const cur=(document.querySelector('.s3nav button.active,.s3nav 
  const bt=(f,t)=>'<button class="it" onclick="'+cl(f)+'">'+t+'</button>';
  const tab=id=>{const b=$('tab-'+id);if(!b)return '';if(b.hasAttribute('data-s3hide')||b.style.display==='none'||b.classList.contains('hidden'))return '';return '<button class="it" onclick="s3Shell.go(\''+id+'\')">'+b.innerHTML.replace(/id="[^"]*"/g,'')+'</button>'};
  const sec=(t,x)=>x?'<h4>'+t+'</h4>'+x:'';
- h+=sec('Home',(stu?bt('s3Me.profile()','🪪 Profile')+bt('s3Game.place()','🧭 My level (placement test)'):'')+bt('s3Game.open()','🎮 Games')+(stu?bt('s3Me.chal()','🤝 Duel Challenges'):'')+tab('play')+tab('board'));
+ h+=sec('Home',(stu?bt('s3Me.profile()','🪪 Profile')+bt('s3Game.place()','🧭 My level (placement test)'):'')+bt('s3Game.open()','🎮 Games')+(stu?bt('s3Me.chal()','🤝 Duel Challenges'):'')+tab('play')+tab('board')+bt('s3Com.friends()',stu?'👥 Friends':'👥 Friendships'));
  h+=sec('Skills',tab('bank')+tab('read')+(stu?bt('s3Game.spk()','🗣️ Speaking'):'')+tab('write')+tab('listen')+tab('exam')+tab('srs')+tab('notebook')+tab('reference'));
  h+=sec('Teacher',tab('track')+tab('worksheet')+tab('add')+tab('attend'));
  h+=sec('More',tab('quiz')+(stu?bt('s3Game.rec()','🎯 Recommended for me')+bt('s3Ach()','🏅 My rank and badges')+bt('s3Me.shop()','🛍️ Shop'):'')+tab('report')+tab('students')+(!stu?bt('s3Me.pics()','🖼️ Student pictures')+bt('s3Rpt.tOpen()','🚩 Problem reports'):'')+bt('s3Shell.openS()','⚙️ Settings')+bt('s3Logout()','🚪 Log out'));
@@ -6756,7 +6756,7 @@ function openS(){let h='<div style="display:flex;justify-content:space-between;a
  sh.innerHTML=h+'<div id="s3-set-body"></div>';const body=$('s3-set-body');
  const add=(label,node)=>{if(!node)return;const r=document.createElement('div');r.className='row';r.innerHTML='<span>'+label+'</span>';node.style.display='';r.appendChild(node);body.appendChild(r)};
  add('Theme',$('s3-theme'));if(window.s3Wall)body.appendChild(s3Wall.row());add('Accent',$('voice-accent'));add('Speed',$('voice-rate'));
- const bk=$('s3-bkbtn');if(bk){bk.style.display='';const r=document.createElement('div');r.className='row';r.appendChild(bk);body.appendChild(r)}
+ if(window.s3Com&&window.S3&&S3.isStudent())body.appendChild(s3Com.lockRow());const bk=$('s3-bkbtn');if(bk){bk.style.display='';const r=document.createElement('div');r.className='row';r.appendChild(bk);body.appendChild(r)}
  const rs=document.querySelector('#stats-ribbon [onclick*=eset]');const r2=document.createElement('div');r2.className='row';r2.innerHTML='<button class="s3btn ghost" onclick="s3Shell.closeS();(document.querySelector(\'#stats-ribbon [onclick*=eset]\')||{click(){}}).click()">♻️ Reset my progress</button>';if(rs)body.appendChild(r2);
  const who0=window.S3&&S3.SESS&&S3.SESS();if(who0&&who0.role==='teacher'){const r4=document.createElement('div');r4.className='row';r4.innerHTML='<span>Greeting name</span><input id="s3-tn" class="s3in" maxlength="30" placeholder="Your first name" style="max-width:150px" value="'+S3.esc(localStorage.getItem('s3_tname')||'')+'"><button class="s3btn" onclick="var v=document.getElementById(\'s3-tn\').value.trim();localStorage.setItem(\'s3_tname\',v);S3.toast(v?\'Saved. Greeting name: \'+v:\'Greeting name cleared\')">Save</button>';body.appendChild(r4)}
  const who=window.S3&&S3.SESS&&S3.SESS();const r3=document.createElement('div');r3.className='row';r3.innerHTML='<span>'+(who?(who.role==='teacher'?'👩‍🏫 Teacher':'🎓 '+(who.name||'')):'')+'</span><button class="s3btn" onclick="s3Shell.closeS();s3Logout()">Log out</button>';body.appendChild(r3);
@@ -7917,6 +7917,138 @@ window.s3Track={render:render,
   var rows=shown().map(function(s){var a=analyze(s);return [s.cls||'',s.name,a.x.xp,a.acc==null?'':a.acc,a.n].concat(SKILLS.map(function(k){var o=a.sk[k[0]];return o.n?pct(o.ok,o.n):''})).concat([a.speak&&a.speak.score!=null?a.speak.score:'',a.speak&&a.speak.lv?a.speak.lv[1]:'',a.x.last?new Date(a.x.last).toLocaleDateString():'']).map(function(c){return '"'+String(c).replace(/"/g,'""')+'"'}).join(',')});
   var b=new Blob([[h.join(',')].concat(rows).join('\n')],{type:'text/csv'}),u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download='tracker_'+(st.cls==='all'?'all':st.cls)+'.csv';document.body.appendChild(l);l.click();l.remove()}};
 window.s3TrackTest={analyze:analyze,insights:insights};
+})();
+</script>
+<script id="s3-community">/* S3 Community: student profiles, friends, cheers. Uses only new collections: publicProfiles, friendProfiles, friendships, friendRequests, blocks, cheers. */
+(function(){
+var S=function(){return window.S3},fx=function(){return window.S3CLOUD&&S3CLOUD.fbx?S3CLOUD.fbx():null};
+var esc=function(s){return S().esc(s)},MAXF=30;
+var RANKS=[[0,'\ud83c\udf31','Beginner'],[100,'\ud83d\udcd8','Learner'],[300,'\ud83e\udded','Explorer'],[700,'\ud83c\udfc5','Achiever'],[1500,'\ud83d\udc8e','Expert'],[3000,'\ud83d\udc51','Master']];
+var BDG=[['first','\ud83d\udc63','First Steps',function(x){return x.att>=10}],['s5','\ud83d\udd25','Streak 5',function(x){return x.best>=5}],['s10','\u26a1','Streak 10',function(x){return x.best>=10}],['s20','\ud83d\ude80','Streak 20',function(x){return x.best>=20}],
+['d3','\ud83d\udcc5','3-Day Habit',function(x){return x.ds>=3}],['d7','\ud83d\uddd3\ufe0f','Week Warrior',function(x){return x.ds>=7}],['d14','\ud83c\udfd5\ufe0f','Two Weeks Strong',function(x){return x.ds>=14}],
+['sh','\ud83c\udfaf','Sharpshooter',function(x){return x.att>=20&&x.acc>=90}],['ace','\ud83e\udde0','Accuracy Ace',function(x){return x.att>=100&&x.acc>=85}],
+['m10','\ud83c\udf1f','Mastery 10',function(x){return x.mastered>=10}],['m25','\ud83c\udfc6','Master',function(x){return x.mastered>=25}],['m50','\ud83c\udf93','Grand Master',function(x){return x.mastered>=50}],
+['a100','\ud83d\udcda','Bookworm',function(x){return x.att>=100}],['a300','\ud83d\udcd6','Scholar',function(x){return x.att>=300}],['a600','\ud83e\udd89','Wise Owl',function(x){return x.att>=600}],
+['x500','\u2b50','500 XP',function(x){return x.xp>=500}],['x1000','\u2728','1000 XP',function(x){return x.xp>=1000}],['x2500','\ud83c\udf20','2500 XP',function(x){return x.xp>=2500}]];
+var rankOf=function(xp){var k=0;RANKS.forEach(function(r,i){if(xp>=r[0])k=i});return RANKS[k]};
+var SKN=[['g','Grammar'],['v','Vocabulary'],['r','Reading'],['l','Listening'],['w','Writing skills'],['s','Speaking']];
+var C={fset:new Set(),mine:null,req:{inc:[],out:[]},blocks:[],fl:[],dis:false,locked:false,loaded:false};window.s3Com=C;
+var F=function(){return fx().F},db=function(){return fx().db};
+var me=function(){var x=fx();return x?x.uid:null};
+var pid=function(a,b){return a<b?a+'_'+b:b+'_'+a};
+var $=function(id){return document.getElementById(id)};
+var toast=function(m){try{S().toast(m)}catch(e){}};
+var errMsg=function(e){return (e&&e.code==='permission-denied')?'Not allowed right now.':((e&&e.message)||'Something went wrong').slice(0,80)};
+function col(n){return F().collection(db(),n)}
+function dref(n,id){return F().doc(db(),n,id)}
+async function getAll(n,field,val){var f=F(),q=await f.getDocs(f.query(col(n),f.where(field,'==',val))),a=[];q.forEach(function(d){a.push(Object.assign({id:d.id},d.data()))});return a}
+function rows(){return (S().CLS().students||[])}
+function statOf(s){return S().statsFor(s)}
+function boardRow(id){var s=rows().filter(function(x){return x.id===id})[0];return s?{s:s,x:statOf(s)}:null}
+function badgesOf(x){return BDG.filter(function(b){return b[3](x)})}
+function nameOf(id){var r=boardRow(id);return r?r.s.name:'Student'}
+/* ---------- loading my social state ---------- */
+C.isFriend=function(id){return C.fset.has(id)};
+C.load=async function(){var u=me();if(!u||S().isTeacher())return;
+ try{var r=await Promise.all([getAll('friendships','a',u),getAll('friendships','b',u),getAll('friendRequests','to',u),getAll('friendRequests','from',u),getAll('blocks','by',u),F().getDoc(dref('publicProfiles',u))]);
+  C.fl=r[0].concat(r[1]);C.fset=new Set(C.fl.map(function(d){return d.a===u?d.b:d.a}));
+  C.req.inc=r[2].filter(function(d){return d.st==='pending'});C.req.out=r[3].filter(function(d){return d.st==='pending'});
+  C.blocks=r[4];var p=r[5].exists()?r[5].data():{};C.locked=!!p.locked;C.dis=!!p.fdis;C.loaded=true}catch(e){C.loaded=false;C.err=errMsg(e)}
+ };
+C.sync=async function(){var u=me(),s=S().SESS&&S().SESS();if(!u||!s||s.role==='teacher')return;
+ var k='s3com_'+u,last=+(localStorage.getItem(k)||0);if(Date.now()-last<6*3600*1000)return;
+ try{var p=S().getProg(s.id),sk={};var P=p.place&&p.place.sk;if(P)SKN.forEach(function(n){var z=P[n[0]];if(z&&z[1]>=4)sk[n[0]]=[z[0],z[1]]});
+  var st=S().statsFor({id:s.id,name:s.name});
+  await F().setDoc(dref('friendProfiles',u),{sk:sk,last:p.last||0,cur:st.cur||0,updated:Date.now()});
+  var pp=await F().getDoc(dref('publicProfiles',u));if(!pp.exists())await F().setDoc(dref('publicProfiles',u),{locked:false,updated:Date.now()});
+  localStorage.setItem(k,String(Date.now()))}catch(e){}};
+C.boot=async function(){if(!me()||S().isTeacher())return;await C.load();C.sync();if(window.s3BoardCls&&$('view-board')&&$('view-board').offsetParent!==null)window.s3BoardCls(window.__s3bc||'all')};
+/* ---------- overlay ---------- */
+function ov(title,html){var o=$('s3com-ov');if(!o){o=document.createElement('div');o.id='s3com-ov';o.style.cssText='position:fixed;inset:0;z-index:99991;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center';
+ o.addEventListener('click',function(e){if(e.target===o)C.close()});document.body.appendChild(o)}
+ o.innerHTML='<style>#s3com-ov .sh{background:var(--bg,#f4f6fb);color:var(--tx,#0f172a);width:100%;max-width:520px;max-height:88vh;overflow:auto;border-radius:22px 22px 0 0;padding:16px}#s3com-ov .cd{background:var(--surf,#fff);border:1px solid var(--bd,#e2e8f0);border-radius:16px;padding:12px;margin-bottom:10px}#s3com-ov .rw{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--bd,#e2e8f0)}#s3com-ov .rw:first-child{border-top:0}#s3com-ov .bt{border:0;border-radius:12px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer;background:var(--ac,#4f46e5);color:#fff}#s3com-ov .bt.g{background:transparent;color:var(--tx,#0f172a);border:1.5px solid var(--bd,#cbd5e1)}#s3com-ov .bt.r{background:#e11d48}#s3com-ov .mu{color:var(--mu,#64748b);font-size:12px}#s3com-ov .bd{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--bd,#e2e8f0);border-radius:12px;padding:4px 8px;margin:3px;font-size:12px;background:var(--surf2,#f8fafc)}</style><div class="sh"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:18px">'+title+'</b><button class="bt g" onclick="s3Com.close()">\u2715</button></div>'+html+'</div>'}
+C.close=function(){var o=$('s3com-ov');if(o)o.remove()};
+/* ---------- profile card ---------- */
+C.open=async function(id){var u=me(),teacher=S().isTeacher(),R=boardRow(id);if(!R)return;ov(esc(R.s.name),'<div class="cd mu">Loading\u2026</div>');
+ var self=id===u,pub={},fr=null,friend=C.fset.has(id),cheers=[];
+ try{if(!C.loaded&&!teacher)await C.load();friend=C.fset.has(id);
+  var g=await Promise.all([F().getDoc(dref('publicProfiles',id)),(self||friend||teacher)?F().getDoc(dref('friendProfiles',id)).catch(function(){return null}):Promise.resolve(null),getAll('cheers','to',id).catch(function(){return[]})]);
+  pub=g[0].exists()?g[0].data():{};fr=g[1]&&g[1].exists()?g[1].data():null;cheers=g[2]}catch(e){}
+ var x=R.x,rk=rankOf(x.xp),locked=!!pub.locked&&!self&&!teacher,box=function(h){return '<div class="cd">'+h+'</div>'};
+ var head='<div class="cd" style="text-align:center"><div style="width:84px;height:84px;margin:4px auto;border-radius:50%;background:var(--ac,#4f46e5);color:#fff;font-size:34px;font-weight:800;display:flex;align-items:center;justify-content:center">'+esc((R.s.name||'?').trim().charAt(0).toUpperCase())+'</div><div style="font-size:22px;font-weight:800">'+esc(R.s.name)+'</div>'+(locked?'':'<div class="mu">'+esc(R.s.cls||'')+'</div>')+'<div style="margin-top:4px;font-size:15px">'+rk[1]+' <b>'+rk[2]+'</b>'+(locked?'':' \u00b7 '+x.xp+' XP')+'</div></div>';
+ var body='';
+ if(locked){body=box('<div class="mu" style="text-align:center">\ud83d\udd12 This student keeps the profile private.</div>')}
+ else{
+  var all=rows().map(function(s){return{id:s.id,cls:s.cls||'',xp:statOf(s).xp}}).sort(function(a,b){return b.xp-a.xp}),inCls=all.filter(function(a){return a.cls===(R.s.cls||'')});
+  var rAll=all.findIndex(function(a){return a.id===id})+1,rCls=inCls.findIndex(function(a){return a.id===id})+1;
+  body+=box('<div class="rw"><span>Rank in '+esc(R.s.cls||'class')+'</span><b>#'+rCls+' of '+inCls.length+'</b></div><div class="rw"><span>Rank in all classes</span><b>#'+rAll+' of '+all.length+'</b></div>');
+  var cc={};cheers.forEach(function(c){cc[c.badge]=(cc[c.badge]||0)+1});var mine={};cheers.forEach(function(c){if(c.from===u)mine[c.badge]=1});
+  var bl=badgesOf(x);body+=box('<div style="font-weight:800;margin-bottom:6px">Badges</div>'+(bl.length?bl.map(function(b){return '<span class="bd">'+b[1]+' '+esc(b[2])+(self||teacher?'':' <button class="bt g" style="padding:2px 7px;font-size:12px" onclick="s3Com.cheer(\''+id+'\',\''+b[0]+'\')">'+(mine[b[0]]?'\ud83d\udc4f\u2713':'\ud83d\udc4f')+'</button>')+(cc[b[0]]?' <b>'+cc[b[0]]+'</b>':'')+'</span>'}).join(''):'<span class="mu">No badges yet.</span>'));
+  if(self||friend||teacher){
+   var sk=(fr&&fr.sk)||{},sh=SKN.filter(function(n){return sk[n[0]]}).map(function(n){var z=sk[n[0]];return '<div class="rw"><span>'+n[1]+'</span><b>'+Math.round(z[0]/z[1]*100)+'%</b></div>'}).join('');
+   body+=box('<div style="font-weight:800;margin-bottom:6px">'+(self?'Friends can see':'Friends info')+'</div><div class="rw"><span>\ud83d\udd25 Streak (days)</span><b>'+(fr?fr.cur||0:x.cur||0)+'</b></div><div class="rw"><span>Last activity</span><b>'+(fr&&fr.last?new Date(fr.last).toLocaleDateString():(x.last?new Date(x.last).toLocaleDateString():'\u2013'))+'</b></div>'+(sh||'<div class="mu" style="margin-top:6px">No placement test results yet.</div>'))}
+  else body+=box('<div class="mu">\ud83d\udd12 Streak, last activity and best skill results are for friends only.</div>')}
+ var act='';if(!self&&!teacher){
+  var inReq=C.req.inc.filter(function(d){return d.from===id})[0],outReq=C.req.out.filter(function(d){return d.to===id})[0],blocked=C.blocks.filter(function(d){return d.who===id})[0];
+  if(friend)act='<button class="bt g" onclick="s3Com.remove(\''+id+'\')">Remove friend</button> ';
+  else if(inReq)act='<button class="bt" onclick="s3Com.accept(\''+id+'\')">Accept request</button> <button class="bt g" onclick="s3Com.decline(\''+id+'\')">Decline</button> ';
+  else if(outReq)act='<button class="bt g" disabled>Request sent</button> ';
+  else if(!blocked)act='<button class="bt" onclick="s3Com.request(\''+id+'\')">\u2795 Add friend</button> ';
+  act+=blocked?'<button class="bt g" onclick="s3Com.unblock(\''+id+'\')">Unblock</button>':'<button class="bt g" onclick="s3Com.block(\''+id+'\')">Block</button>';
+  act='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">'+act+'</div>'}
+ ov(esc(R.s.name),head+body+act)};
+/* ---------- friend actions ---------- */
+async function guard(){if(S().isTeacher())return false;if(!C.loaded)await C.load();if(C.dis){toast('Friends are turned off for your account.');return false}return true}
+C.request=async function(id){if(!await guard())return;var u=me();try{
+  if(C.fset.size>=MAXF){toast('You already have '+MAXF+' friends.');return}
+  await F().setDoc(dref('friendRequests',u+'_'+id),{from:u,to:id,fromName:String(nameOf(u)).slice(0,60),toName:String(nameOf(id)).slice(0,60),st:'pending',t:Date.now()});
+  toast('Friend request sent');await C.load();C.open(id)}catch(e){toast(errMsg(e))}};
+C.accept=async function(id){if(!await guard())return;var u=me();try{
+  if(C.fset.size>=MAXF){toast('You already have '+MAXF+' friends.');return}
+  var a=u<id?u:id,b=u<id?id:u;
+  await F().setDoc(dref('friendships',pid(u,id)),{a:a,b:b,aName:String(nameOf(a)).slice(0,60),bName:String(nameOf(b)).slice(0,60),by:u,t:Date.now()});
+  await F().deleteDoc(dref('friendRequests',id+'_'+u)).catch(function(){});
+  toast('You are now friends');await C.load();C.friends()}catch(e){toast(errMsg(e))}};
+C.decline=async function(id){var u=me();try{await F().deleteDoc(dref('friendRequests',id+'_'+u));await C.load();C.friends()}catch(e){toast(errMsg(e))}};
+C.cancel=async function(id){var u=me();try{await F().deleteDoc(dref('friendRequests',u+'_'+id));await C.load();C.friends()}catch(e){toast(errMsg(e))}};
+C.remove=async function(id){if(!confirm('Remove this friend?'))return;var u=me();try{await F().deleteDoc(dref('friendships',pid(u,id)));await C.load();C.friends();if(window.s3BoardCls&&$('view-board')&&$('view-board').offsetParent!==null)window.s3BoardCls(window.__s3bc||'all')}catch(e){toast(errMsg(e))}};
+C.block=async function(id){if(!confirm('Block this student? They cannot send you requests.'))return;var u=me();try{
+  await F().setDoc(dref('blocks',u+'_'+id),{by:u,who:id,t:Date.now()});
+  await F().deleteDoc(dref('friendships',pid(u,id))).catch(function(){});await F().deleteDoc(dref('friendRequests',id+'_'+u)).catch(function(){});
+  await C.load();C.open(id)}catch(e){toast(errMsg(e))}};
+C.unblock=async function(id){var u=me();try{await F().deleteDoc(dref('blocks',u+'_'+id));await C.load();C.open(id)}catch(e){toast(errMsg(e))}};
+C.cheer=async function(id,badge){var u=me(),cid=id+'_'+badge+'_'+u;try{var d=await F().getDoc(dref('cheers',cid));
+  if(d.exists())await F().deleteDoc(dref('cheers',cid));else await F().setDoc(dref('cheers',cid),{to:id,badge:badge,from:u,t:Date.now()});C.open(id)}catch(e){toast(errMsg(e))}};
+/* ---------- friends manager (student) ---------- */
+C.friends=async function(){if(S().isTeacher())return C.teacher();ov('\ud83d\udc65 Friends','<div class="cd mu">Loading\u2026</div>');await C.load();var u=me();
+ if(!C.loaded){ov('\ud83d\udc65 Friends','<div class="cd">Could not load. '+esc(C.err||'')+'</div>');return}
+ var li=function(id,nm,btns){return '<div class="rw"><span style="cursor:pointer;font-weight:700" onclick="s3Com.open(\''+id+'\')">'+esc(nm)+'</span><span>'+btns+'</span></div>'};
+ var h='';if(C.dis)h+='<div class="cd" style="background:#fee2e2">Friends are turned off for your account by your teacher.</div>';
+ h+='<div class="cd"><div style="font-weight:800;margin-bottom:4px">Requests ('+C.req.inc.length+')</div>'+(C.req.inc.length?C.req.inc.map(function(d){return li(d.from,d.fromName||nameOf(d.from),'<button class="bt" onclick="s3Com.accept(\''+d.from+'\')">Accept</button> <button class="bt g" onclick="s3Com.decline(\''+d.from+'\')">Decline</button>')}).join(''):'<div class="mu">No requests.</div>')+'</div>';
+ h+='<div class="cd"><div style="font-weight:800;margin-bottom:4px">My friends ('+C.fl.length+'/'+MAXF+')</div>'+(C.fl.length?C.fl.map(function(d){var o=d.a===u?d.b:d.a;return li(o,nameOf(o)!=='Student'?nameOf(o):(d.a===u?d.bName:d.aName),'<button class="bt g" onclick="s3Com.remove(\''+o+'\')">Remove</button>')}).join(''):'<div class="mu">No friends yet. Open the Leaderboard and tap a name.</div>')+'</div>';
+ if(C.req.out.length)h+='<div class="cd"><div style="font-weight:800;margin-bottom:4px">Sent</div>'+C.req.out.map(function(d){return li(d.to,d.toName||nameOf(d.to),'<button class="bt g" onclick="s3Com.cancel(\''+d.to+'\')">Cancel</button>')}).join('')+'</div>';
+ if(C.blocks.length)h+='<div class="cd"><div style="font-weight:800;margin-bottom:4px">Blocked</div>'+C.blocks.map(function(d){return li(d.who,nameOf(d.who),'<button class="bt g" onclick="s3Com.unblock(\''+d.who+'\')">Unblock</button>')}).join('')+'</div>';
+ h+='<button class="bt" style="width:100%" onclick="s3Com.close();s3BoardCls(\'@f\');switchTab(\'board\')">\ud83c\udfc6 Friends leaderboard</button>';
+ ov('\ud83d\udc65 Friends',h)};
+/* ---------- lock switch (settings) ---------- */
+C.lockRow=function(){var r=document.createElement('div');r.className='row';var lab=document.createElement('span');lab.textContent='\ud83d\udd12 Lock my profile';
+ var inp=document.createElement('input');inp.type='checkbox';inp.style.cssText='width:22px;height:22px';inp.checked=C.locked;
+ inp.onchange=async function(){var v=inp.checked;try{await F().setDoc(dref('publicProfiles',me()),{locked:v,updated:Date.now()},{merge:true});C.locked=v;toast(v?'Profile locked: others see only your name and rank':'Profile open: others see your basic profile')}catch(e){inp.checked=!v;toast(errMsg(e))}};
+ r.appendChild(lab);r.appendChild(inp);if(!C.loaded)C.load().then(function(){inp.checked=C.locked});return r};
+/* ---------- teacher: all friendships ---------- */
+C.teacher=async function(){ov('\ud83d\udc65 Friendships','<div class="cd mu">Loading\u2026</div>');
+ try{var f=F(),q=await f.getDocs(col('friendships')),fl=[];q.forEach(function(d){fl.push(Object.assign({id:d.id},d.data()))});
+  var q2=await f.getDocs(col('publicProfiles')),dis=[];q2.forEach(function(d){if(d.data().fdis)dis.push(d.id)});
+  var nm=function(id,fb){return nameOf(id)!=='Student'?nameOf(id):(fb||'Student')};
+  var h='<div class="cd"><div style="font-weight:800;margin-bottom:4px">All friendships ('+fl.length+')</div>'+(fl.length?fl.map(function(d){return '<div class="rw"><span>'+esc(nm(d.a,d.aName))+' \u2194 '+esc(nm(d.b,d.bName))+'</span><button class="bt r" onclick="s3Com.tdel(\''+d.id+'\')">Remove</button></div>'}).join(''):'<div class="mu">No friendships yet.</div>')+'</div>';
+  var opts=rows().slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'')}).map(function(s){return '<option value="'+s.id+'">'+esc((s.cls?s.cls+' \u2013 ':'')+s.name)+'</option>'}).join('');
+  h+='<div class="cd"><div style="font-weight:800;margin-bottom:6px">Turn friends off or on for a student</div><div style="display:flex;gap:6px"><select id="s3com-sel" class="s3in" style="flex:1">'+opts+'</select><button class="bt r" onclick="s3Com.tdis(true)">Off</button><button class="bt g" onclick="s3Com.tdis(false)">On</button></div>'+
+   (dis.length?'<div class="mu" style="margin-top:8px">Currently off: '+dis.map(function(i){return esc(nm(i))}).join(', ')+'</div>':'')+'</div>';
+  ov('\ud83d\udc65 Friendships',h)}catch(e){ov('\ud83d\udc65 Friendships','<div class="cd">Could not load. '+esc(errMsg(e))+'</div>')}};
+C.tdel=async function(id){if(!confirm('Remove this friendship?'))return;try{await F().deleteDoc(dref('friendships',id));C.teacher()}catch(e){toast(errMsg(e))}};
+C.tdis=async function(v){var id=($('s3com-sel')||{}).value;if(!id)return;try{await F().setDoc(dref('publicProfiles',id),{fdis:v,updated:Date.now()},{merge:true});toast(v?'Friends turned off for this student':'Friends turned on');C.teacher()}catch(e){toast(errMsg(e))}};
+/* start once logged in */
+var t0=0;setInterval(function(){var u=null;try{u=me()}catch(e){}if(u&&u!==t0){t0=u;setTimeout(C.boot,2500)}if(!u)t0=0},1500);
 })();
 </script>
 </body>
