@@ -4794,7 +4794,7 @@ function fillVoiceSel(){const s=$('s3-voice');vStatus();if(!s)return;const lang=
  s.value=list.some(v=>v.name===cur)?cur:'auto'}
 window.s3Voice=function(v){ls.set(K_VOICE+'_'+nl(state.voiceAccent||'en-US'),v);vStatus();speak(SAMPLE())};
 const SAMPLE=()=>nl(state.voiceAccent)==='en-gb'?'Hello! This is the British accent. Listen carefully, then choose the best answer.':'Hello! This is the American accent. Listen carefully, then choose the best answer.';
-window.updateSpeechSettings=function(){state.voiceAccent=$('voice-accent').value;state.voiceRate=parseFloat($('voice-rate').value)||1;saveAud();fillVoiceSel();speak(SAMPLE())};
+window.updateSpeechSettings=function(){const r0=state.voiceRate;state.voiceAccent=$('voice-accent').value;state.voiceRate=parseFloat($('voice-rate').value)||1;saveAud();fillVoiceSel();if(state.voiceRate!==r0)speak(SAMPLE())};
 (function restoreAud(){const a=ls.get(AUD_K,null);if(a){state.voiceAccent=a.accent==='en-GB'?'en-GB':'en-US';state.voiceRate=a.rate||1}
  const set=()=>{const sa=$('voice-accent'),sr=$('voice-rate');if(sa)sa.value=state.voiceAccent;if(sr)sr.value=String(state.voiceRate||1)};
  window.__restoreAudUI=set})();
