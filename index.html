@@ -6244,33 +6244,72 @@ window.s3PlBox=P=>{if(!P)return '';return '<div style="margin:12px 0;padding:10p
 /* ===== GEMINI COACH (optional; falls back to local scoring) ===== */
 const GEM={topic:'',url:'https://script.google.com/macros/s/AKfycbybb3qX3KLFUr_uaxt0jhYy-WZErn2E4DWeNCoyqdgGOort6SUVFz7-j3IpjnXcCs75/exec',lim:30,
  async ask(p){if(!GEM.url||!navigator.onLine||!window.S3CLOUD||!S3CLOUD.idToken)return{ok:false,error:'disabled'};
-  try{const idToken=await S3CLOUD.idToken();if(!idToken)return{ok:false,error:'auth'};const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),15000);
+  try{const idToken=await S3CLOUD.idToken();if(!idToken)return{ok:false,error:'auth'};const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),p.audio?45000:20000);
    const r=await fetch(GEM.url,{method:'POST',body:JSON.stringify(Object.assign({idToken},p)),signal:ctl.signal});clearTimeout(t);const j=await r.json();return j&&j.ok?j:{ok:false,error:(j&&j.error)||'bad'}}catch(e){return{ok:false,error:'network'}}},
  why(e){return e==='student_limit'?'You used all your coach tries for today. Come back tomorrow.':'The coach is not available now. Your normal score above still counts.'},
- rec(ms){return new Promise((res,rej)=>{if(!navigator.mediaDevices||!window.MediaRecorder)return rej(new Error('nomic'));navigator.mediaDevices.getUserMedia({audio:true}).then(st=>{const chunks=[],mr=new MediaRecorder(st);mr.ondataavailable=e=>chunks.push(e.data);
-   mr.onstop=()=>{st.getTracks().forEach(x=>x.stop());const b=new Blob(chunks,{type:mr.mimeType||'audio/webm'}),fr=new FileReader();fr.onload=()=>res({mime:(b.type||'audio/webm').split(';')[0],data:String(fr.result).split(',')[1]});fr.readAsDataURL(b)};mr.start();setTimeout(()=>{if(mr.state!=='inactive')mr.stop()},ms)}).catch(rej)})}};
+ rec(ms){return new Promise((res,rej)=>{const AC=window.AudioContext||window.webkitAudioContext;if(!navigator.mediaDevices||!AC)return rej(new Error('nomic'));
+  const get=n=>navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}).catch(e=>{if(n>0&&e&&e.name!=='NotAllowedError'&&e.name!=='SecurityError')return new Promise(r=>setTimeout(r,700)).then(()=>get(n-1));throw e});
+  get(3).then(st=>{const ctx=new AC(),src=ctx.createMediaStreamSource(st),pr=ctx.createScriptProcessor(4096,1,1),mute=ctx.createGain(),buf=[];let done=false;mute.gain.value=0;try{ctx.resume()}catch(e){}
+   const finish=()=>{if(done)return;done=true;GEM.recStop=null;try{pr.disconnect();src.disconnect()}catch(e){}st.getTracks().forEach(x=>x.stop());const sr=ctx.sampleRate;try{ctx.close()}catch(e){}
+    let len=0;buf.forEach(b=>len+=b.length);const all=new Float32Array(len);let o=0;buf.forEach(b=>{all.set(b,o);o+=b.length});
+    let peak=0;for(let i=0;i<len;i+=7){const v=Math.abs(all[i]);if(v>peak)peak=v}
+    if(len<sr*0.6||peak<0.008)return rej(new Error('silent'));
+    const ratio=sr/16000,n=Math.floor(len/ratio),pcm=new Int16Array(n);
+    for(let i=0;i<n;i++){const a=Math.floor(i*ratio),b=Math.max(a+1,Math.min(len,Math.floor((i+1)*ratio)));let s=0;for(let j=a;j<b;j++)s+=all[j];const v=Math.max(-1,Math.min(1,s/(b-a)));pcm[i]=v<0?v*32768:v*32767}
+    const wav=new ArrayBuffer(44+n*2),dv=new DataView(wav),W=(p,t)=>{for(let i=0;i<t.length;i++)dv.setUint8(p+i,t.charCodeAt(i))};
+    W(0,'RIFF');dv.setUint32(4,36+n*2,true);W(8,'WAVE');W(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);dv.setUint32(24,16000,true);dv.setUint32(28,32000,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);W(36,'data');dv.setUint32(40,n*2,true);new Int16Array(wav,44).set(pcm);
+    let bin='';const u8=new Uint8Array(wav);for(let i=0;i<u8.length;i+=0x8000)bin+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));
+    res({mime:'audio/wav',data:btoa(bin)})};
+   pr.onaudioprocess=e=>{if(!done)buf.push(new Float32Array(e.inputBuffer.getChannelData(0)))};src.connect(pr);pr.connect(mute);mute.connect(ctx.destination);GEM.recStop=finish;setTimeout(finish,ms)}).catch(rej)})}};
 window.S3GEM=GEM;
-function spCoach(){if(!SP)return;const it=SP.items[SP.i],m=$('sp-m'),a=$('sp-a');if(!GEM.url)return;
+function spCoachStop(){if(GEM.recStop)GEM.recStop()}
+function spCoach(){if(!SP)return;const it=SP.items[SP.i],m=$('sp-m'),a=$('sp-a');if(!GEM.url||SP.coachBusy)return;SP.coachBusy=1;const keep=a.innerHTML,sp=SP,idx=SP.i;
  try{if(rec)rec.abort()}catch(e){}try{speechSynthesis.cancel()}catch(e){}
- m.innerHTML='🎙️ Say the sentence now (up to 10 seconds)…';GEM.rec(10000).then(async au=>{m.innerHTML='🤖 The coach is listening…';
+ m.innerHTML='🎙️ Recording… say the sentence now, then press Done.';a.innerHTML=btn('⏹ Done speaking','s3Game.spCoachStop()');
+ GEM.rec(12000).then(async au=>{if(SP!==sp||SP.i!==idx)return;a.innerHTML='';m.innerHTML='🤖 The coach is listening… this can take up to 20 seconds.';
   const r=await GEM.ask({mode:'feedback',question:'Repeat this sentence clearly: '+it.t,transcript:SP.heard||'',words:spWords(it.t).slice(0,20),audio:au.data,mime:au.mime});
+  if(SP!==sp||SP.i!==idx)return;SP.coachBusy=0;a.innerHTML=keep;
   if(!r.ok){m.innerHTML=esc(GEM.why(r.error));return}
   const x=r.result||{};try{if(S.isStudent()&&x.score!=null){const p=S.getProg(uid()),o=p.spk||{n:0,sum:0,sets:0,self:0,best:0},c=o.cf||{n:0,p:0,g:0,v:0,f:0,s:0};c.n++;c.p+=+x.pronunciation||0;c.g+=+x.grammar||0;c.v+=+x.vocabulary||0;c.f+=+x.fluency||0;c.s+=+x.score||0;c.last=Date.now();o.cf=c;p.spk=o;S.saveProg(p)}}catch(e){}m.innerHTML='<b style="font-size:16px">🤖 Coach: '+esc(String(x.score!=null?x.score:'?'))+'/10</b><div style="font-size:13px;margin:4px 0">Pronunciation <b style="color:#f59e0b">'+rpStars(x.pronunciation)+'</b><br>Grammar <b style="color:#f59e0b">'+rpStars(x.grammar)+'</b><br>Vocabulary <b style="color:#f59e0b">'+rpStars(x.vocabulary)+'</b><br>Fluency <b style="color:#f59e0b">'+rpStars(x.fluency)+'</b></div>'+(x.good?'👍 '+esc(x.good)+'<br>':'')+(x.fix?'✏️ '+esc(x.fix)+'<br>':'')+(x.better?'💬 '+esc(x.better):'')+'<div class="s3sub" style="margin-top:4px">AI feedback can make mistakes.</div>'
- }).catch(()=>{m.innerHTML='The microphone is not available. Allow it for this site and try again.'})}
+ }).catch(e=>{if(SP!==sp||SP.i!==idx)return;SP.coachBusy=0;a.innerHTML=keep;const n=e&&e.name,msg=e&&e.message;m.innerHTML=msg==='silent'?'I could not hear any sound. Move the phone closer, speak louder, and press Coach feedback again.':(n==='NotAllowedError'||n==='SecurityError')?'The microphone is blocked. Allow the microphone for this site in the browser settings, then try again.':(n==='NotReadableError'||n==='AbortError')?'The microphone is busy. Wait a second and press Coach feedback again.':'The microphone is not available. Allow it for this site and try again.'})}
+
 const RPU=['Inside the World of Care','The Power of Machines','Protect Nature, Protect Future','Marine Life','Smart Choices','Our Heritage','Health and Lifestyle','Technology and Communication','Travel and Culture','Work and Careers','Science and Discovery','Global Issues'];
 let RP=null;
 function rpMenu(){clean();if(!GEM.url)return;ov('💬 Talk with the coach',card('<div class="s3sub" style="margin-bottom:10px">Pick a unit. You talk, the coach answers and helps you. 5 short turns.</div>'+RPU.map((n,i)=>'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:8px;padding:12px;text-align:left" onclick="s3Game.rpStart('+(i+1)+')">Unit '+(i+1)+': '+n+'</button>').join(''))+'<div style="text-align:center">'+btn('Back','s3Game.spk',1)+'</div>')}
 function rpStart(u){clean();if(!GEM.url)return;const topic='Unit '+u+': '+RPU[u-1]+' (a friendly chat using words and ideas from this unit)';
- RP={u,topic,hist:[],n:0,g:0,v:0,r:0,c:0};ov('💬 Talk with the coach',card('<div class="s3sub">Unit '+u+': <b>'+esc(RPU[u-1])+'</b></div><div id="rp-log" style="margin:10px 0;line-height:1.8;font-size:16px"></div><div id="rp-a"></div><div class="s3sub" id="rp-m" style="margin-top:8px"></div>')+'<div style="text-align:center">'+btn('Stop and exit','s3Game.close()',1)+'</div>');rpTurn('')}
+ RP={u,topic,hist:[],n:0,g:0,v:0,r:0,c:0,mis:[],tips:[],s:0,sn:0};ov('💬 Talk with the coach',card('<div class="s3sub">Unit '+u+': <b>'+esc(RPU[u-1])+'</b></div><div id="rp-log" style="margin:10px 0;line-height:1.8;font-size:16px"></div><div id="rp-a"></div><div class="s3sub" id="rp-m" style="margin-top:8px"></div>')+'<div style="text-align:center">'+btn('⏹ End conversation','s3Game.rpEnd()',1)+'</div>');rpTurn('')}
 function rpLog(who,t){const l=$('rp-log');if(l)l.innerHTML+='<div style="margin-bottom:6px"><b>'+who+'</b> '+esc(t)+'</div>'}
 function rpStars(n){n=Math.max(0,Math.min(5,Math.round(+n||0)));return '★'.repeat(n)+'☆'.repeat(5-n)}
 async function rpTurn(said){if(!RP)return;RP.last=said;const m=$('rp-m'),a=$('rp-a');a.innerHTML='';m.textContent='🤖 The coach is thinking…';
  const r=await GEM.ask({mode:'roleplay',topic:RP.topic,history:RP.hist.slice(-6),transcript:said||'(start the conversation with a simple question)'});
- if(!r.ok){m.textContent=GEM.why(r.error);a.innerHTML=btn('🔁 Try again','s3Game.rpRetry()')+(RP.n>=2?btn('Finish','s3Game.rpEnd()',1):'')+btn('Back','s3Game.rpMenu',1);return}
- const x=r.result||{};if(said){RP.g+=+x.grammar||0;RP.v+=+x.vocab||0;RP.r+=+x.relevant||0;RP.c++}
+ if(!RP)return;if(!r.ok){m.textContent=GEM.why(r.error);a.innerHTML=btn('🔁 Try again','s3Game.rpRetry()')+(RP.n>=2?btn('Finish','s3Game.rpEnd()',1):'')+btn('Back','s3Game.rpMenu',1);return}
+ const x=r.result||{};if(said){RP.g+=+x.grammar||0;RP.v+=+x.vocab||0;RP.r+=+x.relevant||0;RP.c++;if(x.score!=null){RP.s+=+x.score||0;RP.sn++}aiM(RP.mis,x);if(x.tip&&RP.tips.length<6)RP.tips.push(String(x.tip))}
  RP.hist.push({s:said,c:x.reply});rpLog('🤖 Coach:',x.reply||'');m.innerHTML=said&&x.tip?'💡 '+esc(x.tip):'';try{say(x.reply||'')}catch(e){}
  RP.n++;if(RP.n>=6){rpEnd();return}
  a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')+btn('🔊 Hear again','s3Game.rpHear()',1)}
+
+/* ===== CONVERSATION END SCREEN + VOICE CHOOSER (patch3) ===== */
+const aiM=(arr,x)=>{try{((x&&x.mistakes)||[]).slice(0,2).forEach(k=>{if(k&&k.wrong&&k.right&&arr.length<12&&!arr.some(z=>z.wrong===String(k.wrong).slice(0,80)))arr.push({wrong:String(k.wrong).slice(0,80),right:String(k.right).slice(0,80),why:String(k.why||'').slice(0,120)})})}catch(e){}};
+function aiEndHtml(o){const sc=Math.max(0,Math.min(10,+o.sc||0)),col=sc>=8?'#16a34a':sc>=5?'#f59e0b':'#dc2626';
+ const row=(l,n)=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--bd)"><span>'+l+'</span><b style="color:#f59e0b">'+n+'</b></div>';
+ const mis=o.mis||[],tips=[...new Set(o.tips||[])].slice(0,3);
+ return '<div style="text-align:center;font-size:40px">'+(sc>=8?'🏆':sc>=5?'👏':'💪')+'</div>'
+  +'<div style="text-align:center;margin:2px 0 6px"><span style="font-size:44px;font-weight:800;color:'+col+'">'+(Math.round(sc*10)/10)+'</span><span style="font-size:18px;font-weight:700">/10</span><div class="s3sub">Your score</div></div>'
+  +(o.sub?'<div class="s3sub" style="text-align:center;margin-bottom:8px">'+o.sub+'</div>':'')
+  +(o.rows||[]).map(r=>row(r[0],r[1])).join('')
+  +'<div class="s3lbl" style="margin-top:12px">Your mistakes</div>'
+  +(mis.length?mis.map(k=>'<div style="padding:8px 10px;margin:6px 0;border-radius:10px;background:var(--surf2,#eef2ff);font-size:14px;line-height:1.5"><span style="color:#dc2626;text-decoration:line-through">'+esc(k.wrong)+'</span> → <b style="color:#16a34a">'+esc(k.right)+'</b>'+(k.why?'<div class="s3sub" style="margin-top:2px">Why: '+esc(k.why)+'</div>':'')+'</div>').join(''):'<div style="font-size:14px;margin:6px 0">✅ No clear mistakes. Well done!</div>')
+  +(tips.length?'<div class="s3lbl" style="margin-top:12px">Tips for next time</div>'+tips.map(t=>'<div style="font-size:13px;margin:4px 0">💡 '+esc(t)+'</div>').join(''):'')
+  +'<div class="s3sub" style="margin-top:8px">AI feedback can make mistakes.</div>'}
+function voiceMenu(){clean();aiStop();
+ let acc='en-US';try{acc=state.voiceAccent||'en-US'}catch(e){}
+ const all=(window.speechSynthesis?speechSynthesis.getVoices():[]).filter(v=>/^en/i.test(v.lang)),norm=l=>String(l).replace('_','-').toLowerCase();
+ let vs=all.filter(v=>norm(v.lang)===norm(acc));const note=vs.length?'':'<div class="s3sub" style="margin-bottom:8px">No '+esc(acc)+' voice was found on this device.</div>';if(!vs.length)vs=all;
+ const nm=v=>(v.name||'').replace(/'/g,"&#39;");
+ ov('🔊 Coach voice',card('<div class="s3sub" style="margin-bottom:10px;line-height:1.6">The coach speaks with a voice that is installed on your phone. Tap a voice to hear it. Voices marked ✨ are usually the most natural.</div>'+note
+  +'<button class="s3btn" style="display:block;width:100%;margin-bottom:8px;padding:12px;text-align:left" onclick="window.s3Voice(\'auto\')">Auto (best voice)</button>'
+  +vs.map(v=>'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:8px;padding:12px;text-align:left" onclick="window.s3Voice(this.dataset.v)" data-v="'+esc(v.name)+'">'+esc(v.name.replace(/^Microsoft |^Google /,''))+(/natural|neural|online|enhanced|premium/i.test(v.name)?' ✨':'')+' <span class="s3sub">'+esc(v.lang)+'</span></button>').join('')
+  +'<div class="s3sub" style="margin-top:8px;line-height:1.6">Want a better voice on Android? Open Settings, search for "Text-to-speech output", open the Google engine settings, then Install voice data and pick an English (US) voice. Come back and tap it here.</div>')+'<div style="text-align:center">'+btn('Back','s3Game.spk()',1)+'</div>')}
 
 /* ===== DIALOGUE PARTNER + OPEN CONVERSATION (patch2) ===== */
 function aiMic(m,onText,onFail){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){m.textContent='This browser cannot listen to you. Use Chrome on Android.';if(onFail)onFail();return}
@@ -6300,8 +6339,8 @@ function dlPlay(){const D=DL;if(!D)return;const t=++D.tok;let i=0;aiStop();
  const next=()=>{if(DL!==D||D.tok!==t||i>=D.L.turns.length)return;const k=i++;D.L.turns.forEach((_,j)=>{const e=$('dl-l'+j);if(e)e.style.background=j===k?'var(--acs,#e0e7ff)':'transparent'});
   s3Listen.play(D.L,k,()=>{if(DL===D&&D.tok===t)setTimeout(next,250)})};next()}
 function dlHide(){const D=DL;if(!D)return;D.tok++;aiStop();D.hide=!D.hide;dlListenUI()}
-function dlRole(k){const D=DL;if(!D)return;D.tok++;aiStop();D.role=D.sp[k];D.i=0;D.sc=[];D.gr=0;D.vo=0;D.n=0;D.cap=4;D.skip={};D.prev='';
- ov('🎭 '+esc(D.L.title),card('<div class="s3sub">You are <b>'+esc(D.role)+'</b></div><div id="dl-log" style="margin:10px 0;line-height:1.7;font-size:15px"></div><div id="dl-a"></div><div class="s3sub" id="dl-m" style="margin-top:8px"></div>')+'<div style="text-align:center">'+btn('Stop and exit','s3Game.close()',1)+'</div>');dlStep()}
+function dlRole(k){const D=DL;if(!D)return;D.tok++;aiStop();D.role=D.sp[k];D.i=0;D.sc=[];D.gr=0;D.vo=0;D.n=0;D.cap=4;D.skip={};D.prev='';D.mis=[];D.tips=[];D.pend=0;
+ ov('🎭 '+esc(D.L.title),card('<div class="s3sub">You are <b>'+esc(D.role)+'</b></div><div id="dl-log" style="margin:10px 0;line-height:1.7;font-size:15px"></div><div id="dl-a"></div><div class="s3sub" id="dl-m" style="margin-top:8px"></div>')+'<div style="text-align:center">'+btn('⏹ End conversation','s3Game.dlEnd()',1)+'</div>');dlStep()}
 function dlLog(w,t){const l=$('dl-log');if(l)l.innerHTML+=aiBubble(w,t)}
 function dlStep(){const D=DL;if(!D)return;const a=$('dl-a'),m=$('dl-m');if(!a)return;a.innerHTML='';m.textContent='';
  if(D.i>=D.L.turns.length)return dlEnd();
@@ -6315,22 +6354,22 @@ function dlHint(){const D=DL;if(!D)return;const t=D.L.turns[D.i],k=[...String(t[
 function dlSkip(){const D=DL;if(!D)return;D.skip[D.i]=1;dlStep()}
 function dlSay(){const D=DL;if(!D)return;const a=$('dl-a'),m=$('dl-m'),again=()=>{a.innerHTML=btn('🎤 Speak','s3Game.dlSay()')+btn('💡 Hint','s3Game.dlHint()',1)+btn('⏭ Skip','s3Game.dlSkip()',1)};
  a.innerHTML='';aiMic(m,said=>dlEval(said),again)}
-async function dlEval(said){const D=DL;if(!D)return;const a=$('dl-a'),m=$('dl-m'),t=D.L.turns[D.i],exp=dlPlain(t[1]);D.tries++;dlLog('🧑 You:',said);m.textContent='🤖 The coach is checking…';a.innerHTML='';
+async function dlEval(said){const D=DL;if(!D)return;const a=$('dl-a'),m=$('dl-m'),t=D.L.turns[D.i],exp=dlPlain(t[1]);D.tries++;D.lastM=[];D.lastT='';dlLog('🧑 You:',said);m.textContent='🤖 The coach is checking…';a.innerHTML='';
  const kw=[...new Set(dlWords(exp))],sl=said.toLowerCase(),hit=kw.filter(w=>sl.indexOf(w)>-1).length;
  const r=await GEM.ask({mode:'dialogue',topic:D.L.title,role:D.role,prev:D.prev,expected:exp,transcript:said});
  if(DL!==D)return;let sc,msg;
- if(r.ok){const x=r.result||{};sc=Math.max(0,Math.min(10,Math.round(+x.score||0)));D.lastG=+x.grammar||0;D.lastV=+x.vocabulary||0;
+ if(r.ok){const x=r.result||{};sc=Math.max(0,Math.min(10,Math.round(+x.score||0)));D.lastG=+x.grammar||0;D.lastV=+x.vocabulary||0;D.lastM=x.mistakes||[];D.lastT=x.tip||'';
   msg='<b style="font-size:16px">🤖 Coach: '+sc+'/10</b><div style="font-size:13px;margin:4px 0">Grammar <b style="color:#f59e0b">'+rpStars(x.grammar)+'</b><br>Vocabulary <b style="color:#f59e0b">'+rpStars(x.vocabulary)+'</b></div>'+(x.good?'👍 '+esc(x.good)+'<br>':'')+(x.tip?'💡 '+esc(x.tip)+'<br>':'')}
  else{sc=kw.length?Math.round(hit/kw.length*10):5;D.lastG=0;D.lastV=0;msg='<b>Key words matched: '+hit+' of '+kw.length+'</b><div class="s3sub" style="margin:4px 0">'+esc(GEM.why(r.error))+'</div>'}
- D.lastSc=sc;m.innerHTML=msg+'<div style="margin-top:6px;padding:8px;border-radius:10px;background:var(--surf2,#eef2ff)">📖 In the book: <i>'+esc(exp)+'</i></div><div class="s3sub" style="margin-top:4px">AI feedback can make mistakes.</div>';
+ D.lastSc=sc;D.pend=1;m.innerHTML=msg+((D.lastM||[]).slice(0,2).filter(k=>k&&k.wrong&&k.right).map(k=>'<div style="font-size:13px;margin:3px 0">✏️ <span style="color:#dc2626;text-decoration:line-through">'+esc(k.wrong)+'</span> → <b style="color:#16a34a">'+esc(k.right)+'</b>'+(k.why?' <span class="s3sub">('+esc(k.why)+')</span>':'')+'</div>').join(''))+'<div style="margin-top:6px;padding:8px;border-radius:10px;background:var(--surf2,#eef2ff)">📖 In the book: <i>'+esc(exp)+'</i></div><div class="s3sub" style="margin-top:4px">AI feedback can make mistakes.</div>';
  a.innerHTML=(D.tries<2?btn('🔁 Try again','s3Game.dlSay()',1):'')+btn('Next ▶','s3Game.dlNext()')}
-function dlNext(){const D=DL;if(!D)return;D.sc.push(D.lastSc||0);D.gr+=D.lastG||0;D.vo+=D.lastV||0;D.n++;D.i++;dlStep()}
-function dlEnd(){const D=DL;if(!D)return;const c=D.sc.length;aiStop();
- if(!c){ov('🎭 Good listening!',card('<div class="s3sub" style="text-align:center;margin-bottom:8px">'+esc(D.L.title)+'</div><div style="text-align:center">'+btn('Try again as a speaker','s3Game.dlListen('+D.u+')')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));DL=null;return}
+function dlCommit(D){if(!D.pend)return;D.pend=0;D.sc.push(D.lastSc||0);D.gr+=D.lastG||0;D.vo+=D.lastV||0;D.n++;aiM(D.mis,{mistakes:D.lastM});if(D.lastT&&D.tips.length<6)D.tips.push(String(D.lastT))}
+function dlNext(){const D=DL;if(!D)return;dlCommit(D);D.i++;dlStep()}
+function dlEnd(){const D=DL;if(!D)return;D.tok++;aiStop();try{if(rec)rec.abort()}catch(e){}dlCommit(D);const c=D.sc.length;
+ if(!c){ov('🎭 Conversation ended',card('<div class="s3sub" style="text-align:center;margin-bottom:8px">'+esc(D.L.title)+'</div><div class="s3sub" style="text-align:center;margin-bottom:10px">You did not say a reply yet, so there is no score.</div><div style="text-align:center">'+btn('Try again as a speaker','s3Game.dlListen('+D.u+')')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));DL=null;return}
  const avg=D.sc.reduce((x,y)=>x+y,0)/c,g=D.gr/c,v=D.vo/c;
  if(c>=2){aiSave(o=>{const q=o.dl||{n:0,s:0};q.n+=1;q.s+=avg;q.last=Date.now();(q.u=q.u||{})[D.u]=(q.u[D.u]||0)+1;o.dl=q});aiXP(8)}
- const row=(l,n)=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--bd)"><span>'+l+'</span><b style="color:#f59e0b">'+n+'</b></div>';
- ov('🎭 Well done!',card('<div style="text-align:center;font-size:44px">'+(avg>=8?'🏆':avg>=5?'👏':'💪')+'</div><div class="s3sub" style="text-align:center;margin-bottom:8px">'+esc(D.L.title)+' · you were '+esc(D.role)+'</div>'+row('Your replies',c)+row('Average score',avg.toFixed(1)+'/10')+(g?row('Grammar',rpStars(g)):'')+(v?row('Vocabulary',rpStars(v)):'')+'<div class="s3sub" style="margin-top:8px">AI feedback can make mistakes.</div><div style="margin-top:12px;text-align:center">'+btn('Another dialogue','s3Game.dlMenu()')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));DL=null}
+ ov('🎭 Conversation finished',card(aiEndHtml({sc:avg,sub:esc(D.L.title)+' · you were '+esc(D.role),rows:[['Your replies',c]].concat(g?[['Grammar',rpStars(g)]]:[]).concat(v?[['Vocabulary',rpStars(v)]]:[]),mis:D.mis,tips:D.tips})+'<div style="margin-top:12px;text-align:center">'+btn('Another dialogue','s3Game.dlMenu()')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));DL=null}
 
 /* ---- Open conversation ---- */
 let OC=null;
@@ -6341,25 +6380,25 @@ function ocStart(i){let topic='';
  if(i>=0)topic=OCT[i][1];else if(i===-2)topic=OCT[Math.floor(Math.random()*OCT.length)][1];else if(i===-3)topic=String(GEM.topic||'');
  else{const e=$('oc-own');topic=e?e.value:''}
  topic=topic.replace(/[^A-Za-z0-9 ,.'?!-]/g,' ').replace(/\s+/g,' ').trim().slice(0,60);if(!topic){const e=$('oc-own');if(e)e.placeholder='Type a topic first';return}
- clean();OC={topic,hist:[],n:0,g:0,v:0,c:0,tips:[],last:''};
- ov('🗨️ Open conversation',card('<div class="s3sub">Topic to start: <b>'+esc(topic)+'</b>. You can change it any time.</div><div id="oc-log" style="margin:10px 0;line-height:1.7;font-size:16px"></div><div id="oc-a"></div><div class="s3sub" id="oc-m" style="margin-top:8px"></div>')+'<div style="text-align:center">'+btn('Stop and exit','s3Game.close()',1)+'</div>');ocTurn('')}
+ clean();OC={topic,hist:[],n:0,g:0,v:0,c:0,tips:[],last:'',mis:[],s:0,sn:0};
+ ov('🗨️ Open conversation',card('<div class="s3sub">Topic to start: <b>'+esc(topic)+'</b>. You can change it any time.</div><div id="oc-log" style="margin:10px 0;line-height:1.7;font-size:16px"></div><div id="oc-a"></div><div class="s3sub" id="oc-m" style="margin-top:8px"></div>')+'<div style="text-align:center">'+btn('⏹ End conversation','s3Game.ocEnd()',1)+'</div>');ocTurn('')}
 function ocLog(w,t){const l=$('oc-log');if(l)l.innerHTML+=aiBubble(w,t)}
 function ocBtns(){const a=$('oc-a');if(a&&OC)a.innerHTML=btn('🎤 Answer','s3Game.ocRec()')+btn('🔊 Hear again','s3Game.ocHear()',1)+(OC.c>=3?btn('Finish','s3Game.ocEnd()',1):'')}
 async function ocTurn(said){const O=OC;if(!O)return;O.last=said;const m=$('oc-m'),a=$('oc-a');a.innerHTML='';m.textContent='🤖 The coach is thinking…';
  const r=await GEM.ask({mode:'chat',topic:O.topic,history:O.hist.slice(-6),transcript:said||'(start the conversation with a friendly question about the starting topic)'});
  if(OC!==O)return;
  if(!r.ok){m.textContent=GEM.why(r.error);a.innerHTML=btn('🔁 Try again','s3Game.ocRetry()')+(O.c>=2?btn('Finish','s3Game.ocEnd()',1):'')+btn('Back','s3Game.ocMenu()',1);return}
- const x=r.result||{};if(said){O.g+=+x.grammar||0;O.v+=+x.vocab||0;O.c++;if(x.tip&&O.tips.length<6)O.tips.push(String(x.tip))}
+ const x=r.result||{};if(said){O.g+=+x.grammar||0;O.v+=+x.vocab||0;O.c++;if(x.score!=null){O.s+=+x.score||0;O.sn++}aiM(O.mis,x);if(x.tip&&O.tips.length<6)O.tips.push(String(x.tip))}
  O.hist.push({s:said,c:x.reply});ocLog('🤖 Coach:',x.reply||'');m.innerHTML=said&&x.tip?'💡 '+esc(x.tip):'';try{say(x.reply||'')}catch(e){}
  O.n++;if(O.n>=9){ocEnd();return}ocBtns()}
 function ocRetry(){if(OC)ocTurn(OC.last||'')}
 function ocHear(){try{const l=OC.hist[OC.hist.length-1];say(l.c||'')}catch(e){}}
 function ocRec(){const O=OC;if(!O)return;const a=$('oc-a');a.innerHTML='';aiMic($('oc-m'),t=>{ocLog('🧑 You:',t);ocTurn(t)},ocBtns)}
-function ocEnd(){const O=OC;if(!O)return;aiStop();const c=Math.max(1,O.c),g=O.g/c,v=O.v/c;
- if(O.c>=3){aiSave(o=>{const q=o.oc||{n:0,g:0,v:0,t:0};q.n+=1;q.g+=g;q.v+=v;q.t+=O.c;q.last=Date.now();o.oc=q});aiXP(8)}
- const row=(l,n)=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--bd)"><span>'+l+'</span><b style="color:#f59e0b">'+n+'</b></div>';
- const tips=[...new Set(O.tips)].slice(0,3);
- ov('🗨️ Well done!',card('<div style="text-align:center;font-size:44px">'+(O.c>=6?'🏆':O.c>=3?'👏':'💪')+'</div><div class="s3sub" style="text-align:center;margin-bottom:8px">You started with: '+esc(O.topic)+'</div>'+row('Your turns',O.c)+(O.c?row('Grammar',rpStars(g))+row('Vocabulary',rpStars(v)):'')+(tips.length?'<div class="s3lbl" style="margin-top:10px">Things to remember</div>'+tips.map(t=>'<div style="font-size:13px;margin:4px 0">💡 '+esc(t)+'</div>').join(''):'')+'<div class="s3sub" style="margin-top:8px">AI feedback can make mistakes.</div><div style="margin-top:12px;text-align:center">'+btn('New conversation','s3Game.ocMenu()')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));OC=null}
+function ocEnd(){const O=OC;if(!O)return;aiStop();try{if(rec)rec.abort()}catch(e){}
+ if(!O.c){ov('🗨️ Conversation ended',card('<div class="s3sub" style="text-align:center;margin-bottom:10px">You did not say anything yet, so there is no score. Try again, it is fun!</div><div style="text-align:center">'+btn('New conversation','s3Game.ocMenu()')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));OC=null;return}
+ const c=O.c,g=O.g/c,v=O.v/c,sc=O.sn?O.s/O.sn:Math.min(10,g+v);
+ if(c>=3){aiSave(o=>{const q=o.oc||{n:0,g:0,v:0,t:0};q.n+=1;q.g+=g;q.v+=v;q.t+=c;q.s=(q.s||0)+sc;q.last=Date.now();o.oc=q});aiXP(8)}
+ ov('🗨️ Conversation finished',card(aiEndHtml({sc,sub:'You started with: '+esc(O.topic),rows:[['Your turns',c],['Grammar',rpStars(g)],['Vocabulary',rpStars(v)]],mis:O.mis,tips:O.tips})+'<div style="margin-top:12px;text-align:center">'+btn('New conversation','s3Game.ocMenu()')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));OC=null}
 
 function rpRetry(){if(RP)rpTurn(RP.last||'')}
 function rpHear(){try{const l=RP.hist[RP.hist.length-1];say(l.c||'')}catch(e){}}
@@ -6368,10 +6407,11 @@ function rpRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognitio
   rec.onresult=e=>{got=true;const t=e.results[0][0].transcript;rpLog('🧑 You:',t);rpTurn(t)};
   rec.onerror=ev=>{got=true;const c=ev&&ev.error;m.textContent=c==='not-allowed'?'The microphone is blocked. Allow it for this site.':c==='no-speech'?'I did not hear anything. Try again, a little louder.':'I could not hear you. Try again.';a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')};
   rec.onend=()=>{if(!got){m.textContent='I did not hear anything. Try again.';a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')}};rec.start()}catch(e){m.textContent='The microphone is not available.'}}
-function rpEnd(){if(!RP)return;const c=Math.max(1,RP.c),g=RP.g/c,v=RP.v/c,r=RP.r/c;
- try{if(S.isStudent()&&RP.c>=2){const p=S.getProg(uid());const o=p.spk||{n:0,sum:0,sets:0,self:0,best:0};const q=o.rp||{n:0,g:0,v:0,r:0};q.n+=1;q.g+=g;q.v+=v;q.r+=r;q.last=Date.now();(q.u=q.u||{})[RP.u]=(q.u[RP.u]||0)+1;o.rp=q;p.spk=o;S.saveProg(p);const k='s3sx_'+uid()+'_'+S.dayKey(),used=S.ls.get(k,0),give=Math.max(0,Math.min(8,40-used));if(give){S.ls.set(k,used+give);S.addXP(give,'Speaking')}}}catch(e){}
- const row=(l,n)=>'<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--bd)"><span>'+l+'</span><b style="color:#f59e0b">'+rpStars(n)+'</b></div>';
- ov('💬 Well done!',card('<div style="text-align:center;font-size:44px">'+(g+v+r>=11?'🏆':g+v+r>=8?'👏':'💪')+'</div><div class="s3sub" style="text-align:center;margin-bottom:8px">Unit '+RP.u+': '+esc(RPU[RP.u-1])+'</div>'+row('Grammar',g)+row('Vocabulary',v)+row('Answering the question',r)+'<div class="s3sub" style="margin-top:8px">Pronunciation and fluency are checked in the "Coach feedback" button after each Listen and repeat sentence. AI feedback can make mistakes.</div><div style="margin-top:12px;text-align:center">'+btn('Another unit','s3Game.rpMenu')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));RP=null}
+function rpEnd(){if(!RP)return;aiStop();try{if(rec)rec.abort()}catch(e){}
+ if(!RP.c){ov('💬 Conversation ended',card('<div class="s3sub" style="text-align:center;margin-bottom:10px">You did not say anything yet, so there is no score. Try again, it is fun!</div><div style="text-align:center">'+btn('Another unit','s3Game.rpMenu')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));RP=null;return}
+ const c=RP.c,g=RP.g/c,v=RP.v/c,r=RP.r/c,sc=RP.sn?RP.s/RP.sn:Math.min(10,(g+v+r)/15*10);
+ try{if(S.isStudent()&&c>=2){const p=S.getProg(uid());const o=p.spk||{n:0,sum:0,sets:0,self:0,best:0};const q=o.rp||{n:0,g:0,v:0,r:0};q.n+=1;q.g+=g;q.v+=v;q.r+=r;q.s=(q.s||0)+sc;q.last=Date.now();(q.u=q.u||{})[RP.u]=(q.u[RP.u]||0)+1;o.rp=q;p.spk=o;S.saveProg(p);const k='s3sx_'+uid()+'_'+S.dayKey(),used=S.ls.get(k,0),give=Math.max(0,Math.min(8,40-used));if(give){S.ls.set(k,used+give);S.addXP(give,'Speaking')}}}catch(e){}
+ ov('💬 Conversation finished',card(aiEndHtml({sc,sub:'Unit '+RP.u+': '+esc(RPU[RP.u-1]),rows:[['Grammar',rpStars(g)],['Vocabulary',rpStars(v)],['Answering the question',rpStars(r)]],mis:RP.mis,tips:RP.tips})+'<div class="s3sub" style="margin-top:4px">Pronunciation and fluency are checked in the "Coach feedback" button after each Listen and repeat sentence.</div><div style="margin-top:12px;text-align:center">'+btn('Another unit','s3Game.rpMenu')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));RP=null}
 
 /* ================= SPEAKING PRACTICE (listen and repeat) ================= */
 let SP=null;
@@ -6387,7 +6427,7 @@ function spMenu(){clean();SP=null;const k=SPK(),P=spPool(),avg=k.n?Math.round(k.
  ov('🗣️ Speaking practice',card('<div class="s3sub" style="line-height:1.7;margin-bottom:10px">Listen to the sentence, then say it aloud. The app listens and shows which words were missing. Each set has 8 sentences.</div>'+
  (k.sets||k.self?'<div style="margin-bottom:10px" class="s3pill">Sets done: '+k.sets+(k.n?' · Average: '+avg+'%':'')+'</div>':'')+
  [1,2,3].map(l=>'<button class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.spStart('+l+')">'+['','🟢','🟡','🔴'][l]+' '+SPLV[l].n+'<br><span style="font-weight:400;font-size:12px">'+SPLV[l].d+' · '+P[l].length+' sentences</span></button>').join('')+
- (GEM.url?'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.rpMenu()">💬 Talk with the AI coach<br><span style="font-weight:400;font-size:12px">Pick a unit, 5 short turns, stars for grammar and vocabulary</span></button><button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.dlMenu()">🎭 Dialogue with a partner<br><span style="font-weight:400;font-size:12px">Listen to a dialogue, then play one of the two people</span></button><button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.ocMenu()">🗨️ Open conversation<br><span style="font-weight:400;font-size:12px">Pick a topic, then talk about anything you like</span></button>':'')+'<div class="s3sub" style="margin-top:6px">Works best in Chrome on Android with a microphone and internet. Scoring is approximate: it can miss words even when you said them well.</div>'))}
+ (GEM.url?'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.rpMenu()">💬 Talk with the AI coach<br><span style="font-weight:400;font-size:12px">Pick a unit, 5 short turns, stars for grammar and vocabulary</span></button><button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.dlMenu()">🎭 Dialogue with a partner<br><span style="font-weight:400;font-size:12px">Listen to a dialogue, then play one of the two people</span></button><button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.ocMenu()">🗨️ Open conversation<br><span style="font-weight:400;font-size:12px">Pick a topic, then talk about anything you like</span></button>':'')+'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.voiceMenu()">🔊 Coach voice<br><span style="font-weight:400;font-size:12px">Choose the voice you like best</span></button><div class="s3sub" style="margin-top:6px">Works best in Chrome on Android with a microphone and internet. Scoring is approximate: it can miss words even when you said them well.</div>'))}
 function spStart(l){clean();const P=spPool()[l];if(!P||P.length<8)return S.toast('Not enough sentences');
  const by={};shuf(P).forEach(x=>(by[x.q.unit]=by[x.q.unit]||[]).push(x));const us=shuf(Object.keys(by)),items=[];let k=0;while(items.length<8&&us.some(u=>by[u].length)){const u=us[k%us.length];if(by[u].length)items.push(by[u].pop());k++}
  SP={lv:l,items,i:0,res:[],best:0,tries:0,can:!!(window.SpeechRecognition||window.webkitSpeechRecognition)&&navigator.onLine,done:false};spDraw()}
@@ -6399,14 +6439,14 @@ function spAlign(target,heard){const a=norm(target).split(' '),b=norm(heard).spl
 function spHtml(t,hit){const w=spWords(t),nw=norm(t).split(' ');
  // map original tokens to normalized tokens (tokens that normalize to nothing stay neutral)
  let k=0;return w.map(x=>{const nx=norm(x);if(!nx)return esc(x);const parts=nx.split(' ').length;let ok=true;for(let c=0;c<parts;c++){if(!hit||!hit[k+c])ok=false}k+=parts;return hit?'<span style="'+(ok?'color:var(--ok,#16a34a);font-weight:700':'color:#e11d48;font-weight:700;text-decoration:underline')+'">'+esc(x)+'</span>':esc(x)}).join(' ')}
-function spDraw(){clean();const it=SP.items[SP.i];SP.best=0;SP.tries=0;SP.hit=null;
+function spDraw(){if(GEM.recStop)GEM.recStop();clean();const it=SP.items[SP.i];SP.coachBusy=0;SP.best=0;SP.tries=0;SP.hit=null;
  const head='<div class="s3sub" style="display:flex;justify-content:space-between"><span>Sentence '+(SP.i+1)+' / 8</span><span>'+SPLV[SP.lv].n+'</span></div><div class="lsbar" style="margin:6px 0 12px"><i style="width:'+Math.round(SP.i/8*100)+'%"></i></div>';
  const body='<div id="sp-t" style="background:var(--surf2);border:1px solid var(--bd);border-radius:14px;padding:14px;font-size:18px;line-height:1.7;margin-bottom:12px">'+esc(it.t)+'</div>'+
  '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="s3btn ghost" onclick="s3Game.spHear()">🔊 Hear it</button>'+(SP.can?'<button class="s3btn" id="sp-b" onclick="s3Game.spRec()">🎤 Say it</button>':'')+'</div>'+
  '<div id="sp-m" class="s3sub" style="margin-top:12px;line-height:1.6">'+(SP.can?'Listen first, then press Say it and repeat the sentence.':'')+'</div><div id="sp-a" style="margin-top:10px"></div>';
  ov('🗣️ Speaking practice',card(head+body)+'<div style="text-align:center">'+btn('Stop and exit','s3Game.close()',1)+'</div>');
  if(!SP.can)spManual(!(window.SpeechRecognition||window.webkitSpeechRecognition)?'This browser cannot listen to you (for example Safari on iPhone). Use Chrome on Android for scoring. You can still practise:':'You are offline, so scoring is off. You can still practise:');
- setTimeout(()=>{if(SP&&!SP.done)say(it.t)},400)}
+ }
 function spHear(){if(SP)say(SP.items[SP.i].t)}
 function spManual(msg){const m=$('sp-m'),a=$('sp-a');if(!m||!a)return;m.innerHTML=msg+'<br>Listen, say the sentence aloud 2 times, then check yourself.';a.innerHTML=btn('✅ I said it clearly','s3Game.spSelf(1)')+btn('Again','s3Game.spHear()',1)}
 function spSelf(){if(!SP)return;SP.res.push({pct:-1,self:1});spAdvance()}
@@ -6442,7 +6482,7 @@ function s3AiBox(K){let h='';const q=K.rp,c=K.cf,f=(a,n)=>(a/n).toFixed(1)+'/5';
  const d=K.dl,o=K.oc;if(d&&d.n)h+='<div style="margin-top:8px;font-size:13px"><b>🎭 Dialogues</b> ('+d.n+' done)<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"><span class="s3pill">Average '+(d.s/d.n).toFixed(1)+'/10</span></div>'+(d.u?'<div class="s3sub" style="margin-top:4px">Units: '+Object.keys(d.u).sort((a,b)=>a-b).map(u=>'U'+u).join(', ')+'</div>':'')+'</div>';
  if(o&&o.n)h+='<div style="margin-top:8px;font-size:13px"><b>🗨️ Open conversations</b> ('+o.n+' done, '+o.t+' turns)<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"><span class="s3pill">Grammar '+f(o.g,o.n)+'</span><span class="s3pill">Vocabulary '+f(o.v,o.n)+'</span></div></div>';
  return h?h+'<div class="s3sub" style="margin-top:4px">AI scores are approximate and only a guide.'+(q&&q.last?' Last role-play '+new Date(q.last).toLocaleDateString()+'.':'')+'</div>':''}
-window.s3Game={dlMenu,dlListen,dlPlay,dlHide,dlRole,dlSay,dlHint,dlSkip,dlNext,dlEnd,ocMenu,ocStart,ocRetry,ocRec,ocHear,ocEnd,spCoach,rpRetry,rpMenu,rpStart,rpRec,rpHear,rpEnd,spk:spMenu,spStart,spHear,spRec,spNext,spSelf,rec:recStart,open:menu,menu,close,speed,lives,match,ans:gans,mpick,place:placeStart,placeGo,pans,hear,speak,spDone,retake,placeInfo:()=>readPlace()};
+window.s3Game={spCoachStop,voiceMenu,dlMenu,dlListen,dlPlay,dlHide,dlRole,dlSay,dlHint,dlSkip,dlNext,dlEnd,ocMenu,ocStart,ocRetry,ocRec,ocHear,ocEnd,spCoach,rpRetry,rpMenu,rpStart,rpRec,rpHear,rpEnd,spk:spMenu,spStart,spHear,spRec,spNext,spSelf,rec:recStart,open:menu,menu,close,speed,lives,match,ans:gans,mpick,place:placeStart,placeGo,pans,hear,speak,spDone,retake,placeInfo:()=>readPlace()};
 })();
 
 </script>
