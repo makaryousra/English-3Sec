@@ -4957,7 +4957,7 @@ const BDG=[['first','👣','First Steps','Answer 10 questions',x=>x.att>=10],['s
 ['sh','🎯','Sharpshooter','90% accuracy after 20 answers',x=>x.att>=20&&x.acc>=90],['ace','🧠','Accuracy Ace','85% accuracy after 100 answers',x=>x.att>=100&&x.acc>=85],
 ['m10','🌟','Mastery 10','Master 10 questions',x=>x.mastered>=10],['m25','🏆','Master','Master 25 questions',x=>x.mastered>=25],['m50','🎓','Grand Master','Master 50 questions',x=>x.mastered>=50],
 ['a100','📚','Bookworm','Answer 100 questions',x=>x.att>=100],['a300','📖','Scholar','Answer 300 questions',x=>x.att>=300],['a600','🦉','Wise Owl','Answer 600 questions',x=>x.att>=600],
-['x500','⭐','500 XP','Earn 500 XP',x=>x.xp>=500],['x1000','✨','1000 XP','Earn 1000 XP',x=>x.xp>=1000],['x2500','🌠','2500 XP','Earn 2500 XP',x=>x.xp>=2500]];
+['x500','⭐','500 XP','Earn 500 XP',x=>x.xp>=500],['x1000','✨','1000 XP','Earn 1000 XP',x=>x.xp>=1000],['x2500','🌠','2500 XP','Earn 2500 XP',x=>x.xp>=2500],['scout','🗺️','Site Scout','Finish the welcome quest',x=>((x.p&&x.p.log)||[]).some(e=>e.c==='Quest complete')]];
 const badges=x=>BDG.filter(b=>b[4](x)).map(b=>b[1]+' '+b[2]);
 const ach=(function(){const sk=id=>'s3ach_'+id;
  function pop(ic,t,s){const o=document.createElement('div');o.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%) scale(.6);z-index:99999;background:var(--surf,#fff);color:var(--tx,#111);border:2px solid var(--ac,#4f46e5);border-radius:20px;padding:18px 26px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);opacity:0;transition:all .35s cubic-bezier(.3,1.6,.5,1);max-width:86vw';o.innerHTML='<div style="font-size:46px">'+ic+'</div><div style="font-weight:800;font-size:17px">'+esc(t)+'</div><div style="font-size:13px;opacity:.75">'+esc(s)+'</div>';document.body.appendChild(o);requestAnimationFrame(()=>{o.style.opacity=1;o.style.transform='translateX(-50%) scale(1)'});setTimeout(()=>{o.style.opacity=0;setTimeout(()=>o.remove(),400)},3200);o.onclick=()=>o.remove()}
@@ -8092,6 +8092,126 @@ C.tdel=async function(id){if(!confirm('Remove this friendship?'))return;try{awai
 C.tdis=async function(v){var id=($('s3com-sel')||{}).value;if(!id)return;try{await F().setDoc(dref('publicProfiles',id),{fdis:v,updated:Date.now()},{merge:true});toast(v?'Friends turned off for this student':'Friends turned on');C.teacher()}catch(e){toast(errMsg(e))}};
 /* start once logged in */
 var t0=0;setInterval(function(){var u=null;try{u=me()}catch(e){}if(u&&u!==t0){t0=u;setTimeout(C.boot,2500)}if(!u)t0=0},1500);
+})();
+</script>
+<script id="s3-tour">
+/* S3 UPGRADE: welcome tour + New Recruit quest (game-style onboarding).
+   Uses only existing XP paths (logEv/addXP) and local flags. No new Firebase reads/writes. */
+(function(){
+const $=id=>document.getElementById(id);
+const S=()=>window.S3;
+const stu=()=>{try{return S()&&S().isStudent()}catch(e){return false}};
+const toast=m=>{try{S().toast(m)}catch(e){}};
+const seen=k=>{try{const s=S();if(!s.isStudent())return false;const p=s.getProg(s.SESS().id);return (p.log||[]).some(e=>e.c===k)}catch(e){return false}};
+const award=(xp,label)=>{const s=S();if(seen(label))return false;s.addXP(xp,label);return true};
+
+/* ---------- missions ---------- */
+const LBL={m1:'Quest: First Blood',m2:'Quest: Ear Check',m3:'Quest: Daily Dose',m4:'Quest: Say What?',m5:'Quest: Fame Check'};
+const MISSIONS=[
+ {id:'m1',ic:'🩸',t:'First Blood',d:'Answer 1 question in the Question Bank.',go:()=>goTab('bank')},
+ {id:'m2',ic:'👂',t:'Ear Check',d:'Answer 1 question in Listening. Yes, really listen.',go:()=>goTab('listen')},
+ {id:'m3',ic:'⚡',t:'Daily Dose',d:"Finish today's Quick 5 in Challenges.",go:()=>goTab('play')},
+ {id:'m4',ic:'🗣️',t:'Say What?',d:'Say 1 sentence in Speaking. Out loud!',go:()=>{if(window.s3Game&&s3Game.spk)s3Game.spk();else goTab('play')}},
+ {id:'m5',ic:'🏆',t:'Fame Check',d:'Open the Leaderboard and find your name.',go:()=>goTab('board')}
+];
+const questDone=()=>MISSIONS.every(m=>seen(LBL[m.id]));
+const doneCount=()=>MISSIONS.filter(m=>seen(LBL[m.id])).length;
+function goTab(t){closeSheet();try{if(typeof switchTab==='function')switchTab(t)}catch(e){}}
+function complete(id){
+ if(!stu()||seen(LBL[id]))return;
+ const m=MISSIONS.find(x=>x.id===id);
+ if(award(5,LBL[id]))toast('✅ Mission done: '+m.t+' · +5 XP');
+ if(questDone()){if(award(15,'Quest complete'))setTimeout(()=>toast('🏁 Quest complete! +15 XP and a new badge'),900);hidePill()}
+ else showPill();
+ renderSheet();
+}
+/* hooks: wrap the existing XP/navigation functions (they are looked up on window at call time) */
+try{const _so=window.selectOption;if(_so)window.selectOption=function(){const r=_so.apply(this,arguments);setTimeout(()=>complete('m1'),60);return r}}catch(e){}
+try{const _le=S().logEv;S().logEv=function(){const r=_le.apply(this,arguments);try{if(arguments[3]==='ls')complete('m2')}catch(e){}return r}}catch(e){}
+try{const _ax=S().addXP;S().addXP=function(){const r=_ax.apply(this,arguments);try{if(arguments[1]==='Quick 5')complete('m3');if(arguments[1]==='Speaking')complete('m4')}catch(e){}return r}}catch(e){}
+try{const _st=window.switchTab;if(_st)window.switchTab=function(){const r=_st.apply(this,arguments);try{if(arguments[0]==='board')complete('m5')}catch(e){}return r}}catch(e){}
+
+/* ---------- quest pill + sheet ---------- */
+let pill=null;
+function showPill(){
+ if(!stu()||questDone())return;
+ if(!pill){pill=document.createElement('button');pill.style.cssText='position:fixed;right:12px;bottom:14px;z-index:99970;border:2px solid var(--ac,#4f46e5);background:var(--surf,#fff);color:var(--tx,#0f172a);border-radius:999px;padding:9px 14px;font-weight:800;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer';pill.onclick=openSheet;document.body.appendChild(pill)}
+ pill.textContent='🗺️ Quest '+doneCount()+'/5';pill.style.display='block'}
+function hidePill(){if(pill)pill.style.display='none'}
+let sheet=null;
+function openSheet(){if(!stu())return;closeSheet();
+ const bg=document.createElement('div');bg.id='s3-quest-bg';bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99995;display:flex;align-items:flex-end;justify-content:center';bg.onclick=e=>{if(e.target===bg)closeSheet()};
+ const rows=MISSIONS.map(m=>{const dn=seen(LBL[m.id]);
+  return '<div style="display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--bd,#e2e8f0)">'
+  +'<div style="font-size:24px">'+(dn?'✅':m.ic)+'</div>'
+  +'<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:15px'+(dn?';opacity:.55;text-decoration:line-through':'')+'">'+m.t+'</div><div style="font-size:12.5px;opacity:.7">'+m.d+'</div></div>'
+  +(dn?'<div style="font-size:12px;font-weight:700;opacity:.55">+5 XP</div>':'<button style="border:0;background:var(--ac,#4f46e5);color:#fff;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer" data-qgo="'+m.id+'">Go →</button>')
+  +'</div>'}).join('');
+ bg.innerHTML='<div style="width:100%;max-width:560px;max-height:86vh;overflow:auto;background:var(--surf,#fff);color:var(--tx,#0f172a);border-radius:22px 22px 0 0;padding:18px;box-sizing:border-box">'
+  +'<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🗺️ New Recruit Quest</b><button style="border:1px solid var(--bd,#e2e8f0);background:var(--surf2,#f1f5f9);color:inherit;border-radius:10px;width:34px;height:34px;font-size:15px;cursor:pointer" data-qclose="1">✕</button></div>'
+  +'<div style="font-size:13px;opacity:.75;margin:6px 0 10px">5 small missions. Finish them all: +40 XP and the 🗺️ Site Scout badge. '+doneCount()+'/5 done.</div>'
+  +rows+'</div>';
+ document.body.appendChild(bg);sheet=bg;
+ bg.querySelectorAll('[data-qgo]').forEach(b=>b.onclick=()=>{const m=MISSIONS.find(x=>x.id===b.getAttribute('data-qgo'));if(m)m.go()});
+ const x=bg.querySelector('[data-qclose]');if(x)x.onclick=closeSheet}
+function closeSheet(){if(sheet){sheet.remove();sheet=null}}
+function renderSheet(){if(sheet){openSheet()}}
+
+/* ---------- spotlight tour ---------- */
+const STEPS=[
+ {sel:'#s3-chip',t:'This is YOU 👋',b:'Your rank, XP and 🔥 streak live here. Open the app every day or the fire goes out. No pressure. OK, a little pressure.'},
+ {sel:'button[aria-label="Menu"]',t:'The magic menu',b:'Everything hides in here: Bank, Reading, Listening, Speaking, Games. Like a restaurant menu, but free.'},
+ {sel:'#filter-section',t:'Find your questions',b:'Pick your unit and lesson, or type a word. The list gets smaller. Magic.'},
+ {sel:'#questions-container>*',t:'Tap and earn',b:'Choose an answer. Right = +10 XP. Wrong = the question goes to Mastery jail and comes back tomorrow. You win either way.'},
+ {sel:'button[aria-label="Settings"]',t:'Your controls',b:'Colors, voice speed, and this tour (if you ever miss it) are in here. Tour over. Now: missions!'}
+];
+let T=null;
+function startTour(){if(!stu()||T)return;T={i:0};
+ T.ring=document.createElement('div');T.ring.style.cssText='position:fixed;z-index:99992;border:3px solid var(--ac,#6366f1);border-radius:14px;box-shadow:0 0 0 9999px rgba(2,6,23,.72);pointer-events:none;transition:all .25s;display:none';
+ T.bub=document.createElement('div');T.bub.id='s3-tour-bubble';T.bub.style.cssText='position:fixed;z-index:99993;background:var(--surf,#fff);color:var(--tx,#0f172a);border:1px solid var(--bd,#e2e8f0);border-radius:16px;padding:14px;max-width:320px;box-shadow:0 16px 44px rgba(0,0,0,.4);box-sizing:border-box';
+ document.body.append(T.ring,T.bub);step(0)}
+function step(i){
+ if(!T)return;
+ if(i>=STEPS.length)return endTour(true);
+ T.i=i;const s=STEPS[i];let el=document.querySelector(s.sel);
+ if(!el)return step(i+1);
+ try{el.scrollIntoView({block:'center',behavior:'instant'})}catch(e){try{el.scrollIntoView()}catch(_){} }
+ const r=el.getBoundingClientRect(),pad=6,W=innerWidth,H=innerHeight;
+ T.ring.style.display='block';
+ T.ring.style.left=Math.max(4,r.left-pad)+'px';T.ring.style.top=Math.max(4,r.top-pad)+'px';
+ T.ring.style.width=Math.min(W-8,r.width+pad*2)+'px';T.ring.style.height=Math.min(H-8,r.height+pad*2)+'px';
+ const last=i===STEPS.length-1;
+ T.bub.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:16px">'+s.t+'</b><span style="font-size:12px;opacity:.6;font-weight:700">'+(i+1)+' / '+STEPS.length+'</span></div>'
+  +'<div style="font-size:13.5px;line-height:1.5;margin:8px 0 12px">'+s.b+'</div>'
+  +'<div style="display:flex;justify-content:space-between;align-items:center"><button data-tskip="1" style="border:0;background:none;color:inherit;opacity:.6;font-size:12.5px;cursor:pointer;text-decoration:underline">Skip tour</button>'
+  +'<button data-tnext="1" style="border:0;background:var(--ac,#4f46e5);color:#fff;border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer">'+(last?'Start my missions 🚀':'Next →')+'</button></div>';
+ T.bub.querySelector('[data-tnext]').onclick=()=>step(i+1);
+ T.bub.querySelector('[data-tskip]').onclick=()=>endTour(false);
+ const bw=Math.min(320,W-24);T.bub.style.width=bw+'px';
+ const bh=T.bub.offsetHeight;let top=r.bottom+12;if(top+bh>H-8)top=r.top-bh-12;if(top<8)top=Math.max(8,H-bh-8);
+ let left=r.left+r.width/2-bw/2;left=Math.max(12,Math.min(W-bw-12,left));
+ T.bub.style.top=top+'px';T.bub.style.left=left+'px'}
+function endTour(fin){if(!T)return;T.ring.remove();T.bub.remove();T=null;
+ try{S().ls.set('s3tour_v1_'+S().SESS().id,1)}catch(e){}
+ if(questDone())return;
+ setTimeout(()=>{openSheet();showPill()},fin?150:400)}
+
+/* ---------- settings: replay row ---------- */
+setInterval(()=>{try{const body=$('s3-set-body');if(!body||$('s3-tour-row'))return;
+ const r=document.createElement('div');r.className='row';r.id='s3-tour-row';
+ r.innerHTML='<span>🗺️ Tutorial</span>';
+ const b=document.createElement('button');b.className='s3btn';b.textContent='Replay the tour';b.onclick=()=>{try{s3Shell.closeS()}catch(e){};setTimeout(startTour,300)};
+ r.appendChild(b);body.appendChild(r)}catch(e){}},1000);
+
+/* ---------- auto start on first login ---------- */
+let tries=0;
+const boot=setInterval(()=>{tries++;try{
+ const g=$('s3-gate'),inApp=stu()&&(!g||getComputedStyle(g).display==='none')&&$('s3-chip');
+ if(inApp){clearInterval(boot);
+  let done=0;try{done=S().ls.get('s3tour_v1_'+S().SESS().id,0)}catch(e){}
+  if(!done)setTimeout(startTour,900);else if(!questDone())showPill()}}catch(e){}
+ if(tries>90)clearInterval(boot)},700);
+window.s3Tour={start:startTour,quest:openSheet};
 })();
 </script>
 </body>
