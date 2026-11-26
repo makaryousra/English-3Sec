@@ -170,8 +170,10 @@ function fam(l){l=String(l||'');if(location.protocol==='file:')return null;if(/^
 function el(){if(!A){A=new Audio();try{A.preservesPitch=true}catch(e){}}return A}
 function unlock(){document.removeEventListener('touchend',unlock,true);document.removeEventListener('click',unlock,true);try{var a=el();a.src=SIL;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
 document.addEventListener('touchend',unlock,true);document.addEventListener('click',unlock,true);
-function load(f){if(idx[f])return Promise.resolve(idx[f]);if(pend[f])return pend[f];
- pend[f]=fetch('audio_index_'+f+'.json').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){idx[f]=j;return j}).catch(function(){setTimeout(function(){delete pend[f]},60000);return null});return pend[f]}
+function load(f,force){if(idx[f]&&!force)return Promise.resolve(idx[f]);if(pend[f]&&!force)return pend[f];
+ var p=fetch('audio_index_'+f+'.json',{cache:force?'reload':'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){idx[f]=j;return j}).catch(function(){return idx[f]||null});
+ pend[f]=p;p.then(function(j){if(!j&&pend[f]===p)delete pend[f]});return p}
+function waitIdx(f,ms){var p=load(f);return Promise.race([p,new Promise(function(r){setTimeout(function(){r(null)},ms)})])}
 var bad={};
 function clip(f,ix,e){var k=f+e.join(','),pk=ix.p[e[0]];if(cache.has(k))return Promise.resolve(cache.get(k));
  if(bad[pk]&&Date.now()-bad[pk]<20000)return Promise.resolve(null);
@@ -182,12 +184,17 @@ function clip(f,ix,e){var k=f+e.join(','),pk=ix.p[e[0]];if(cache.has(k))return P
   if(cache.size>400){var o=cache.keys().next().value;try{URL.revokeObjectURL(cache.get(o))}catch(x){}cache.delete(o)}cache.set(k,u);return u}).catch(function(){return null})}
 window.S3A={fam:fam,
  stop:function(){if(A){try{A.onended=A.onerror=null;A.pause()}catch(e){}}},
+ prefetch:function(f){if(f&&location.protocol!=='file:')load(f)},
  play:function(f,text,rate,isCur,cb){if(!rangeOK)return Promise.resolve(false);
   var key=H(String(text).toLowerCase());
-  return load(f).then(function(ix){if(!ix)return false;var e=ix.m[key];if(!e)return false;
+  function go(ix){var e=ix&&ix.m[key];if(!e)return Promise.resolve(null);
    return clip(f,ix,e).then(function(u){if(!u)return false;if(!isCur())return true;
     var a=el();a.onended=function(){if(isCur()&&cb)cb()};a.onerror=null;a.src=u;a.playbackRate=rate||1;
-    var p=a.play();return p&&p.then?p.then(function(){return true},function(){return false}):true})})}};
+    var p=a.play();return p&&p.then?p.then(function(){return true},function(){return false}):true})}
+  return waitIdx(f,15000).then(function(ix){if(!ix)return false;
+   return go(ix).then(function(r){if(r!==null)return r;
+    if(ix._fresh)return false;
+    return load(f,true).then(function(j){if(!j)return false;j._fresh=1;return go(j).then(function(r2){return r2===null?false:r2})})})})}};
 try{if(window.speechSynthesis){var oc=speechSynthesis.cancel.bind(speechSynthesis);speechSynthesis.cancel=function(){window.S3A.stop();return oc()}}}catch(e){}
 })();
 </script>
@@ -3269,10 +3276,10 @@ window.s3Shuf={ok,
 
       const explanationHTML = isAnswered ? `
         <div class="mt-4 p-4 rounded-xl bg-indigo-50/80 border border-indigo-100 text-sm text-slate-700 space-y-2">
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex items-start gap-2">
+          <div class="flex items-start justify-between gap-2" style="flex-wrap:wrap">
+            <div class="flex items-start gap-2" style="flex:1 1 260px;min-width:0">
               <span class="text-indigo-600 font-bold text-base leading-none mt-0.5">💡</span>
-              <div>
+              <div style="min-width:0">
                 <span class="font-bold text-indigo-950">Explanation: </span>
                 <span>${makeInteractiveText(q.explanation)}</span>
               </div>
@@ -4810,8 +4817,8 @@ function fillVoiceSel(){const s=$('s3-voice');vStatus();if(!s)return;const lang=
  s.value=list.some(v=>v.name===cur)?cur:'auto'}
 window.s3Voice=function(v){ls.set(K_VOICE+'_'+nl(state.voiceAccent||'en-US'),v);vStatus();speak(SAMPLE())};
 const SAMPLE=()=>nl(state.voiceAccent)==='en-gb'?'Hello! This is the British accent. Listen carefully, then choose the best answer.':'Hello! This is the American accent. Listen carefully, then choose the best answer.';
-window.updateSpeechSettings=function(){const r0=state.voiceRate;state.voiceAccent=$('voice-accent').value;state.voiceRate=parseFloat($('voice-rate').value)||1;saveAud();fillVoiceSel();if(state.voiceRate!==r0)speak(SAMPLE())};
-(function restoreAud(){const a=ls.get(AUD_K,null);if(a){state.voiceAccent=a.accent==='en-GB'?'en-GB':'en-US';state.voiceRate=a.rate||1}
+window.updateSpeechSettings=function(){const r0=state.voiceRate;state.voiceAccent=$('voice-accent').value;state.voiceRate=parseFloat($('voice-rate').value)||1;saveAud();try{S3A.prefetch(S3A.fam(state.voiceAccent))}catch(e){}fillVoiceSel();if(state.voiceRate!==r0)speak(SAMPLE())};
+setTimeout(function(){try{S3A.prefetch(S3A.fam(state.voiceAccent||'en-US'))}catch(e){}},3000);(function restoreAud(){const a=ls.get(AUD_K,null);if(a){state.voiceAccent=a.accent==='en-GB'?'en-GB':'en-US';state.voiceRate=a.rate||1}
  const set=()=>{const sa=$('voice-accent'),sr=$('voice-rate');if(sa)sa.value=state.voiceAccent;if(sr)sr.value=String(state.voiceRate||1)};
  window.__restoreAudUI=set})();
 
