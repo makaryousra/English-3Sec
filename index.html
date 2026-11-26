@@ -190,7 +190,7 @@ var done=0;function fin(){if(done)return;done=1;if(mo)mo.disconnect();d.classLis
 function ready(g){return g&&(g.style.display==='none'||g.children.length>0)}
 var mo=new MutationObserver(function(){var g=document.getElementById('s3-gate');if(!g)return;if(ready(g))return fin();if(!g._o){g._o=1;mo.observe(g,{attributes:true,attributeFilter:['style'],childList:true})}});
 mo.observe(document,{childList:true,subtree:true});
-setTimeout(fin,10000)}catch(e){document.documentElement.classList.remove('s3-boot')}})();</script>
+addEventListener('load',function(){setTimeout(fin,4000)});setTimeout(fin,90000)}catch(e){document.documentElement.classList.remove('s3-boot')}})();</script>
 <style id="s3-boot-css">
 #s3-splash{display:none}
 html.s3-boot body>*:not(#s3-splash):not(script):not(style){visibility:hidden}
