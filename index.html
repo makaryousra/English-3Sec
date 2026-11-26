@@ -221,9 +221,17 @@ function waitIdx(f,ms){var p=load(f);return Promise.race([p,new Promise(function
 var bad={},rangeBad=0,blocks={},bkeys=[],BLOCK=160000;
 function mk(k,ab){var u=URL.createObjectURL(new Blob([ab],{type:'audio/mpeg'}));
  if(cache.size>400){var o=cache.keys().next().value;try{URL.revokeObjectURL(cache.get(o))}catch(x){}cache.delete(o)}cache.set(k,u);return u}
-function rng(pk,s,n,quiet){var ac=window.AbortController?new AbortController():null,t=ac?setTimeout(function(){try{ac.abort()}catch(x){}},quiet?40000:25000):0;
+var fullP={},rbroken=false;try{rbroken=localStorage.getItem('s3rb')==='1'}catch(x){}
+function fullBlob(pk){if(fullP[pk])return fullP[pk];
+ var p=(window.caches?caches.open('s3-aipk').then(function(ch){return ch.match(pk)}).then(function(m){return m?m.blob():null}).catch(function(){return null}):Promise.resolve(null)).then(function(b){if(b&&b.size>1000)return b;
+  return fetch(pk).then(function(r){if(!r.ok)throw 0;return r.blob()}).then(function(bl){try{if(window.caches)caches.open('s3-aipk').then(function(ch){return ch.put(pk,new Response(bl))}).catch(function(){})}catch(x){}return bl})}).catch(function(){delete fullP[pk];S3A.why2='fullpack-failed';return null});
+ fullP[pk]=p;return p}
+function sliceFull(pk,s,n){return fullBlob(pk).then(function(b){return b?b.slice(s,s+n).arrayBuffer():null})}
+function rng(pk,s,n,quiet){
+ if(fullP[pk]||rbroken){if(quiet&&!fullP[pk])return Promise.resolve(null);return sliceFull(pk,s,n)}
+ var ac=window.AbortController?new AbortController():null,t=ac?setTimeout(function(){try{ac.abort()}catch(x){}},quiet?40000:25000):0;
  return fetch(pk,{headers:{Range:'bytes='+s+'-'+(s+n-1)},signal:ac?ac.signal:undefined}).then(function(r){clearTimeout(t);
-  if(r.status===200){S3A.why2='range200';if(!quiet)rangeBad=Date.now()+30000;try{r.body&&r.body.cancel()}catch(x){}return null}
+  if(r.status===200){S3A.why2='range200';try{r.body&&r.body.cancel()}catch(x){}rbroken=true;try{localStorage.setItem('s3rb','1')}catch(x){}if(quiet)return null;return sliceFull(pk,s,n)}
   if(r.status!==206){S3A.why2='status'+r.status;return null}return r.arrayBuffer()}).catch(function(){clearTimeout(t);S3A.why2='fetch-timeout';return null})}
 function keep(pk,s,b){if(!blocks[pk])bkeys.push(pk);blocks[pk]={s:s,b:b};while(bkeys.length>6){delete blocks[bkeys.shift()]}}
 function ahead(pk,s){var sv=false;try{sv=navigator.connection&&navigator.connection.saveData}catch(x){}if(sv)return;var bl=blocks[pk];if(bl&&s>=bl.s&&s<bl.s+bl.b.byteLength)return;
