@@ -7727,7 +7727,7 @@ if(matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
 (function(){
 var S=window.S3,$=function(id){return document.getElementById(id)},esc=function(t){return S?S.esc(t):String(t)};
 if(!S)return;
-var st={mode:'students',cls:'all',id:null,q:''};
+var st={mode:'students',cls:'all',id:null,q:'',range:7,lim:30,af:null};
 var SKILLS=[['Grammar',function(c){return c==='Grammar'}],['Vocabulary',function(c){return /Vocabulary|Idiom|Spelling/.test(c||'')}],['Reading',function(c){return c==='Reading'}],['Listening',function(c){return c==='Listening'}],['Rewrite',function(c){return c==='Rewrite'}],['Translation',function(c){return c==='Translation'}]];
 var DAY=864e5,COL={g:'#16a34a',a:'#f59e0b',r:'#e11d48',n:'#94a3b8'};
 function pct(o,n){return n?Math.round(o/n*100):null}
@@ -7787,7 +7787,7 @@ function classes(){var m={};students().forEach(function(s){if(s.cls)m[s.cls]=1})
 function byId(id){return students().filter(function(s){return s.id===id})[0]}
 function shown(){return students().filter(function(s){return st.cls==='all'||s.cls===st.cls}).slice().sort(function(a,b){return (a.cls||'').localeCompare(b.cls||'')||String(a.name).localeCompare(String(b.name))})}
 function chips(){var h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">';['all'].concat(classes()).forEach(function(c){h+='<button class="s3btn '+(c===st.cls?'':'ghost')+'" style="padding:5px 12px;font-size:12px" onclick="s3Track.cls(\''+c+'\')">'+(c==='all'?'All classes':'Class '+esc(c))+'</button>'});return h+'</div>'}
-function head(){return card('<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between"><h2 style="font-size:20px;font-weight:800">📈 Tracker</h2><div style="display:flex;gap:6px"><button class="s3btn '+(st.mode==='students'?'':'ghost')+'" onclick="s3Track.mode(\'students\')">Students</button><button class="s3btn '+(st.mode==='classes'?'':'ghost')+'" onclick="s3Track.mode(\'classes\')">Classes</button></div></div><div class="s3sub">Everything here comes from recorded answers, speaking results and placement tests. Nothing is guessed.</div>'+chips())}
+function head(){return card('<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between"><h2 style="font-size:20px;font-weight:800">📈 Tracker</h2><div style="display:flex;gap:6px"><button class="s3btn '+(st.mode==='students'?'':'ghost')+'" onclick="s3Track.mode(\'students\')">Students</button><button class="s3btn '+(st.mode==='classes'?'':'ghost')+'" onclick="s3Track.mode(\'classes\')">Classes</button><button class="s3btn '+(st.mode==='activity'?'':'ghost')+'" onclick="s3Track.mode(\'activity\')">Activity</button></div></div><div class="s3sub">Everything here comes from recorded answers, speaking results and placement tests. Nothing is guessed.</div>'+chips())}
 /* ---------- students list ---------- */
 function listRows(){var q=(st.q||'').toLowerCase();var rows=shown().filter(function(s){return !q||String(s.name).toLowerCase().indexOf(q)>=0}).map(function(s){var a=analyze(s),f=flag(a),sp=a.speak&&a.speak.lv?a.speak.lv[2]+' '+a.speak.lv[1]+' · '+a.speak.score+'%':'-',L=overall(a);
  return '<tr style="cursor:pointer" onclick="s3Track.open(\''+esc(s.id)+'\')"><td>'+esc(s.cls||'-')+'</td><td><b>'+esc(s.name)+'</b></td><td>'+(a.acc==null?'-':a.acc+'%')+' <span class="s3sub">'+a.n+' ans.</span></td><td>'+pill(L)+'</td><td>'+sp+'</td><td>'+esc(ago(a.x.last))+'</td><td><span class="s3pill" style="border-color:'+f.c+';color:'+f.c+'">'+f.t+'</span></td></tr>'}).join('');
@@ -7816,7 +7816,7 @@ function profileHtml(a,forPrint){
  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:14px"><div><div class="s3lbl">Accuracy by unit</div>'+un+'</div><div><div class="s3lbl">Questions missed more than once</div>'+(mis?'<ul style="margin:6px 0 0 16px;font-size:12px">'+mis+'</ul>':'<p class="s3sub">None yet.</p>')+'<div class="s3lbl" style="margin-top:14px">Activity</div>'+act+'</div></div>'+
  '<div class="s3lbl" style="margin-top:14px">Teacher comment</div>'+note+'<div class="s3sub" style="margin-top:10px">Speaking scores come from phone speech recognition and the AI coach, so they are approximate.</div></div>'}
 function renderProfile(v){var s=byId(st.id);if(!s){st.id=null;return renderList(v)}var a=analyze(s);
- v.innerHTML='<div style="display:grid;gap:12px;max-width:980px;margin:0 auto"><div id="trk-ctl" class="trk-noprint" style="display:flex;gap:8px;flex-wrap:wrap"><button class="s3btn ghost" onclick="s3Track.back()">← All students</button><button class="s3btn" onclick="s3Track.print()">🖨️ Print / PDF</button><button class="s3btn ghost" onclick="s3Track.wa()">📲 WhatsApp summary</button></div>'+profileHtml(a)+'</div>'}
+ v.innerHTML='<div style="display:grid;gap:12px;max-width:980px;margin:0 auto"><div id="trk-ctl" class="trk-noprint" style="display:flex;gap:8px;flex-wrap:wrap"><button class="s3btn ghost" onclick="s3Track.back()">← All students</button><button class="s3btn" onclick="s3Track.print()">🖨️ Print / PDF</button><button class="s3btn ghost" onclick="s3Track.wa()">📲 WhatsApp summary</button><button class="s3btn ghost" onclick="s3Track.only(\''+esc(s.id)+'\')">📜 Activity</button></div>'+profileHtml(a)+'</div>'}
 /* ---------- class report ---------- */
 function classHtml(forPrint){
  var list=shown(),A=list.map(analyze),act=A.filter(function(a){return a.n>0});
@@ -7853,10 +7853,47 @@ function classHtml(forPrint){
  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:16px"><div><div class="s3lbl">Needs attention</div>'+attH+'</div><div><div class="s3lbl">Questions most students miss</div>'+(hard?'<ul style="margin:6px 0 0 16px;font-size:12px">'+hard+'</ul>':'<p class="s3sub">Not enough data yet (needs 5+ tries and 2+ students wrong).</p>')+'</div></div>'+
  '<div class="s3lbl" style="margin-top:16px">Students</div><div style="overflow-x:auto"><table class="s3tbl"><thead><tr><th>Class</th><th>Student</th><th>XP</th><th>Accuracy</th><th>Answered</th><th>Speaking</th><th>Placement</th><th>Last active</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'}
 function renderClass(v){v.innerHTML='<div style="display:grid;gap:12px;max-width:980px;margin:0 auto">'+head()+'<div class="trk-noprint" style="display:flex;gap:8px;flex-wrap:wrap"><button class="s3btn" onclick="s3Track.print()">🖨️ Print / PDF</button><button class="s3btn ghost" onclick="s3Track.csv()">⬇ CSV</button></div>'+classHtml()+'</div>'}
+
+/* ---------- activity feed (built from answers already saved per student; no extra Firebase reads or writes) ---------- */
+var SEC={q:'Question bank',srs:'Mastery review',rw:'Rewrite',tr:'Translation',reading:'Reading',ls:'Listening',dict:'Spelling',rec:'Recommended practice',weekly:'Weekly challenge'};
+var SPKN={lr:'Listen and repeat',rp:'Talk with the coach',dl:'Dialogue',oc:'Open conversation'};
+function sessionsFor(s,since){
+ var p=S.statsFor(s).p||{},log=(p.log||[]).filter(function(e){return e.k!=='bonus'&&e.t>=since}).sort(function(a,b){return a.t-b.t}),out=[],cur=null;
+ log.forEach(function(e){
+  if(!cur||e.t-cur.end>10*60000){cur={s:s,start:e.t,end:e.t,sec:{},units:{},n:0,ok:0};out.push(cur)}
+  cur.end=e.t;cur.n++;if(e.ok)cur.ok++;var k=SEC[e.k]||'Challenge or other practice',o=cur.sec[k]=cur.sec[k]||{n:0,ok:0};o.n++;if(e.ok)o.ok++;var u=Number(e.u);if(u>0)cur.units[u]=1});
+ ((p.spk&&p.spk.h)||[]).forEach(function(h){if(h&&h.t>=since)out.push({s:s,sp:1,start:h.t,end:h.t,label:SPKN[h.k]||'Speaking',score:h.s})});
+ if(p.place&&p.place.t>=since)out.push({s:s,pl:1,start:p.place.t,end:p.place.t,score:p.place.tot});
+ return out}
+function dayLabel(t){var k=S.dayKey(t);if(k===S.dayKey(Date.now()))return 'Today';if(k===S.dayKey(Date.now()-DAY))return 'Yesterday';return new Date(t).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
+function timeLabel(t){return new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+function itemHtml(it){
+ var s=it.s,who='<b>'+esc(s.name)+'</b>'+(s.cls?' <span class="s3sub">'+esc(s.cls)+'</span>':'');
+ var body;
+ if(it.sp){var c=it.score>=75?COL.g:it.score>=50?COL.a:COL.r;body='🗣️ Speaking · '+esc(it.label)+' <b style="color:'+c+'">'+it.score+'%</b>'}
+ else if(it.pl){body='🧭 Placement test finished · <b>'+it.score+'%</b>'}
+ else{var mins=it.n>=2?Math.max(1,Math.round((it.end-it.start)/60000)):0,pc=pct(it.ok,it.n),c2=pc>=75?COL.g:pc>=50?COL.a:COL.r;
+  var secs=Object.keys(it.sec).map(function(k){var o=it.sec[k];return '<span class="s3pill" style="font-size:12px;padding:3px 9px">'+esc(k)+' · '+o.n+' q · '+o.ok+' correct</span>'}).join(' ');
+  var us=Object.keys(it.units).sort(function(a,b){return a-b});
+  body='<div>✍️ '+it.n+(it.n===1?' question':' questions')+' · <b style="color:'+c2+'">'+pc+'% correct</b>'+(mins?' · about '+mins+' min':'')+(us.length?' · Unit '+us.join(', '):'')+'</div><div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px">'+secs+'</div>'}
+ return '<div style="padding:10px 0;border-top:1px solid var(--bd);cursor:pointer" onclick="s3Track.open(\''+esc(s.id)+'\')"><div style="display:flex;justify-content:space-between;gap:8px;font-size:13px"><span>'+who+'</span><span class="s3sub">'+timeLabel(it.end)+'</span></div><div style="font-size:13px;margin-top:3px">'+body+'</div></div>'}
+function renderActivity(v){
+ var since=st.range===1?new Date(new Date().setHours(0,0,0,0)).getTime():Date.now()-st.range*DAY,q=(st.q||'').toLowerCase();
+ var list=shown().filter(function(s){return (!st.af||s.id===st.af)&&(!q||String(s.name).toLowerCase().indexOf(q)>=0)});
+ var items=[];list.forEach(function(s){items=items.concat(sessionsFor(s,since))});
+ items.sort(function(a,b){return b.end-a.end});
+ var who={},qn=0,sess=0;items.forEach(function(i){who[i.s.id]=1;if(!i.sp&&!i.pl){qn+=i.n;sess++}});
+ var rng=[[1,'Today'],[7,'7 days'],[30,'30 days']].map(function(r){return '<button class="s3btn '+(st.range===r[0]?'':'ghost')+'" style="padding:5px 12px;font-size:12px" onclick="s3Track.range('+r[0]+')">'+r[1]+'</button>'}).join(' ');
+ var only=st.af&&byId(st.af)?'<div style="margin:6px 0;font-size:13px">Showing only <b>'+esc(byId(st.af).name)+'</b> <button class="s3btn ghost" style="padding:3px 10px;font-size:12px" onclick="s3Track.clearOnly()">Show everyone ✕</button></div>':'';
+ var h='',last='',shownN=items.slice(0,st.lim);
+ shownN.forEach(function(it){var d=dayLabel(it.end);if(d!==last){h+='<div class="s3lbl" style="margin-top:12px">'+esc(d)+'</div>';last=d}h+=itemHtml(it)});
+ if(!items.length)h='<p class="s3sub">No activity recorded in this period.</p>';
+ var more=items.length>st.lim?'<div style="text-align:center;margin-top:10px"><button class="s3btn ghost" onclick="s3Track.more()">Show more ('+(items.length-st.lim)+' left)</button></div>':'';
+ v.innerHTML='<div style="display:grid;gap:12px;max-width:980px;margin:0 auto">'+head()+card('<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+rng+'</div><input id="trk-aq" class="s3in" placeholder="Search student name" value="'+esc(st.q)+'" oninput="s3Track.asearch(this.value)" style="margin-top:8px">'+only+'<div class="s3sub" style="margin-top:8px">'+Object.keys(who).length+' of '+list.length+' students active · '+sess+' practice sessions · '+qn+' questions answered</div>')+card('<div id="trk-feed">'+h+'</div>'+more+'<div class="s3sub" style="margin-top:10px">A session is a run of answers with no break longer than 10 minutes. "About N min" is first to last answer, so it is an estimate. The feed is built from the answers each student already saved (the last 3,000 per student) plus speaking and placement results. Time on a page without answering is not recorded.</div>')+'</div>'}
 /* ---------- render, actions ---------- */
 function render(){var v=$('view-track');if(!v)return;if(!S.isTeacher()){v.innerHTML='';return}
  if(!ready()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading... ⏳</div>';S3CLOUD.load().then(render);return}
- try{if(st.mode==='classes')renderClass(v);else if(st.id)renderProfile(v);else renderList(v)}catch(e){console.warn('tracker',e);v.innerHTML='<div class="bg-white rounded-2xl border p-5">The tracker could not load. Use Reports instead.<div class="s3sub">'+esc(e&&e.message||'')+'</div></div>'}}
+ try{if(st.mode==='classes')renderClass(v);else if(st.mode==='activity')renderActivity(v);else if(st.id)renderProfile(v);else renderList(v)}catch(e){console.warn('tracker',e);v.innerHTML='<div class="bg-white rounded-2xl border p-5">The tracker could not load. Use Reports instead.<div class="s3sub">'+esc(e&&e.message||'')+'</div></div>'}}
 function summaryText(a){var I=insights(a),t='📘 English progress: '+a.s.name+(a.s.cls?' ('+a.s.cls+')':'')+'\n⭐ XP '+a.x.xp+' · Accuracy '+(a.acc==null?'-':a.acc+'%')+' ('+a.n+' answers)\n';
  SKILLS.forEach(function(k){var o=a.sk[k[0]];if(o.n)t+='• '+k[0]+': '+pct(o.ok,o.n)+'% ('+o.n+')\n'});
  if(a.speak&&a.speak.score!=null)t+='• Speaking: '+a.speak.score+'%'+(a.speak.lv?' '+a.speak.lv[1]:'')+'\n';
@@ -7864,10 +7901,15 @@ function summaryText(a){var I=insights(a),t='📘 English progress: '+a.s.name+(
  if(I.weak.length)t+='🎯 To improve: '+I.weak.map(function(i){return i.t}).join(', ')+'\n';
  if(a.p.note)t+='📝 Teacher: '+a.p.note;return t}
 window.s3Track={render:render,
- mode:function(m){st.mode=m;st.id=null;render()},
- cls:function(c){st.cls=c;st.id=null;render()},
+ mode:function(m){st.mode=m;st.id=null;if(m!=='activity')st.af=null;st.lim=30;render()},
+ range:function(d){st.range=d;st.lim=30;render()},
+ more:function(){st.lim+=30;render()},
+ only:function(id){st.mode='activity';st.af=id;st.id=null;st.lim=30;render();window.scrollTo({top:0})},
+ clearOnly:function(){st.af=null;render()},
+ cls:function(c){st.cls=c;st.id=null;st.lim=30;render()},
  open:function(id){st.mode='students';st.id=id;render();window.scrollTo({top:0})},
  back:function(){st.id=null;render()},
+ asearch:function(q){st.q=q;st.lim=30;renderActivity($('view-track'));var e=$('trk-aq');if(e){e.focus();e.setSelectionRange(q.length,q.length)}},
  search:function(q){st.q=q;var r=$('trk-rows');if(r)r.innerHTML=listRows()},
  print:function(){document.body.classList.add('print-track');setTimeout(function(){print();document.body.classList.remove('print-track')},120)},
  wa:function(){var s=byId(st.id);if(!s)return;window.open('https://wa.me/?text='+encodeURIComponent(summaryText(analyze(s))),'_blank')},
