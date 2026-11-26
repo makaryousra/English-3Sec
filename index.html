@@ -5501,7 +5501,7 @@ function playSeq(ti){const my=++tok;const L=cur;if(!playing||ti>=L.turns.length)
 api.toggle=()=>{if(playing){playing=false;tok++;stop();setBtn();return}playing=true;setBtn();playSeq(pidx>=0&&pidx<cur.turns.length-1?pidx:0)};
 api.playFrom=i=>{playing=true;setBtn();playSeq(cur.sents[i].ti)};
 /* ---- Match ---- */
-function match(){const L=cur;const pairs=shuf(L.vocab).slice(0,6);M={L,pairs,en:shuf(pairs),ar:shuf(pairs),sel:null,done:{},miss:0,ok:0};drawMatch()}
+function match(){const L=cur;const pairs=s3Fresh.pick(L.vocab,'lm'+L.unit,6,v=>v.n);M={L,pairs,en:shuf(pairs),ar:shuf(pairs),sel:null,done:{},miss:0,ok:0};drawMatch()}
 function drawMatch(){const m=M;const col=(arr,k)=>arr.map(w=>{const id=k+w.n;const d=m.done[w.n];const s=m.sel&&m.sel.id===id;return '<button class="lsm '+(k==='a'?'lsar ':'')+(d?'done':s?'sel':'')+'" onclick="s3Listen.pick(\''+k+'\','+w.n+')">'+esc(k==='e'?w.en:w.ar)+'</button>'}).join('');
  view().innerHTML=head(m.L,'Match')+'<div class="lsc"><div style="font-size:13px;margin-bottom:8px">Tap an English word, then its Arabic meaning. Mistakes: <b>'+m.miss+'</b></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+col(m.en,'e')+'</div><div>'+col(m.ar,'a')+'</div></div>'+
  (m.ok===m.pairs.length?'<div style="margin-top:12px;font-weight:800;color:#16a34a">🎉 Done! '+m.miss+' mistake(s).</div><button class="lsb" onclick="s3Listen.go(\'match\','+m.L.unit+')">Play again (new words)</button>':'')+'</div>'}
@@ -5519,7 +5519,7 @@ function mk(L,kind){const out=[];const V=L.vocab.filter(v=>v.en);
  if(kind==='ear'||kind==='timed'){V.forEach(w=>{const {o,a}=opts(w,'en');out.push({t:'ear',w,o,a,ar:false})})}
  if(kind==='mean'||kind==='timed'){V.forEach(w=>{if(Math.random()<.5){const {o,a}=opts(w,'ar');out.push({t:'m1',w,o,a,ar:true})}else{const {o,a}=opts(w,'en');out.push({t:'m2',w,o,a,ar:false})}})}
  return shuf(out)}
-api.start=kind=>{const L=cur;let qs=mk(L,kind);if(kind!=='timed')qs=qs.slice(0,Math.min(qs.length,kind==='ear'?10:12));
+api.start=kind=>{const L=cur;let qs=mk(L,kind);const lk='lq'+L.unit+kind,lid=q=>(q.t==='m1'||q.t==='m2'?'m':q.t)+':'+(q.w?q.w.n:'')+':'+(q.ti!=null?q.ti:''),ltot=qs.length;qs=s3Fresh.order(qs,lk,lid);if(kind!=='timed')qs=qs.slice(0,Math.min(qs.length,kind==='ear'?10:12));s3Fresh.mark(lk,qs.slice(0,kind==='timed'?20:qs.length).map(lid),Math.max(12,Math.min(80,Math.floor(ltot*.6))));
  Q={L,kind,qs,i:0,score:0,streak:0,ans:null,end:false,t:kind==='timed'?60:0};mode='quiz';clearInterval(timer);
  if(Q.t)timer=setInterval(()=>{Q.t--;const e=$('ls-time');if(e)e.textContent=Q.t+'s';const bar=$('ls-tb');if(bar)bar.style.width=Q.t/60*100+'%';if(Q.t<=0){clearInterval(timer);Q.end=true;stop();quizUI()}},1000);quizUI();
  const q=Q.qs[0];if(q&&(q.t==='ear'))sp(q.w.en)};
@@ -5760,6 +5760,21 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>s3Bank.init(),60
 if(document.readyState!=='loading')setTimeout(()=>s3Bank.init(),600);
 const st=document.createElement('style');st.textContent='.nbin{border:1px solid var(--bd,#cbd5e1);border-radius:10px;padding:6px 8px;background:var(--surf,#fff);color:var(--tx,#0f172a);font-size:13px}.nbb{border:0;border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600;background:#4f46e5;color:#fff;cursor:pointer}.nbb.g{background:#e2e8f0;color:#334155}.nbb.r{background:#fee2e2;color:#b91c1c}';document.head.appendChild(st);
 })();
+</script>
+<script id="s3-fresh">
+/* Fresh questions: remembers what each student saw recently (per device, per game) and prefers items not shown lately. */
+(function(){
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const who=()=>{try{const s=JSON.parse(localStorage.getItem('s3_session_v1'));return String((s&&(s.id||s.uid||s.name))||'x')}catch(e){return 'x'}};
+const K=k=>'s3fr_'+who()+'_'+k;
+const get=k=>{try{const a=JSON.parse(localStorage.getItem(K(k)));return Array.isArray(a)?a:[]}catch(e){return[]}};
+const idd=x=>(x&&typeof x==='object'&&x.id!=null)?x.id:String(x);
+const F={recent:get,
+ mark(k,ids,cap){try{const r=get(k).filter(i=>ids.indexOf(i)<0).concat(ids);localStorage.setItem(K(k),JSON.stringify(r.slice(-(cap||80))))}catch(e){}},
+ order(pool,k,idf){idf=idf||idd;const r=get(k),f=[],o=[];pool.forEach(x=>(r.indexOf(idf(x))<0?f:o).push(x));return shuf(f).concat(shuf(o))},
+ fresh(pool,k,idf,min){idf=idf||idd;const r=get(k),f=pool.filter(x=>r.indexOf(idf(x))<0);return f.length>=(min||1)?f:pool},
+ pick(pool,k,n,idf){idf=idf||idd;const o=F.order(pool,k,idf).slice(0,n);F.mark(k,o.map(idf),Math.max(n,Math.min(80,Math.floor(pool.length*.6))));return o}};
+window.s3Fresh=F})();
 </script>
 <script id="s3-backup">
 (function(){
@@ -6200,7 +6215,7 @@ function menu(){clean();const b=best('speed'),l=best('lives'),m=best('match');
 '<button onclick="s3Game.match()" class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left">🧩 Word Match<br><span style="font-weight:400;font-size:12px">Match 6 English words with their Arabic meaning · Best: '+(m?m+'s':'-')+'</span></button>'+'<button onclick="s3Game.spk()" class="s3btn" style="display:block;width:100%;padding:14px;text-align:left">🗣️ Speaking practice<br><span style="font-weight:400;font-size:12px">Listen and repeat. See which words you missed</span></button>'+(window.s3G2?s3G2.menuButtons():'')+''))}
 /* generic MCQ runner for speed and lives */
 let G=null;
-function gq(){const pool=G.pool();const q=pool[Math.floor(Math.random()*pool.length)];G.q=q;G.done=false;return q}
+function gq(){const pool=G.pool();const q=s3Fresh.pick(pool,'g_'+G.key,1,x=>x.id)[0];G.q=q;G.done=false;return q}
 function gdraw(){const q=G.q;ov(G.title,card('<div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px"><span>'+G.hud()+'</span><span id="g-t">'+(G.timed?G.left+'s':'')+'</span></div><div style="font-size:16px;font-weight:700;margin-bottom:10px;line-height:1.5">'+esc(q.question)+'</div>'+q.options.map((o,j)=>optB(o,j,'s3Game.ans',G.done?(j===q.answer?OKS:(j===G.pick?NOS:'border:1px solid var(--bd);background:var(--surf2);opacity:.6')):'')).join('')+(G.done&&G.msg?'<div class="s3sub">'+G.msg+'</div>':'')))}
 function gans(j){if(!G||G.done)return;const q=G.q;G.pick=j;G.done=true;const ok=j===q.answer;G.onAns(ok);gdraw();if(G.over()){setTimeout(gend,700)}else setTimeout(()=>{if(G&&G.q===q){gq();gdraw()}},ok?450:1100)}
 function gend(){const g=G;clean();const xp=gx(g.xp());const nb=best(g.key,g.score());ov(g.title,card('<div style="text-align:center"><div style="font-size:44px">'+(g.score()>=nb&&g.score()>0?'🏆':'👏')+'</div><div style="font-size:30px;font-weight:800;color:var(--ac)">'+g.res()+'</div><div class="s3sub">Best: '+best(g.key)+(xp?' · +'+xp+' XP':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3Game.'+g.key+'()')+btn('Games menu','s3Game.menu()',1)+'</div></div>'))}
@@ -6213,7 +6228,7 @@ function lives(){clean();const V=Q().filter(ISVOC),I=Q().filter(q=>q.category.in
   onAns:ok=>{if(ok){run++;tot++;G.msg=''}else{h--;G.msg=G.q.explanation?esc(G.q.explanation):''}G.bestRun=Math.max(G.bestRun||0,run)},over:()=>h<=0,score:()=>Math.max(G.bestRun||0,run),res:()=>tot+' correct',xp:()=>Math.floor(tot/5)*3};
  gq();gdraw()}
 function parsePairs(){const out=[],seen={};shuf(Q().filter(q=>q.category==='Main Vocabulary'&&q.arabicNote)).forEach(q=>{const m=q.arabicNote.match(/^\s*([A-Za-z][A-Za-z' \-\.]{1,24}?)\s*=\s*(.+)$/);if(!m)return;const w=m[1].trim().toLowerCase(),a=m[2].split(/\s*[\/،;]\s*/)[0].trim();if(!a||a.length>28||seen[w]||/[A-Za-z]{4,}/.test(a))return;seen[w]=1;out.push([w,a])});return out}
-function match(){clean();const P=parsePairs().slice(0,6);if(P.length<6){ov('🧩 Word Match',card('Not enough words found.'));return}
+function match(){clean();const P=s3Fresh.pick(parsePairs(),'wm',6,p=>p[0]);if(P.length<6){ov('🧩 Word Match',card('Not enough words found.'));return}
  const M={P,L:shuf(P.map((p,i)=>i)),R:shuf(P.map((p,i)=>i)),sel:null,done:{},err:0,t0:Date.now()};window.__m=M;
  function draw(){const colB=(arr,side)=>arr.map(i=>{const d=M.done[i],s=M.sel&&M.sel.side===side&&M.sel.i===i;return '<button '+(d?'disabled ':'')+'onclick="s3Game.mpick(\''+side+'\','+i+')" style="display:block;width:100%;padding:12px 6px;margin-bottom:8px;border-radius:12px;font-size:'+(side==='r'?'16':'15')+'px;cursor:pointer;color:var(--tx);'+(d?'border:2px solid var(--ok);background:var(--okbg);opacity:.7':s?'border:2px solid var(--ac);background:var(--acs)':'border:1px solid var(--bd);background:var(--surf2)')+(side==='r'?';direction:rtl;font-family:Cairo,sans-serif':'')+'">'+esc(side==='l'?M.P[i][0]:M.P[i][1])+'</button>'}).join('');
   ov('🧩 Word Match',card('<div class="s3sub" style="margin-bottom:8px">Tap an English word, then its Arabic meaning. Mistakes: '+M.err+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+colB(M.L,'l')+'</div><div>'+colB(M.R,'r')+'</div></div>'))}
@@ -6548,9 +6563,9 @@ function spMenu(){clean();SP=null;const SK=spkStat(),k=SPK(),P=spPool(),avg=k.n?
  const mode=(ic,bg,t,d,fn)=>'<button class="spx-c" onclick="s3Game.'+fn+'()"><div class="ic" style="background:'+bg+'">'+ic+'</div><div><b>'+t+'</b><span>'+d+'</span></div><div class="ar">›</div></button>';
  const ai=GEM.url?'<div class="spx-h">Talk with the AI coach</div>'+mode('💬','linear-gradient(135deg,#06b6d4,#3b82f6)','Talk with the coach','Pick a unit and have a short chat. You get a score, mistakes and tips.','rpMenu')+mode('🎭','linear-gradient(135deg,#f59e0b,#ef4444)','Dialogue with a partner','Listen to a dialogue, then play one of the two people.','dlMenu')+mode('🗨️','linear-gradient(135deg,#10b981,#14b8a6)','Open conversation','Pick a topic and talk about anything you like.','ocMenu')+'<button class="spx-v" onclick="s3Game.voiceMenu()">🔊 Coach voice</button>':'';
  ov('🗣️ Speaking',css+'<div class="spx"><div class="spx-hero" onclick="s3Game.spProg()" style="cursor:pointer"><h2>Speak English with confidence</h2><p>Listen, repeat, then chat with your AI coach. A little every day makes a big difference.</p><div class="spx-st"><div><b>'+(SK.lv?SK.lv[2]:'🌱')+'</b><span>'+(SK.lv?SK.lv[1]:'Level')+'</span></div><div><b>'+(SK.score!=null?SK.score+'%':'-')+'</b><span>Speaking score</span></div><div><b>'+SK.cnt+'</b><span>Results</span></div></div><div style="margin-top:10px;font-size:12px;opacity:.95;text-align:center;font-weight:700;position:relative">📊 Tap to see your progress ›</div></div><div class="spx-h" style="margin-top:0">Listen and repeat</div><div class="spx-lv">'+lv+'</div>'+ai+'<div class="s3sub" style="margin-top:14px;text-align:center;line-height:1.6">Works best in Chrome on Android with a microphone and internet. Scoring is approximate: it can miss words even when you said them well.</div></div>')}
-function spStart(l){clean();const P=spPool()[l];if(!P||P.length<8)return S.toast('Not enough sentences');
+function spStart(l){clean();const P0=spPool()[l];if(!P0||P0.length<8)return S.toast('Not enough sentences');const P=s3Fresh.fresh(P0,'sp'+l,x=>x.q.id,8);
  const by={};shuf(P).forEach(x=>(by[x.q.unit]=by[x.q.unit]||[]).push(x));const us=shuf(Object.keys(by)),items=[];let k=0;while(items.length<8&&us.some(u=>by[u].length)){const u=us[k%us.length];if(by[u].length)items.push(by[u].pop());k++}
- SP={lv:l,items,i:0,res:[],best:0,tries:0,can:!!(window.SpeechRecognition||window.webkitSpeechRecognition)&&navigator.onLine,done:false};spDraw()}
+ s3Fresh.mark('sp'+l,items.map(x=>x.q.id),Math.max(8,Math.min(80,Math.floor(P0.length*.6))));SP={lv:l,items,i:0,res:[],best:0,tries:0,can:!!(window.SpeechRecognition||window.webkitSpeechRecognition)&&navigator.onLine,done:false};spDraw()}
 function spWords(t){return t.split(/\s+/)}
 function spAlign(target,heard){const a=norm(target).split(' '),b=norm(heard).split(' '),n=a.length,m=b.length,d=[];for(let i=0;i<=n;i++){d.push(new Array(m+1).fill(0))}
  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)d[i][j]=a[i-1]===b[j-1]?d[i-1][j-1]+1:Math.max(d[i-1][j],d[i][j-1]);
@@ -6715,6 +6730,7 @@ window.s3Att={curCls:()=>st.cls,absentNames:()=>{const ab=absToday();return sess
 /* S3 Games Pack 2: more student games + classroom games with a lesson picker.
    All content comes from the existing question bank / vocab pairs / listening texts. */
 (function(){
+const S=window.S3;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a};
@@ -6865,7 +6881,7 @@ function tfAns(v){const T=TF;if(!T||!T.cur)return;const ok=(!!v)===T.cur.truth;i
 let US=null;
 function usort(){clean();const byU={};pairs().forEach(p=>{if(p.u)(byU[p.u]=byU[p.u]||[]).push(p)});
  const us=Object.keys(byU).filter(u=>byU[u].length>=6).map(Number);if(us.length<2){ov('🧺 Unit Sort',card('Not enough words in the bank yet.'));return}
- const two=shuf(us).slice(0,2);const pool=shuf(byU[two[0]].concat(byU[two[1]]));
+ const two=shuf(us).slice(0,2);const pool=s3Fresh.order(byU[two[0]].concat(byU[two[1]]),'usort',p=>p.w);s3Fresh.mark('usort',pool.slice(0,14).map(p=>p.w),60);
  US={two,pool,i:0,score:0,hearts:3};usDraw()}
 function usDraw(){const U=US;if(!U)return;
  if(U.hearts<=0||U.i>=U.pool.length){const xp=gx(Math.min(15,U.score)),nb=best('us',U.score);
@@ -6908,7 +6924,7 @@ function gap(){clean();const L=listenData();if(!L.length){ov('🎧 Gap Sprint',c
  +L.map(x=>'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:8px;padding:12px;text-align:left" onclick="s3G2.gapStart('+x.unit+')">Unit '+x.unit+': '+esc(x.title)+'</button>').join('')
  +'<div class="s3sub" style="margin-top:8px">Best so far: '+best('gap')+'</div>'))}
 function gapStart(u){const L=listenData().find(x=>x.unit===u);if(!L||L.sents.length<4)return;
- GS={L,qs:shuf(L.sents),i:0,score:0,streak:0,left:60,lock:false};gapDraw();
+ GS={L,qs:s3Fresh.order(L.sents,'gap'+u,s=>s.plain||s.raw),i:0,score:0,streak:0,left:60,lock:false};s3Fresh.mark('gap'+u,GS.qs.slice(0,15).map(s=>s.plain||s.raw),Math.max(15,Math.min(80,Math.floor(L.sents.length*.6))));gapDraw();
  every(()=>{const G=GS;if(!G)return;G.left--;const e=$('gs-t');if(e)e.textContent=G.left+'s';
   if(G.left<=0){const sc=G.score,xp=gx(Math.min(15,sc*2)),nb=best('gap',sc);GS=null;
    ov('🎧 Gap Sprint',card('<div style="text-align:center"><div style="font-size:40px">⏰</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+sc+' gaps in 60s</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('gap')+(sc>=nb&&sc>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.gap()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}},1000)}
@@ -7055,7 +7071,7 @@ const ACTS=[
  {e:'🎭',n:'Two Truths and a Lie',steps:['Each student says 3 sentences using words from the list.','Two are true, one is a lie.','The class votes for the lie. Liars who fool everyone get a point.']},
  {e:'🐝',n:'Spelling Bee',steps:['Read a word from the list aloud.','The student spells it letter by letter.','Wrong letter? Next student tries. Last speller standing wins.']}];
 function acts(){ov('🃏 Activity Cards',card(lesHead()+ACTS.map((a,i)=>'<div style="border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px"><b>'+a.e+' '+a.n+'</b><ol style="margin:6px 0 8px 18px;font-size:13px;line-height:1.7">'+a.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol>'+btn('🎲 Get 10 words','s3G2.actWords('+i+')')+'</div>').join('')))}
-function actWords(i){const P=shuf(lesPairs().length>=10?lesPairs():pairs()).slice(0,10);
+function actWords(i){const P=s3Fresh.pick(lesPairs().length>=10?lesPairs():pairs(),'actw',10,p=>p.w);
  if(!P.length){S.toast('No words in the bank yet');return}
  ov('🎲 Words for '+ACTS[i].n,card('<ol dir="ltr" style="margin:4px 0 0 20px;font-size:16px;line-height:2">'+P.map(p=>'<li><b>'+esc(p.w)+'</b> <span dir="rtl" style="font-family:Cairo,sans-serif;opacity:.75">'+esc(p.a)+'</span></li>').join('')+'</ol><div style="text-align:center;margin-top:12px">'+btn('🎲 New 10','s3G2.actWords('+i+')')+btn('Back','s3G2.acts()',1)+'</div>'))}
 /* ---------- menu buttons for the student Games menu ---------- */
@@ -7456,7 +7472,8 @@ const cloud=()=>!!(window.S3CLOUD&&S3CLOUD.on&&!S3CLOUD.offline);
 const FN=n=>String(n||'').trim().split(/\s+/)[0];
 function labs(list){const c={};list.forEach(s=>{const f=FN(s.name).toLowerCase();c[f]=(c[f]||0)+1});return s=>{const f=FN(s.name);if(c[f.toLowerCase()]>1){const r=String(s.name).trim().split(/\s+/)[1]||'';return f+(r?' '+r[0]+'.':'')}return f}}
 /* matched pairs: same category and same level, two different questions */
-function pairs(n,used){used=new Set(used||[]);const g={};bank().forEach(q=>{if(used.has(q.id))return;const k=q.category+'|'+lv(q);(g[k]=g[k]||[]).push(q)});
+function pairs(n,used){const rc=window.s3Fresh?s3Fresh.recent('duel'):[];let o=pairs0(n,(used||[]).concat(rc));if(o.length<n)o=pairs0(n,used);if(window.s3Fresh)s3Fresh.mark('duel',o.flatMap(x=>[x.a,x.b]),400);return o}
+function pairs0(n,used){used=new Set(used||[]);const g={};bank().forEach(q=>{if(used.has(q.id))return;const k=q.category+'|'+lv(q);(g[k]=g[k]||[]).push(q)});
  const keys=Object.keys(g).filter(k=>g[k].length>=2),cats=shuf([...new Set(keys.map(k=>k.split('|')[0]))]),out=[];let i=0;
  while(out.length<n&&cats.length&&i<500){const cat=cats[i++%cats.length],ks=keys.filter(k=>k.split('|')[0]===cat&&g[k].length>=2);if(!ks.length)continue;
   const k=shuf(ks)[0],L=shuf(g[k]),a=L.pop(),b=L.pop();g[k]=L;out.push({a:a.id,b:b.id,cat:a.category,tier:lv(a)})}
