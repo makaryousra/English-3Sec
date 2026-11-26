@@ -5664,7 +5664,7 @@ const fmt=n=>{const r=Math.round(n*100)/100;return String(r)};
 const MARKS={mcq:14,fill:4,read:5,dlg:5,tr:8,wr:4};
 const N={mcq:14,fill:4,dlg:5,tr:2,read:5,gram:5};
 const EP={mode:'exam',seed:'E1',force:0,notes:[],data:{},
- cfg:{school:'Egyptian Secondary Language School',title:'Secondary 3 English Final Exam',teacher:'',cls:'Secondary 3',date:'',time:'1 hour',units:new Set(),lessons:new Set(),level:'x',key:false}};
+ cfg:{school:'Egyptian Secondary Language School',title:'Secondary 3 English Final Exam',teacher:'',cls:'Secondary 3',date:'',time:'2 hours',units:new Set(),lessons:new Set(),level:'x',key:false}};
 const LVN={e:'Easy',m:'Medium',h:'Hard',x:'Mixed'};
 function rng(seed){let a=0;for(const c of String(seed))a=(a*31+c.charCodeAt(0))>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 function shuf(arr,r){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -6019,7 +6019,8 @@ function menu(){clean();const b=best('speed'),l=best('lives'),m=best('match');
  ov('🎮 Games',card('<div class="s3sub" style="margin-bottom:10px">Practise with fun games. Questions come from your question bank. Game XP is limited to 60 per day.</div>'+
  '<button onclick="s3Game.speed()" class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left">⚡ Speed Round<br><span style="font-weight:400;font-size:12px">60 seconds, 3 lives, combo bonus · Best: '+b+'</span></button>'+
  '<button onclick="s3Game.lives()" class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left">❤️ Lives Run<br><span style="font-weight:400;font-size:12px">No timer. Get harder every 5. 3 hearts · Best streak: '+l+'</span></button>'+
- '<button onclick="s3Game.match()" class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left">🧩 Word Match<br><span style="font-weight:400;font-size:12px">Match 6 English words with their Arabic meaning · Best: '+(m?m+'s':'-')+'</span></button>'+'<button onclick="s3Game.spk()" class="s3btn" style="display:block;width:100%;padding:14px;text-align:left">🗣️ Speaking practice<br><span style="font-weight:400;font-size:12px">Listen and repeat. See which words you missed</span></button>'))}
+ (S.isStudent()?'<button onclick="s3Duel.home()" class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left">⚔️ Duel a friend<br><span style="font-weight:400;font-size:12px">Play a friend on your phones with a 4-digit code · practice only</span></button>':'')+
+'<button onclick="s3Game.match()" class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left">🧩 Word Match<br><span style="font-weight:400;font-size:12px">Match 6 English words with their Arabic meaning · Best: '+(m?m+'s':'-')+'</span></button>'+'<button onclick="s3Game.spk()" class="s3btn" style="display:block;width:100%;padding:14px;text-align:left">🗣️ Speaking practice<br><span style="font-weight:400;font-size:12px">Listen and repeat. See which words you missed</span></button>'))}
 /* generic MCQ runner for speed and lives */
 let G=null;
 function gq(){const pool=G.pool();const q=pool[Math.floor(Math.random()*pool.length)];G.q=q;G.done=false;return q}
@@ -6261,7 +6262,7 @@ function draw(keepScroll){const v=$('view-attend');if(!v)return;if(!S.isTeacher(
  const cl=clsList();if(!cl.length){v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div class="s3h">✅ Attendance</div><div class="s3sub" style="margin-top:6px">No students yet. Create accounts in the Students tab first.</div></div>';return}
  if(!st.cls||!cl.includes(st.cls)){st.cls=cl[0];pick(st.cls,st.date);return}
  const L=stuList(),cnt=counts(),days=Object.keys(st.rec).length,nAbs=sessList().filter(s=>st.abs.has(s.id)).length,y=window.scrollY;
- let h='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div class="s3h" style="font-size:17px">🏫 Classroom mode</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="s3btn'+(st.mode==='att'?'':' ghost')+'" style="flex:1 1 100%" onclick="s3Att.mode(\'att\')">✅ Attendance</button><button class="s3btn'+(st.mode==='rnd'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'rnd\')">🎲 Random student</button><button class="s3btn'+(st.mode==='quiz'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'quiz\')">❓ Question picker</button></div>'+
+ let h='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div class="s3h" style="font-size:17px">🏫 Classroom mode</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="s3btn'+(st.mode==='att'?'':' ghost')+'" style="flex:1 1 100%" onclick="s3Att.mode(\'att\')">✅ Attendance</button><button class="s3btn'+(st.mode==='rnd'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'rnd\')">🎲 Random student</button><button class="s3btn'+(st.mode==='quiz'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'quiz\')">❓ Question picker</button><button class="s3btn ghost" style="flex:1 1 100%" onclick="s3Duel.teacher()">⚔️ 1v1 Duel</button></div>'+
  '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+cl.map(c=>'<button class="s3btn'+(c===st.cls?'':' ghost')+'" onclick="s3Att.cls(\''+esc(c).replace(/'/g,"\\'")+'\')">'+esc(c)+'</button>').join('')+'</div>'+xpanel()+
  (st.mode!=='att'?'':'<div style="display:flex;gap:6px;align-items:center"><button class="s3btn ghost" onclick="s3Att.shift(-1)" aria-label="Previous day">◀</button><input type="date" class="s3in" style="flex:1;min-width:0" value="'+st.date+'" onchange="s3Att.date(this.value)"><button class="s3btn ghost" onclick="s3Att.shift(1)" aria-label="Next day">▶</button></div>'+
  '<div class="s3sub" style="margin-top:6px">'+dnice(st.date)+(st.date===today()?' · Today':'')+(st.loaded==='saved'?' · <b style="color:var(--ok,#16a34a)">Saved before, you can edit</b>':' · Not saved yet')+'</div>')+'</div>';
@@ -6524,10 +6525,149 @@ C.award=async function(op){const F=fb.F,sr=F.doc(fb.db,'students',op.uid),br=F.d
  await Promise.race([F.runTransaction(fb.db,async tx=>{const s=await tx.get(sr);if(!s.exists())throw{code:'not-found'};const d=s.data();if((d.tpLog||{})[op.id])return;const b=await tx.get(br);const up={};up['tpLog.'+op.id]={n:op.n||0,t:tt};if(op.wrong&&op.q!=null)up['tmis.'+op.id]={q:op.q,t:tt};if(op.drop)up['tmis.'+op.drop]=F.deleteField();tx.update(sr,up);if(b.exists()&&op.n){const x=b.data();tx.update(br,{xp:Math.max(0,(x.xp||0)+op.n),wxp:Math.max(0,(x.wxp||0)+op.n)})}}),new Promise((_,r)=>setTimeout(()=>r({code:'timeout'}),20000))]);
  const L=Object.assign({},C.mem['t'+op.uid]||{});L[op.id]={n:op.n||0,t:tt};C.mem['t'+op.uid]=L};
 function applyMis(uid,d){const ent=Object.entries(d.tmis||{});if(!ent.length)return;const ls=S().ls,p=S().getProg(uid),done=new Set(p.tmisApplied||[]),nw=ent.filter(([id])=>!done.has(id));if(!nw.length)return;const b=ls.get(bk(uid),{})||{};b.srsMap=b.srsMap||{};nw.forEach(([id,e])=>{if(e&&e.q!=null)b.srsMap[e.q]={level:0,consecutiveCorrect:0,nextReviewAt:Date.now()};done.add(id)});p.tmisApplied=[...done].slice(-1500);ls.set(bk(uid),b);ls.set(pk(uid),p);lastH=''}
+C.logDuel=async function(op){await fb.F.setDoc(fb.F.doc(fb.db,'duelLog',op.id),op.log)};
+C.fbx=function(){return(fb&&fb.auth.currentUser)?{F:fb.F,db:fb.db,uid:fb.auth.currentUser.uid}:null};
 C.refresh=async function(){loadedAt=0;C.renderStudents($('view-students'))};
 C.file=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('stu-new').value=String(r.result).trim();S().toast('File loaded. Press Create accounts')};r.readAsText(f,'utf-8');e.target.value=''};
 })();
 
+</script>
+<script id="s3-duel">
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const TL=15,NQ=10,MAXX=3,QK='s3_duel_q';
+const OKS='border:2px solid var(--ok,#16a34a);background:var(--okbg,#dcfce7)',NOS='border:2px solid #e11d48;background:var(--nobg,#ffe4e6)';
+const jget=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}};
+const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const bank=()=>((typeof state!=='undefined'&&state.allQuestions)||[]).filter(q=>q.options&&q.options.length>1&&q.answer!=null&&q.question);
+const lv=q=>window.s3Level?s3Level(q):'m';
+const qOf=id=>((typeof state!=='undefined'&&state.allQuestions)||[]).find(q=>q.id===id);
+const cloud=()=>!!(window.S3CLOUD&&S3CLOUD.on&&!S3CLOUD.offline);
+const FN=n=>String(n||'').trim().split(/\s+/)[0];
+function labs(list){const c={};list.forEach(s=>{const f=FN(s.name).toLowerCase();c[f]=(c[f]||0)+1});return s=>{const f=FN(s.name);if(c[f.toLowerCase()]>1){const r=String(s.name).trim().split(/\s+/)[1]||'';return f+(r?' '+r[0]+'.':'')}return f}}
+/* matched pairs: same category and same level, two different questions */
+function pairs(n,used){used=new Set(used||[]);const g={};bank().forEach(q=>{if(used.has(q.id))return;const k=q.category+'|'+lv(q);(g[k]=g[k]||[]).push(q)});
+ const keys=Object.keys(g).filter(k=>g[k].length>=2),cats=shuf([...new Set(keys.map(k=>k.split('|')[0]))]),out=[];let i=0;
+ while(out.length<n&&cats.length&&i<500){const cat=cats[i++%cats.length],ks=keys.filter(k=>k.split('|')[0]===cat&&g[k].length>=2);if(!ks.length)continue;
+  const k=shuf(ks)[0],L=shuf(g[k]),a=L.pop(),b=L.pop();g[k]=L;out.push({a:a.id,b:b.id,cat:a.category,tier:lv(a)})}
+ return out}
+const pts=(ok,left)=>ok?10+Math.ceil(5*Math.max(0,left)/TL):0;
+function shell(title,body){let o=$('duel-ov');if(!o){o=document.createElement('div');o.id='duel-ov';o.style.cssText='position:fixed;inset:0;z-index:99995;background:var(--bg,#f1f5f9);overflow:auto;-webkit-overflow-scrolling:touch;color:var(--tx,#0f172a)';document.body.appendChild(o)}
+ o.innerHTML='<style>#duel-ov *{box-sizing:border-box}.dcard{background:var(--surf,#fff);border:1px solid var(--bd,#e2e8f0);border-radius:18px;padding:16px;margin-bottom:12px}.dname{font-size:30px;font-weight:800;text-align:center;padding:14px 8px;border-radius:16px;background:var(--surf2,#eef2ff);min-height:64px;display:flex;align-items:center;justify-content:center;line-height:1.3}.dopt{display:block;width:100%;text-align:left;padding:13px;border-radius:12px;margin-bottom:8px;border:1px solid var(--bd,#e2e8f0);background:var(--surf2,#eef2ff);color:var(--tx,#0f172a);font-size:16px;cursor:pointer}.dbar{height:10px;background:var(--surf2,#e2e8f0);border-radius:9px;overflow:hidden}.dbar>i{display:block;height:100%;background:var(--ac,#4f46e5);width:100%}.dsc{display:flex;gap:8px}.dsc>div{flex:1;text-align:center;padding:8px;border-radius:12px;background:var(--surf2,#eef2ff);font-weight:700}.dsc .on{outline:3px solid var(--ac,#4f46e5)}.dsc b{display:block;font-size:24px}</style><div style="max-width:560px;margin:0 auto;padding:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:18px">'+title+'</b><button class="s3btn ghost" onclick="s3Duel.close()">✕ Close</button></div>'+body+'</div>';o.scrollTop=0}
+const card=h=>'<div class="dcard">'+h+'</div>';
+const btn=(t,f,g,x)=>'<button class="s3btn'+(g?' ghost':'')+'" style="margin:3px;'+(x||'')+'" onclick="'+f+'">'+t+'</button>';
+const opts=(q,chosen,locked,fn)=>q.options.map((o,j)=>{let st='';if(locked){if(j===q.answer)st=OKS;else if(j===chosen)st=NOS}
+ return '<button class="dopt" dir="auto" '+(locked?'disabled':'onclick="s3Duel.pick('+j+')"')+(st?' style="'+st+'"':'')+'><b>'+'ABCD'[j]+'.</b> '+esc(o)+'</button>'}).join('');
+const qBox=q=>'<div dir="auto" style="font-size:18px;font-weight:700;line-height:1.55;margin:10px 0;white-space:pre-wrap">'+esc(q.question)+'</div>';
+const scoreRow=(names,sc,on)=>'<div class="dsc">'+names.map((n,i)=>'<div class="'+(on===i?'on':'')+'"><span dir="auto">'+esc(n)+'</span><b>'+sc[i]+'</b></div>').join('')+'</div>';
+let tm=null,MODE=null;const stop=()=>{clearInterval(tm);tm=null};
+function timer(t0,fire){stop();tm=setInterval(()=>{const left=Math.max(0,TL-(Date.now()-t0)/1000),b=$('d-bar'),s=$('d-sec');if(b)b.style.width=(left/TL*100)+'%';if(s)s.textContent=Math.ceil(left)+'s';if(left<=0){stop();fire()}},100)}
+const barHtml='<div style="display:flex;justify-content:space-between;font-weight:700;margin:6px 0"><span>⏱️</span><span id="d-sec">'+TL+'s</span></div><div class="dbar"><i id="d-bar"></i></div>';
+/* ================= IN CLASS (teacher device) ================= */
+let T=null,D=null,AQ=jget(QK,[]),aBusy=false;
+const stuAll=()=>((window.S3&&S3.CLS&&S3.CLS().students)||[]).filter(s=>s.cls&&s.name);
+const classes=()=>[...new Set(stuAll().map(s=>s.cls))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+const inCls=c=>stuAll().filter(s=>s.cls===c);
+const absent=c=>{try{return(window.s3Att&&s3Att.curCls()===c)?s3Att.absentNames():[]}catch(e){return[]}};
+function teacher(){if(!(window.S3&&S3.isTeacher&&S3.isTeacher()))return;const cl=classes();if(!cl.length){shell('⚔️ 1v1 Duel',card('No students yet. Create accounts in the Students tab first.'));return}
+ const c=(window.s3Att&&s3Att.curCls&&cl.includes(s3Att.curCls()))?s3Att.curCls():cl[0];MODE='class';T={cls:c,a:null,b:null,spin:false};tSetup()}
+function tPool(){const ab=absent(T.cls);return inCls(T.cls).filter(s=>!ab.includes(s.name))}
+function tSetup(){stop();const L=inCls(T.cls),lb=labs(L),ab=absent(T.cls),slot=(k,id)=>{const s=L.find(x=>x.id===T[k]);return '<div style="flex:1;text-align:center"><div class="dname" id="d-s'+k+'" dir="auto">'+(s?esc(lb(s)):'?')+'</div>'+(s?btn('🔄 Change','s3Duel.reroll(\''+k+'\')',true,'font-size:12px;padding:6px 10px'):'')+'</div>'};
+ const ready=T.a&&T.b;
+ shell('⚔️ 1v1 Duel · in class',
+  card('<div class="s3sub" style="margin-bottom:8px">Two students play on <b>this device</b>, taking turns. '+NQ+' questions each, '+TL+' seconds per question. Different questions, same level and topic.</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'+classes().map(c=>'<button class="s3btn'+(c===T.cls?'':' ghost')+'" onclick="s3Duel.cls(\''+esc(c).replace(/\'/g,"\\'")+'\')">'+esc(c)+'</button>').join('')+'</div>'+
+  '<div style="display:flex;gap:10px;align-items:flex-start">'+slot('a')+'<div style="align-self:center;font-weight:800;font-size:20px">VS</div>'+slot('b')+'</div>'+
+  '<div style="text-align:center;margin-top:12px">'+btn('🎲 Random pick','s3Duel.random()',false,'padding:12px 20px')+'</div>')+
+  card('<div class="s3sub" style="margin-bottom:6px">Or tap two names'+(ab.length?' (absent today are greyed)':'')+'</div>'+L.slice().sort((x,y)=>x.name.localeCompare(y.name)).map(s=>{const on=T.a===s.id||T.b===s.id,a=ab.includes(s.name);return '<button class="dopt" style="'+(on?'border:2px solid var(--ac,#4f46e5);':'')+(a?'opacity:.5;':'')+'" onclick="s3Duel.tap(\''+s.id+'\')" dir="auto">'+(on?'✅ ':'')+esc(lb(s))+(a?' · absent':'')+'</button>'}).join(''))+
+  '<div style="position:sticky;bottom:0;padding:8px 0">'+btn('▶️ Start duel','s3Duel.start()',false,'width:100%;padding:14px;font-size:16px'+(ready?'':';opacity:.45'))+'</div>')}
+function spinPick(keys){if(T.spin)return;const P=tPool();if(P.length<keys.length+(keys.length===1?1:0)||P.length<2){return}
+ const cur=keys.length===1?T[keys[0]==='a'?'b':'a']:null;let pool=P.filter(s=>s.id!==cur);let w;
+ if(keys.length===2){const x=shuf(P);w={a:x[0].id,b:x[1].id}}else{const o=T[keys[0]==='a'?'b':'a'],c=pool.filter(s=>s.id!==o&&s.id!==T[keys[0]]);w={};w[keys[0]]=(c.length?shuf(c):shuf(pool.filter(s=>s.id!==o)))[0].id}
+ const lb=labs(inCls(T.cls));let n=0;T.spin=true;
+ const iv=setInterval(()=>{keys.forEach(k=>{const e=$('d-s'+k);if(e)e.textContent=lb(P[Math.floor(rnd()*P.length)])});if(++n>=14){clearInterval(iv);T.spin=false;keys.forEach(k=>T[k]=w[k]);tSetup()}},90)}
+function start(){if(!(T&&T.a&&T.b))return;const L=inCls(T.cls),lb=labs(L),P=[T.a,T.b].map(id=>{const s=L.find(x=>x.id===id);return{id:s.id,name:s.name,lab:lb(s)}});
+ const sets=pairs(NQ);if(sets.length<NQ){shell('⚔️ 1v1 Duel',card('Not enough matching questions in the bank.'));return}
+ D={p:P,sets,turn:0,sc:[0,0],cor:[0,0],res:[],phase:'ready',q:null,t0:0,class:T.cls,saved:null};dReady()}
+const dTot=()=>D.sets.length*2,dPi=()=>D.turn%2,dRound=()=>(D.turn>>1)+1;
+function dReady(){stop();D.phase='ready';const P=D.p[dPi()];
+ shell('⚔️ '+esc(D.p[0].lab)+' vs '+esc(D.p[1].lab),card(scoreRow(D.p.map(x=>x.lab),D.sc,dPi())+'<div style="text-align:center;margin:16px 0 6px;opacity:.75">Round '+dRound()+' of '+D.sets.length+(D.sets.length>NQ?' · sudden death':'')+'</div><div class="s3sub" style="text-align:center">Pass the device to</div><div class="dname" dir="auto">'+esc(P.lab)+'</div><div style="text-align:center;margin-top:14px">'+btn('I\'m ready ▶️','s3Duel.go()',false,'padding:14px 28px;font-size:18px')+'</div>'))}
+function dAsk(){const s=D.sets[D.turn>>1],q=qOf(dPi()?s.b:s.a);if(!q){dNext(0,true);return}try{s3Shuf.one(q)}catch(e){}D.q=q;D.phase='q';D.t0=Date.now();
+ shell(esc(D.p[dPi()].lab)+' · Round '+dRound(),card(scoreRow(D.p.map(x=>x.lab),D.sc,dPi())+barHtml+qBox(q)+opts(q,-1,false)));timer(D.t0,()=>dAnswer(-1))}
+function dAnswer(j){if(D.phase!=='q')return;stop();D.phase='fb';const q=D.q,left=TL-(Date.now()-D.t0)/1000,ok=j===q.answer,p=pts(ok,left),pi=dPi();
+ D.sc[pi]+=p;if(ok)D.cor[pi]++;D.res.push({pi,qid:q.id,ok,p,to:j<0,round:dRound(),j,ms:Math.round(Date.now()-D.t0)});
+ shell(esc(D.p[pi].lab)+' · Round '+dRound(),card(scoreRow(D.p.map(x=>x.lab),D.sc,pi)+'<div style="text-align:center;font-size:22px;font-weight:800;margin:10px 0">'+(ok?'✅ Correct +'+p:j<0?'⏰ Time is up':'❌ Wrong')+'</div>'+qBox(q)+opts(q,j,true)));
+ setTimeout(()=>{if(D&&D.phase==='fb')dNext()},ok?1400:2400)}
+function dNext(){D.turn++;if(D.turn>=dTot()){if(D.sc[0]===D.sc[1]&&D.sets.length<NQ+MAXX){const x=pairs(1,D.sets.flatMap(s=>[s.a,s.b]));if(x.length)D.sets.push(x[0])}}
+ if(D.turn>=dTot())return dEnd();dReady()}
+function ops(){const t=Date.now(),o=[],base='d'+t.toString(36)+Math.random().toString(36).slice(2,6),w=D.sc[0]===D.sc[1]?-1:D.sc[0]>D.sc[1]?0:1;
+ D.p.forEach((P,i)=>{D.res.filter(r=>r.pi===i&&!r.ok).forEach((r,k)=>o.push({id:base+'w'+i+'_'+k,uid:P.id,name:P.lab,n:0,t,q:r.qid,wrong:true}))});o.push({id:base,log:{mode:'class',at:t,cls:D.class,p:D.p.map((P,i)=>({uid:P.id,name:P.name,sc:D.sc[i],cor:D.cor[i]})),winner:w,res:D.res.map(r=>({pi:r.pi,q:r.qid,ok:r.ok,p:r.p,j:r.j,ms:r.ms,to:!!r.to,round:r.round}))}});
+ return o}
+function dEnd(){stop();D.phase='end';const w=D.sc[0]===D.sc[1]?-1:D.sc[0]>D.sc[1]?0:1;
+ if(!D.saved){if(window.S3CLOUD&&S3CLOUD.on&&S3CLOUD.award&&S3CLOUD.logDuel){AQ=AQ.concat(ops());jset(QK,AQ);D.saved='queued';flush()}else D.saved='local'}
+ dEndDraw()}
+function dEndDraw(){const w=D.sc[0]===D.sc[1]?-1:D.sc[0]>D.sc[1]?0:1;
+ const st=D.saved==='local'?'Online accounts are off, so the result was not saved.':AQ.length?'⏳ Saving the result… ('+AQ.length+' waiting). It will retry when online.':'☁️ Result saved.';
+ shell('⚔️ Result',card('<div style="text-align:center"><div style="font-size:46px">'+(w<0?'🤝':'🏆')+'</div><div style="font-size:26px;font-weight:800" dir="auto">'+(w<0?'Draw':esc(D.p[w].lab)+' wins!')+'</div></div><div style="margin:12px 0">'+scoreRow(D.p.map(x=>x.lab),D.sc,w)+'</div><div class="s3sub" style="text-align:center">'+D.p.map((x,i)=>esc(x.lab)+': '+D.cor[i]+' correct of '+D.res.filter(r=>r.pi===i).length).join(' · ')+'</div><div class="s3sub" style="text-align:center;margin-top:8px" id="d-save">'+st+'</div>')+
+  '<div style="text-align:center">'+btn('🔁 Rematch','s3Duel.rematch()')+btn('⚔️ New duel','s3Duel.teacher()',true)+btn('Close','s3Duel.close()',true)+(AQ.length?btn('Retry saving','s3Duel.flush()',true):'')+'</div>')}
+async function flush(){if(aBusy||!AQ.length||!(window.S3CLOUD&&S3CLOUD.award))return;aBusy=true;
+ while(AQ.length){try{if(AQ[0].log)await S3CLOUD.logDuel(AQ[0]);else await S3CLOUD.award(AQ[0]);AQ.shift();jset(QK,AQ)}catch(e){if(e&&e.code==='not-found'){AQ.shift();jset(QK,AQ);continue}break}}
+ aBusy=false;if(D&&D.phase==='end'&&$('d-save'))dEndDraw()}
+addEventListener('online',()=>{flush()});
+/* ================= AT HOME (two phones, code) ================= */
+let H=null;
+const fx=()=>(window.S3CLOUD&&S3CLOUD.fbx)?S3CLOUD.fbx():null;
+const hMe=()=>{const s=S3.SESS();return FN(s&&s.name)||'Player'};
+function home(){const s=window.S3&&S3.SESS&&S3.SESS();if(!s||s.role==='teacher')return;MODE='home';stop();hLeave(true);
+ if(!cloud()||!fx()){shell('⚔️ Duel a friend',card('Duels need the internet. Connect and try again.'));return}
+ shell('⚔️ Duel a friend',card('<div class="s3sub" style="margin-bottom:10px">Play a friend on your own phones. '+NQ+' questions each, '+TL+' seconds per question, taking turns. Practice only.</div>'+btn('➕ Start a duel','s3Duel.create()',false,'display:block;width:100%;padding:14px;margin:0 0 12px')+'<div class="s3sub" style="margin-bottom:6px">Or join with your friend\'s 4-digit code</div><div style="display:flex;gap:8px"><input id="d-code" inputmode="numeric" maxlength="4" class="s3in" style="flex:1;font-size:22px;text-align:center;letter-spacing:6px" placeholder="0000"><button class="s3btn" onclick="s3Duel.join()">Join</button></div><div id="d-err" style="color:#e11d48;font-weight:700;margin-top:8px"></div>'))}
+const err=m=>{const e=$('d-err');if(e)e.textContent=m};
+async function create(){const x=fx();if(!x)return;const F=x.F;let code=null;
+ try{for(let i=0;i<8&&!code;i++){const c=String(1000+Math.floor(rnd()*9000)),s=await F.getDoc(F.doc(x.db,'duels',c));if(!s.exists())code=c}
+  if(!code)return err('Try again');const sets=pairs(NQ);if(sets.length<NQ)return err('Not enough questions');
+  await F.setDoc(F.doc(x.db,'duels',code),{hid:x.uid,hn:hMe(),gid:null,gn:null,st:'wait',sets,t:0,ts:Date.now(),r:{},c:Date.now()});
+  hListen(code,0)}catch(e){err('Could not start: '+((e&&e.code)||e))}}
+async function join(){const x=fx(),c=(($('d-code')||{}).value||'').trim();if(!x)return;if(!/^\d{4}$/.test(c))return err('Enter the 4 digits');const F=x.F;
+ try{const ref=F.doc(x.db,'duels',c),s=await F.getDoc(ref);if(!s.exists())return err('No duel with this code');const d=s.data();if(d.hid===x.uid)return err('This is your own duel');if(d.gid&&d.gid!==x.uid)return err('This duel is full');
+  let gn=hMe();if(gn.toLowerCase()===String(d.hn).toLowerCase())gn+=' 2';
+  if(!d.gid)await F.updateDoc(ref,{gid:x.uid,gn,st:'play',ts:Date.now()});hListen(c,1)}catch(e){err('Could not join: '+((e&&e.code)||e))}}
+function hListen(code,me){const x=fx(),F=x.F;H={code,me,doc:null,unsub:null,seen:0,fbUntil:0,qt:-1,last:null,ext:false};
+ H.unsub=F.onSnapshot(F.doc(x.db,'duels',code),s=>{if(!H)return;H.doc=s.exists()?s.data():null;hRender()},e=>{shell('⚔️ Duel',card('Connection problem: '+esc((e&&e.code)||e)))})}
+function hLeave(quiet){stop();const h=H;H=null;if(h){try{h.unsub&&h.unsub()}catch(e){}const x=fx();if(x&&h.me===0){try{x.F.deleteDoc(x.F.doc(x.db,'duels',h.code))}catch(e){}}}}
+function hScore(d){const sc=[0,0],cor=[0,0],n=[0,0];Object.keys(d.r||{}).forEach(k=>{const r=d.r[k],i=(+k)%2;sc[i]+=r.p||0;n[i]++;if(r.ok)cor[i]++});return{sc,cor,n}}
+async function hWrite(t,ok,p,to,j,ms){const x=fx(),F=x.F,u={};u['r.'+t]={ok,p,to:!!to,j:j==null?-1:j,ms:ms==null?0:ms};u.t=t+1;u.ts=Date.now();try{await F.updateDoc(F.doc(x.db,'duels',H.code),u)}catch(e){}}
+function hRender(){const d=H&&H.doc,x=fx();if(!H)return;if(!d){stop();const had=H.seen;shell('⚔️ Duel',card('This duel was closed.')+'<div style="text-align:center">'+btn('Back','s3Duel.home()')+'</div>');return}
+ const names=[d.hn,d.gn||'…'];
+ if(d.st==='wait'){stop();shell('⚔️ Waiting for a friend',card('<div class="s3sub" style="text-align:center">Tell your friend to join with this code</div><div style="font-size:64px;font-weight:800;text-align:center;letter-spacing:10px;margin:10px 0">'+esc(H.code)+'</div><div class="s3sub" style="text-align:center">Waiting…</div>')+'<div style="text-align:center">'+btn('Cancel','s3Duel.close()',true)+'</div>');return}
+ const S0=hScore(d),len=(d.sets||[]).length,t=d.t||0,pi=t%2;
+ const tie=S0.sc[0]===S0.sc[1],over=t>=2*len;
+ if(over&&tie&&len<NQ+MAXX){if(H.me===0&&!H.ext){H.ext=true;const sets=(d.sets||[]).slice(),more=pairs(1,sets.flatMap(s=>[s.a,s.b]));if(more.length){sets.push(more[0]);x.F.updateDoc(x.F.doc(x.db,'duels',H.code),{sets,ts:Date.now()}).then(()=>{if(H)H.ext=false}).catch(()=>{if(H)H.ext=false})}}
+  stop();shell('⚔️ Sudden death',card(scoreRow(names,S0.sc,-1)+'<div style="text-align:center;margin:14px 0;font-weight:800;font-size:20px">🤝 Tied! One more round…</div>'));return}
+ if(over){stop();if(H.me===0&&!H.logged){H.logged=true;try{x.F.setDoc(x.F.doc(x.db,'duelLog','h'+H.code+'_'+(d.c||0)),{mode:'home',at:d.c||Date.now(),hid:d.hid,gid:d.gid,hn:d.hn,gn:d.gn,sc:S0.sc,cor:S0.cor,sets:d.sets,r:d.r})}catch(e){}}const w=tie?-1:S0.sc[0]>S0.sc[1]?0:1,me=H.me;shell('⚔️ Result',card('<div style="text-align:center"><div style="font-size:46px">'+(w<0?'🤝':w===me?'🏆':'👏')+'</div><div style="font-size:26px;font-weight:800" dir="auto">'+(w<0?'Draw':(w===me?'You win!':esc(names[w])+' wins!'))+'</div></div><div style="margin:12px 0">'+scoreRow(names,S0.sc,w)+'</div><div class="s3sub" style="text-align:center">'+names.map((n,i)=>esc(n)+': '+S0.cor[i]+' correct of '+S0.n[i]).join(' · ')+'</div><div class="s3sub" style="text-align:center;margin-top:8px">Practice only.</div>')+'<div style="text-align:center">'+btn('Done','s3Duel.close()')+'</div>');return}
+ /* short result card for the turn that just finished */
+ if(t>H.seen){H.seen=t;const r=(d.r||{})[t-1];if(r&&t>0){H.fbUntil=Date.now()+(r.ok?1300:2200);setTimeout(()=>{if(H&&H.doc)hRender()},r.ok?1350:2250)}}
+ if(Date.now()<H.fbUntil){stop();const k=t-1,r=(d.r||{})[k],who=k%2,mine=who===H.me,lq=mine&&H.last&&H.last.t===k?H.last:null;
+  shell('⚔️ '+esc(names[0])+' vs '+esc(names[1]),card(scoreRow(names,S0.sc,who)+'<div style="text-align:center;font-size:22px;font-weight:800;margin:10px 0">'+(mine?'You: ':esc(names[who])+': ')+(r&&r.ok?'✅ +'+r.p:r&&r.to?'⏰ Time is up':'❌ Wrong')+'</div>'+(lq?qBox(lq.q)+opts(lq.q,lq.j,true):'')));return}
+ if(pi===H.me){const s=d.sets[t>>1],q=qOf(pi?s.b:s.a);if(!q){hWrite(t,false,0,true);return}
+  if(H.qt!==t){H.qt=t;H.t0=Date.now();try{s3Shuf.one(q)}catch(e){}H.q=q}
+  shell('⚔️ Your turn · Round '+((t>>1)+1)+' of '+len,card(scoreRow(names,S0.sc,pi)+barHtml+qBox(H.q)+opts(H.q,-1,false)));timer(H.t0,()=>hAnswer(-1));return}
+ stop();H.qt=-1;const away=Date.now()-(d.ts||0)>30000;
+ shell('⚔️ '+esc(names[0])+' vs '+esc(names[1]),card(scoreRow(names,S0.sc,pi)+'<div style="text-align:center;margin:18px 0;font-weight:700;font-size:18px" dir="auto">'+esc(names[pi])+' is answering…</div><div class="s3sub" style="text-align:center">Round '+((t>>1)+1)+' of '+len+'</div>')+'<div style="text-align:center">'+(away?btn('Friend is away? Skip their turn','s3Duel.skipT()',true):'')+'</div>');
+ if(!away){const w=Math.max(500,30500-(Date.now()-(d.ts||0)));H.awayT=setTimeout(()=>{if(H&&H.doc&&H.doc.t===t)hRender()},w)}}
+function hAnswer(j){if(!H||!H.doc||H.busy)return;const d=H.doc,t=d.t,q=H.q;if(!q||(t%2)!==H.me||H.qt!==t)return;stop();H.busy=true;
+ const left=TL-(Date.now()-H.t0)/1000,ok=j===q.answer,p=pts(ok,left);H.last={t,q,j};hWrite(t,ok,p,j<0,j,Math.round(Date.now()-H.t0)).then(()=>{if(H)H.busy=false})}
+function skipT(){if(!H||!H.doc)return;const t=H.doc.t;hWrite(t,false,0,true)}
+/* ================= shared ================= */
+function pick(j){if(MODE==='class')dAnswer(j);else hAnswer(j)}
+function close(){stop();if(MODE==='home')hLeave();const o=$('duel-ov');if(o)o.remove();D=D&&D.phase==='end'?D:null;if(MODE==='class'&&D&&D.phase!=='end')D=null;T=T&&T.spin?T:T}
+window.s3Duel={_pairs:pairs,teacher,home,close,pick,flush,create,join,skipT,
+ cls(c){T.cls=c;T.a=T.b=null;tSetup()},
+ tap(id){if(T.spin)return;if(T.a===id)T.a=null;else if(T.b===id)T.b=null;else if(!T.a)T.a=id;else if(!T.b)T.b=id;else T.b=id;tSetup()},
+ random(){spinPick(['a','b'])},reroll(k){spinPick([k])},start,go(){dAsk()},
+ rematch(){if(!D)return;const P=[D.p[1],D.p[0]],sets=pairs(NQ);D={p:P,sets,turn:0,sc:[0,0],cor:[0,0],res:[],phase:'ready',q:null,t0:0,class:D.class,saved:null};MODE='class';dReady()}};
+})();
 </script>
 <script id="s3-sw">if("serviceWorker"in navigator&&/^https?:$/.test(location.protocol))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));</script>
 </body>
