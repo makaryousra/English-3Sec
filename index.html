@@ -165,7 +165,7 @@ header h1{font-size:16px!important;white-space:nowrap}
 /* Real US/UK neural voices, lazy loaded. Nothing is fetched until the first time a sound is played. */
 (function(){
 var H=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(16).padStart(14,'0')};
-var idx={},pend={},A=null,rangeOK=true,cache=new Map(),SIL='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+var idx={},pend={},A=null,cache=new Map(),SIL='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
 function fam(l){l=String(l||'');if(location.protocol==='file:')return null;if(/^en[-_]gb/i.test(l))return'uk';if(/^en[-_]us/i.test(l))return'us';return null}
 function el(){if(!A){A=new Audio();try{A.preservesPitch=true}catch(e){}}return A}
 function unlock(){document.removeEventListener('touchend',unlock,true);document.removeEventListener('click',unlock,true);try{var a=el();a.src=SIL;var p=a.play();if(p&&p.catch)p.catch(function(){})}catch(e){}}
@@ -174,24 +174,32 @@ function load(f,force){if(idx[f]&&!force)return Promise.resolve(idx[f]);if(pend[
  var p=fetch('audio_index_'+f+'.json',{cache:force?'reload':'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){idx[f]=j;return j}).catch(function(){return idx[f]||null});
  pend[f]=p;p.then(function(j){if(!j&&pend[f]===p)delete pend[f]});return p}
 function waitIdx(f,ms){var p=load(f);return Promise.race([p,new Promise(function(r){setTimeout(function(){r(null)},ms)})])}
-var bad={};
-function clip(f,ix,e){var k=f+e.join(','),pk=ix.p[e[0]];if(cache.has(k))return Promise.resolve(cache.get(k));
- if(bad[pk]&&Date.now()-bad[pk]<20000)return Promise.resolve(null);
- return fetch(pk,{headers:{Range:'bytes='+e[1]+'-'+(e[1]+e[2]-1)}}).then(function(r){
-  if(r.status===200){rangeOK=false;try{r.body&&r.body.cancel()}catch(x){}return null}
-  if(r.status!==206){bad[pk]=Date.now();return null}
-  return r.arrayBuffer()}).then(function(b){if(!b)return null;var u=URL.createObjectURL(new Blob([b],{type:'audio/mpeg'}));
-  if(cache.size>400){var o=cache.keys().next().value;try{URL.revokeObjectURL(cache.get(o))}catch(x){}cache.delete(o)}cache.set(k,u);return u}).catch(function(){return null})}
+var bad={},rangeBad=0,blocks={},bkeys=[],BLOCK=160000;
+function mk(k,ab){var u=URL.createObjectURL(new Blob([ab],{type:'audio/mpeg'}));
+ if(cache.size>400){var o=cache.keys().next().value;try{URL.revokeObjectURL(cache.get(o))}catch(x){}cache.delete(o)}cache.set(k,u);return u}
+function rng(pk,s,n,quiet){var ac=window.AbortController?new AbortController():null,t=ac?setTimeout(function(){try{ac.abort()}catch(x){}},quiet?20000:10000):0;
+ return fetch(pk,{headers:{Range:'bytes='+s+'-'+(s+n-1)},signal:ac?ac.signal:undefined}).then(function(r){clearTimeout(t);
+  if(r.status===200){if(!quiet)rangeBad=Date.now()+30000;try{r.body&&r.body.cancel()}catch(x){}return null}
+  if(r.status!==206)return null;return r.arrayBuffer()}).catch(function(){clearTimeout(t);return null})}
+function keep(pk,s,b){if(!blocks[pk])bkeys.push(pk);blocks[pk]={s:s,b:b};while(bkeys.length>6){delete blocks[bkeys.shift()]}}
+function ahead(pk,s){var sv=false;try{sv=navigator.connection&&navigator.connection.saveData}catch(x){}if(sv)return;var bl=blocks[pk];if(bl&&s>=bl.s&&s<bl.s+bl.b.byteLength)return;
+ rng(pk,s,BLOCK,true).then(function(b){if(b&&b.byteLength)keep(pk,s,b)})}
+function clip(f,ix,e){var k=f+e.join(','),pk=ix.p[e[0]],off=e[1],len=e[2];if(cache.has(k))return Promise.resolve(cache.get(k));
+ var bl=blocks[pk];if(bl&&off>=bl.s&&off+len<=bl.s+bl.b.byteLength){var u=mk(k,bl.b.slice(off-bl.s,off-bl.s+len));ahead(pk,off+len);return Promise.resolve(u)}
+ if(bad[pk]&&Date.now()-bad[pk]<5000)return Promise.resolve(null);
+ function one(){return rng(pk,off,len).then(function(b){return b&&b.byteLength>=len?b:null})}
+ return one().then(function(b){if(b||Date.now()<rangeBad)return b;return new Promise(function(r){setTimeout(r,300)}).then(one)}).then(function(b){
+  if(!b){bad[pk]=Date.now();return null}var u=mk(k,b.slice(0,len));ahead(pk,off+len);return u})}
 window.S3A={fam:fam,
  stop:function(){if(A){try{A.onended=A.onerror=null;A.pause()}catch(e){}}},
  prefetch:function(f){if(f&&location.protocol!=='file:')load(f)},
- play:function(f,text,rate,isCur,cb){if(!rangeOK)return Promise.resolve(false);
+ play:function(f,text,rate,isCur,cb){if(Date.now()<rangeBad)return Promise.resolve(false);
   var key=H(String(text).toLowerCase());
   function go(ix){var e=ix&&ix.m[key];if(!e)return Promise.resolve(null);
    return clip(f,ix,e).then(function(u){if(!u)return false;if(!isCur())return true;
     var a=el();a.onended=function(){if(isCur()&&cb)cb()};a.onerror=null;a.src=u;a.playbackRate=rate||1;
     var p=a.play();return p&&p.then?p.then(function(){return true},function(){return false}):true})}
-  return waitIdx(f,15000).then(function(ix){if(!ix)return false;
+  return waitIdx(f,8000).then(function(ix){if(!ix)return false;
    return go(ix).then(function(r){if(r!==null)return r;
     if(ix._fresh)return false;
     return load(f,true).then(function(j){if(!j)return false;j._fresh=1;return go(j).then(function(r2){return r2===null?false:r2})})})})}};
@@ -5302,9 +5310,9 @@ const stop=()=>{if(audioEl){const a=audioEl;audioEl=null;a.onended=a.onerror=nul
 const turnText=(L,ti)=>L.sents.filter(s=>s.ti===ti).map(s=>s.plain).join(' ');
 function playTurn(L,ti,cb){stop();let fin=false;const done=()=>{if(fin)return;fin=true;if(cb)cb()};
  const spk=[...new Set(L.turns.map(t=>t[0]))];const pitch=L.turns[ti][0]&&spk.indexOf(L.turns[ti][0])>0?0.85:1;
- const fb=()=>{audioEl=null;sp(turnText(L,ti),done,pitch);setTimeout(done,Math.max(5000,turnText(L,ti).length*100/(slow?.75:1)+3000))};
+ const fb=()=>{try{a.onended=a.onerror=null;a.pause()}catch(e){}audioEl=null;sp(turnText(L,ti),done,pitch);setTimeout(done,Math.max(5000,turnText(L,ti).length*100/(slow?.75:1)+3000))};
  const a=new Audio(LA+'_u'+L.unit+'_'+String(ti).padStart(2,'0')+'.mp3');audioEl=a;a.playbackRate=slow?.75:1;try{a.preservesPitch=true}catch(e){}
- a.onended=()=>{if(audioEl===a){audioEl=null;done()}};a.onerror=()=>{if(audioEl===a)fb()};
+ a.onended=()=>{if(audioEl===a){audioEl=null;done()}};a.onerror=()=>{if(audioEl===a)fb()};a.preload='auto';setTimeout(()=>{if(audioEl===a&&a.currentTime===0&&!a.ended)fb()},9000);
  const pr=a.play();if(pr&&pr.catch)pr.catch(()=>{if(audioEl===a)fb()})}
 let cur=null,mode='home',tok=0,Q=null,M=null,timer=null,pidx=-1,playing=false,hide=false;
 const S3=()=>window.S3||{};
