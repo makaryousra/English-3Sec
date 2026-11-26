@@ -190,7 +190,7 @@ var done=0;function fin(){if(done)return;done=1;if(mo)mo.disconnect();d.classLis
 function ready(g){return g&&(g.style.display==='none'||g.children.length>0)}
 var mo=new MutationObserver(function(){var g=document.getElementById('s3-gate');if(!g)return;if(ready(g))return fin();if(!g._o){g._o=1;mo.observe(g,{attributes:true,attributeFilter:['style'],childList:true})}});
 mo.observe(document,{childList:true,subtree:true});
-setTimeout(fin,10000)}catch(e){document.documentElement.classList.remove('s3-boot')}})();</script>
+addEventListener('DOMContentLoaded',function(){setTimeout(fin,2000)});setTimeout(function(){if(done)return;var sp=document.getElementById('s3-splash');if(sp&&!sp.querySelector('button')){var sl=sp.querySelector('span');if(sl)sl.textContent='Slow connection, still loading\u2026';var b=document.createElement('button');b.textContent='Reload';b.style.cssText='background:#4f46e5;color:#fff;border:0;border-radius:999px;padding:8px 18px;font:700 13px system-ui,sans-serif;cursor:pointer';b.onclick=function(){location.reload()};sp.appendChild(b)}},12000);setTimeout(fin,45000)}catch(e){document.documentElement.classList.remove('s3-boot')}})();</script>
 <style id="s3-boot-css">
 #s3-splash{display:none}
 html.s3-boot body>*:not(#s3-splash):not(script):not(style){visibility:hidden}
