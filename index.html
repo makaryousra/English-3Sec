@@ -200,6 +200,7 @@ html.s3-boot-out #s3-splash{opacity:0}
 @keyframes s3spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){#s3-splash i{animation:none!important}}
 </style>
+<style id="s3-track-css">.s3nav:not(.open) #tab-track:not(.active){display:none!important}@media print{body.print-track header,body.print-track #stats-ribbon,body.print-track #translator-bar,body.print-track #filter-section,body.print-track .trk-noprint,body.print-track .s3chip{display:none!important}body.print-track #view-track{display:block!important}}</style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900"><div id="s3-splash" aria-hidden="true"><i></i><span>S3 English</span></div>
 <script id="s3-audio">
@@ -4920,14 +4921,14 @@ const ago=t=>{if(!t)return'never';const m=(Date.now()-t)/6e4;return m<2?'just no
 function refreshChip(){const c=$('s3-chip');if(!c)return;if(!SESS){c.innerHTML='';return}
  let xp='';if(isStudent()){const p=getProg(SESS.id);const _tx=(p.xp||0)+((window.S3CLOUD&&S3CLOUD.tp)?S3CLOUD.tp(SESS.id).t:0),rk=rankOf(_tx);xp='<button class="s3pill s3rk" style="cursor:pointer" onclick="s3Ach()">'+(p.avatar||'🙂')+' '+rk.ic+' '+rk.n+' · '+_tx+'</button><span class="s3pill">🔥 '+(state.streak||0)+'</span>'}
  setTimeout(()=>ach.check(),50);if(window.s3Game)xp+='<button class="s3pill" style="cursor:pointer" onclick="s3Game.open()">🎮</button><button class="s3pill" style="cursor:pointer" onclick="s3Game.place()">🧭 Level</button>';c.innerHTML=xp+'<span class="s3pill">'+(isTeacher()?'👩‍🏫 Teacher':'🎓 '+esc(SESS.name))+'</span><button class="s3pill" onclick="s3Logout()" style="cursor:pointer">Log out</button>'}
-const TABS=['bank','quiz','read','write','exam','play','listen','notebook','srs','reference','worksheet','add','board','report','students','attend'];
-const LABEL={bank:'📝 Question Bank',quiz:'🎓 Exam',read:'📖 Reading',write:'✍️ Writing',exam:'✍️ Rewrite & Translation',play:'🎯 Challenges',listen:'🎧 Listening',notebook:'📓 Notebook',srs:'🧠 Mastery',reference:'📚 Study Guide',worksheet:'🖨️ Exam Paper',add:'➕ Add Questions',board:'🏆 Leaderboard',report:'📊 Reports',students:'👥 Students',attend:'🏫 Classroom mode'};
-function allowed(t){if(!SESS)return false;if(t==='add'||t==='students'||t==='attend')return isTeacher();return true}
+const TABS=['bank','quiz','read','write','exam','play','listen','notebook','srs','reference','worksheet','add','board','report','students','attend','track'];
+const LABEL={bank:'📝 Question Bank',quiz:'🎓 Exam',read:'📖 Reading',write:'✍️ Writing',exam:'✍️ Rewrite & Translation',play:'🎯 Challenges',listen:'🎧 Listening',notebook:'📓 Notebook',srs:'🧠 Mastery',reference:'📚 Study Guide',worksheet:'🖨️ Exam Paper',add:'➕ Add Questions',board:'🏆 Leaderboard',report:'📊 Reports',students:'👥 Students',attend:'🏫 Classroom mode',track:'📈 Tracker'};
+function allowed(t){if(!SESS)return false;if(t==='add'||t==='students'||t==='attend'||t==='track')return isTeacher();return true}
 window.switchTab=function(tab){if(!allowed(tab))tab='bank';state.currentTab=tab;
  TABS.forEach(t=>{const b=$('tab-'+t);if(b){b.className='tabbtn'+(t===tab?' active':'');b.style.display=allowed(t)?'':'none'}const v=$('view-'+t);if(v)v.classList.toggle('hidden',t!==tab)});
  $('filter-section').classList.toggle('hidden',tab!=='bank');
  if(tab==='quiz'&&window.s3Exam)s3Exam.render();if(tab==='read')s3RW.renderRead();if(tab==='write')s3RW.renderWrite();if(tab==='exam')renderExamDrills();if(tab==='srs')renderSRSDashboard();if(tab==='worksheet')WS.render();if(tab==='add')renderCustomQuestionsList();if(window.s3Engage)s3Engage.render(tab);
- if(tab==='play'&&window.s3Play)s3Play.render();if(tab==='listen'&&window.s3Listen)s3Listen.render();if(tab==='bank'&&window.s3Picker)s3Picker.mount();if(tab==='notebook'&&window.s3Nb)s3Nb.render();if(tab==='reference'){renderReferenceSheets();renderFlashcard()}if(tab==='board')renderBoard();if(tab==='report')renderReport();if(tab==='students')renderStudents();if(tab==='attend'&&window.s3Att)s3Att.render();window.scrollTo({top:0})};
+ if(tab==='play'&&window.s3Play)s3Play.render();if(tab==='listen'&&window.s3Listen)s3Listen.render();if(tab==='bank'&&window.s3Picker)s3Picker.mount();if(tab==='notebook'&&window.s3Nb)s3Nb.render();if(tab==='reference'){renderReferenceSheets();renderFlashcard()}if(tab==='board')renderBoard();if(tab==='report')renderReport();if(tab==='students')renderStudents();if(tab==='attend'&&window.s3Att)s3Att.render();if(tab==='track'&&window.s3Track)s3Track.render();window.scrollTo({top:0})};
 
 /* ---------- GATE (login) ---------- */
 let gateMode='student';
@@ -5076,7 +5077,7 @@ function boot(){
  nav.innerHTML=TABS.map(t=>'<button onclick="switchTab(\''+t+'\')" id="tab-'+t+'" class="tabbtn">'+LABEL[t]+(t==='srs'?' <span id="srs-due-badge" class="px-1.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold">0</span>':'')+'</button>').join('');nav.insertAdjacentHTML('beforeend','<button type="button" id="tab-more" class="tabbtn" onclick="this.parentNode.classList.toggle(\'open\')">More ▾</button>');
  const chip=document.createElement('div');chip.className='s3chip';chip.innerHTML='<select id="s3-theme" class="s3pill" style="cursor:pointer" onchange="s3Theme(this.value)">'+THEMES.map(t=>'<option value="'+t[0]+'">🎨 '+t[1]+'</option>').join('')+'</select><span id="s3-chip" class="s3chip"></span>';
  nav.parentElement.insertBefore(chip,nav);$('s3-theme').value=document.documentElement.getAttribute('data-theme');
- const main=document.querySelector('main');['board','report','students','attend','play','listen','notebook'].forEach(t=>{const s=document.createElement('section');s.id='view-'+t;s.className='hidden space-y-4';main.appendChild(s)});
+ const main=document.querySelector('main');['board','report','students','attend','track','play','listen','notebook'].forEach(t=>{const s=document.createElement('section');s.id='view-'+t;s.className='hidden space-y-4';main.appendChild(s)});
  const g=document.createElement('div');g.id='s3-gate';g.className='no-print';document.body.appendChild(g);
  // voice picker in ribbon
  const vr=$('voice-rate');if(vr){const sp=document.createElement('select');sp.id='s3-voice';sp.className='bg-transparent text-indigo-100 font-semibold focus:outline-none cursor-pointer';sp.style.maxWidth='170px';sp.onchange=e=>s3Voice(e.target.value);vr.parentElement.appendChild(sp);const st=document.createElement('span');st.id='s3-vstat';st.style.cssText='flex-basis:100%;font-size:11px;opacity:.9';vr.parentElement.appendChild(st)}
@@ -6667,7 +6668,7 @@ const chip=$('s3-chip'),row=brand.parentNode,ctl=chip.parentNode;const right=doc
 const dbg=document.createElement('div');dbg.id='s3-drawer-bg';const dr=document.createElement('div');dr.id='s3-drawer';
 const sbg=document.createElement('div');sbg.id='s3-set-bg';const sh=document.createElement('div');sh.id='s3-sheet';
 document.body.append(dbg,dr,sbg,sh);dbg.onclick=closeD;sbg.onclick=closeS;
-const GROUPS=[['Study',['bank','quiz','read','write','exam','listen','srs','notebook','reference']],['Play',['play']],['Class and tools',['worksheet','add','board','report','students','attend']]];
+const GROUPS=[['Study',['bank','quiz','read','write','exam','listen','srs','notebook','reference']],['Play',['play']],['Class and tools',['worksheet','add','board','report','students','attend','track']]];
 function vis(b){return b&&getComputedStyle(b).display!=='none'&&!b.hidden}
 function openD(){const cur=(document.querySelector('.s3nav button.active,.s3nav button.tab-active')||{}).id;let h='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">English · Secondary 3</b><button class="s3ib" onclick="s3Shell.closeD()">✕</button></div>';
  const stu=window.S3&&S3.isStudent();
@@ -6677,7 +6678,7 @@ function openD(){const cur=(document.querySelector('.s3nav button.active,.s3nav 
  const sec=(t,x)=>x?'<h4>'+t+'</h4>'+x:'';
  h+=sec('Home',(stu?bt('s3Me.profile()','🪪 Profile')+bt('s3Game.place()','🧭 My level (placement test)'):'')+bt('s3Game.open()','🎮 Games')+(stu?bt('s3Me.chal()','🤝 Duel Challenges'):'')+tab('play')+tab('board'));
  h+=sec('Skills',tab('bank')+tab('read')+(stu?bt('s3Game.spk()','🗣️ Speaking'):'')+tab('write')+tab('listen')+tab('exam')+tab('srs')+tab('notebook')+tab('reference'));
- h+=sec('Teacher',tab('worksheet')+tab('add')+tab('attend'));
+ h+=sec('Teacher',tab('track')+tab('worksheet')+tab('add')+tab('attend'));
  h+=sec('More',tab('quiz')+(stu?bt('s3Game.rec()','🎯 Recommended for me')+bt('s3Ach()','🏅 My rank and badges')+bt('s3Me.shop()','🛍️ Shop'):'')+tab('report')+tab('students')+(!stu?bt('s3Me.pics()','🖼️ Student pictures')+bt('s3Rpt.tOpen()','🚩 Problem reports'):'')+bt('s3Shell.openS()','⚙️ Settings')+bt('s3Logout()','🚪 Log out'));
  dr.innerHTML=h;dbg.style.display='block';dr.classList.add('open')}
 function closeD(){dr.classList.remove('open');dbg.style.display='none'}
@@ -7596,6 +7597,161 @@ if(matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
 ['stat-answered','stat-accuracy','stat-streak'].forEach(function(id){var e=document.getElementById(id);if(!e)return;
  var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(function(){e.classList.remove('s3bumpn');void e.offsetWidth;e.classList.add('s3bumpn')},0)}).observe(e,{childList:true,characterData:true,subtree:true})});
 }catch(e){}})();
+</script>
+<script id="s3-track">
+/* ===== S3 TRACKER: teacher-only tab to follow each student and each class (read-only, uses recorded data only) ===== */
+(function(){
+var S=window.S3,$=function(id){return document.getElementById(id)},esc=function(t){return S?S.esc(t):String(t)};
+if(!S)return;
+var st={mode:'students',cls:'all',id:null,q:''};
+var SKILLS=[['Grammar',function(c){return c==='Grammar'}],['Vocabulary',function(c){return /Vocabulary|Idiom|Spelling/.test(c||'')}],['Reading',function(c){return c==='Reading'}],['Listening',function(c){return c==='Listening'}],['Rewrite',function(c){return c==='Rewrite'}],['Translation',function(c){return c==='Translation'}]];
+var DAY=864e5,COL={g:'#16a34a',a:'#f59e0b',r:'#e11d48',n:'#94a3b8'};
+function pct(o,n){return n?Math.round(o/n*100):null}
+function lvl(p,n,min){if(p==null||n<(min||5))return{t:'Not enough data',c:COL.n,k:0};if(p>=80)return{t:'Strong',c:COL.g,k:3};if(p>=50)return{t:'Developing',c:COL.a,k:2};return{t:'Needs support',c:COL.r,k:1}}
+function pill(l){return '<span class="s3pill" style="border-color:'+l.c+';color:'+l.c+'">'+l.t+'</span>'}
+function bar(p,col){return '<div class="s3bar"><i style="width:'+Math.max(0,Math.min(100,p||0))+'%;background:'+col+'"></i></div>'}
+function ago(t){if(!t)return 'never';var d=Math.floor((Date.now()-t)/DAY);return d<=0?'today':d===1?'yesterday':d+' days ago'}
+function card(h,s){return '<div class="bg-white rounded-2xl border p-5" style="'+(s||'')+'">'+h+'</div>'}
+function mem(){return (window.S3CLOUD&&S3CLOUD.mem)||{}}
+var QI=null,QN=-1;
+function qIdx(){try{if(typeof state!=='undefined'&&state.allQuestions&&state.allQuestions.length!==QN){QN=state.allQuestions.length;QI={};state.allQuestions.forEach(function(q){QI[String(q.id)]=q})}}catch(e){}return QI||{}}
+function weightedAvg(parts){var t=0,n=0;parts.forEach(function(p){if(p&&p[1]>0){t+=p[0];n+=p[1]}});return n?{v:t/n,n:n}:null}
+/* ---------- analysis of one student (recorded data only) ---------- */
+function analyze(s){
+ var x=S.statsFor(s),p=x.p||{},log=(p.log||[]).filter(function(e){return e.k!=='srs'&&e.k!=='bonus'&&e.q!=null}),now=Date.now();
+ var a={s:s,x:x,p:p,n:log.length,ok:0,sk:{},un:{},miss:{},w1:[0,0],w0:[0,0],act14:0,speak:null,sub:{}};
+ SKILLS.forEach(function(k){a.sk[k[0]]={n:0,ok:0}});
+ log.forEach(function(e){
+  if(e.ok)a.ok++;
+  for(var i=0;i<SKILLS.length;i++){if(SKILLS[i][1](e.c)){var o=a.sk[SKILLS[i][0]];o.n++;if(e.ok)o.ok++;break}}
+  var u=Number(e.u);if(u>0){var uo=a.un[u]=a.un[u]||{n:0,ok:0};uo.n++;if(e.ok)uo.ok++}
+  var m=a.miss[e.q]=a.miss[e.q]||{n:0,bad:0};m.n++;if(!e.ok)m.bad++;
+  var age=now-e.t;if(age<7*DAY){a.w1[0]++;if(e.ok)a.w1[1]++}else if(age<14*DAY){a.w0[0]++;if(e.ok)a.w0[1]++}});
+ var days=p.days||{};for(var i=0;i<14;i++){if(days[S.dayKey(now-i*DAY)])a.act14++}
+ try{if(p.spk&&window.s3SpkStat)a.speak=s3SpkStat(p.spk)}catch(e){}
+ var K=p.spk||{},cf=K.cf,rp=K.rp,oc=K.oc;
+ function sub(name,list){var r=weightedAvg(list);if(r)a.sub[name]=r}
+ sub('Pronunciation',[cf&&[cf.p||0,cf.n||0]]);sub('Fluency',[cf&&[cf.f||0,cf.n||0]]);
+ sub('Speaking grammar',[cf&&[cf.g||0,cf.n||0],rp&&[rp.g||0,rp.n||0],oc&&[oc.g||0,oc.n||0]]);
+ sub('Speaking vocabulary',[cf&&[cf.v||0,cf.n||0],rp&&[rp.v||0,rp.n||0],oc&&[oc.v||0,oc.n||0]]);
+ sub('Answering the question',[rp&&[rp.r||0,rp.n||0]]);
+ a.acc=pct(a.ok,a.n);return a}
+/* ---------- strengths and weaknesses from data ---------- */
+function insights(a){
+ var str=[],weak=[],thin=a.n<20;
+ SKILLS.forEach(function(k){var o=a.sk[k[0]],pc=pct(o.ok,o.n);if(o.n<8)return;
+  var ev=pc+'% correct ('+o.ok+' of '+o.n+')';if(pc>=80)str.push({r:pc,t:k[0],d:ev});else if(pc<60)weak.push({r:pc,t:k[0],d:ev})});
+ var un=[];Object.keys(a.un).forEach(function(u){var o=a.un[u];if(o.n>=5)un.push({u:u,p:pct(o.ok,o.n),o:o})});
+ un.sort(function(x,y){return x.p-y.p});
+ un.filter(function(z){return z.p<60}).slice(0,3).forEach(function(z){weak.push({r:z.p,t:'Unit '+z.u,d:z.p+'% correct ('+z.o.ok+' of '+z.o.n+')'})});
+ un.filter(function(z){return z.p>=85}).reverse().slice(0,3).forEach(function(z){str.push({r:z.p,t:'Unit '+z.u,d:z.p+'% correct ('+z.o.ok+' of '+z.o.n+')'})});
+ if(a.speak&&a.speak.score!=null&&a.speak.cnt>=3){var sc=a.speak.score,ev='speaking score '+sc+'% over '+a.speak.cnt+' results';if(sc>=75)str.push({r:sc,t:'Speaking',d:ev});else if(sc<50)weak.push({r:sc,t:'Speaking',d:ev})}
+ Object.keys(a.sub).forEach(function(k){var r=a.sub[k];if(r.n<3)return;var v=r.v.toFixed(1)+'/5 (coach, '+r.n+' sentences or chats)';if(r.v>=4)str.push({r:r.v*20,t:k,d:v});else if(r.v<3)weak.push({r:r.v*20,t:k,d:v})});
+ var P=a.p.place;if(P&&P.sk){[['g','Grammar'],['v','Vocabulary'],['r','Reading'],['l','Listening'],['w','Writing skills'],['s','Speaking']].forEach(function(k){var z=P.sk[k[0]];if(!z||z[1]<4)return;var pc=pct(z[0],z[1]);var ev='placement test '+z[0]+'/'+z[1];if(pc>=80)str.push({r:pc,t:k[1]+' (placement)',d:ev});else if(pc<50)weak.push({r:pc,t:k[1]+' (placement)',d:ev})})}
+ str.sort(function(x,y){return y.r-x.r});weak.sort(function(x,y){return x.r-y.r});
+ return{str:str.slice(0,6),weak:weak.slice(0,6),thin:thin}}
+function trendText(a){
+ if(a.w1[0]>=10&&a.w0[0]>=10){var n=pct(a.w1[1],a.w1[0]),o=pct(a.w0[1],a.w0[0]),d=n-o;
+  return d>=5?'Improving: '+n+'% this week, '+o+'% the week before.':d<=-5?'Dropping: '+n+'% this week, '+o+'% the week before.':'Steady: '+n+'% this week, '+o+'% the week before.'}
+ return 'Trend needs at least 10 answers in each of the last two weeks (this week '+a.w1[0]+', week before '+a.w0[0]+').'}
+function overall(a){return lvl(a.acc,a.n,20)}
+function flag(a){if(!a.n&&!(a.x&&a.x.att))return{t:'No activity',c:COL.n};var d=a.x.last?(Date.now()-a.x.last)/DAY:99;if(d>=7)return{t:'Inactive '+(a.x.last?Math.floor(d)+'d':''),c:COL.r};if(a.n>=20&&a.acc<50)return{t:'Low accuracy',c:COL.r};if(a.n>=20&&a.acc>=80)return{t:'On track',c:COL.g};return{t:'Active',c:COL.a}}
+/* ---------- data load ---------- */
+function ready(){return !(window.S3CLOUD&&S3CLOUD.on&&!S3CLOUD.offline&&!S3CLOUD.fresh())}
+function students(){return S.CLS().students||[]}
+function classes(){var m={};students().forEach(function(s){if(s.cls)m[s.cls]=1});return Object.keys(m).sort()}
+function byId(id){return students().filter(function(s){return s.id===id})[0]}
+function shown(){return students().filter(function(s){return st.cls==='all'||s.cls===st.cls}).slice().sort(function(a,b){return (a.cls||'').localeCompare(b.cls||'')||String(a.name).localeCompare(String(b.name))})}
+function chips(){var h='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">';['all'].concat(classes()).forEach(function(c){h+='<button class="s3btn '+(c===st.cls?'':'ghost')+'" style="padding:5px 12px;font-size:12px" onclick="s3Track.cls(\''+c+'\')">'+(c==='all'?'All classes':'Class '+esc(c))+'</button>'});return h+'</div>'}
+function head(){return card('<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between"><h2 style="font-size:20px;font-weight:800">📈 Tracker</h2><div style="display:flex;gap:6px"><button class="s3btn '+(st.mode==='students'?'':'ghost')+'" onclick="s3Track.mode(\'students\')">Students</button><button class="s3btn '+(st.mode==='classes'?'':'ghost')+'" onclick="s3Track.mode(\'classes\')">Classes</button></div></div><div class="s3sub">Everything here comes from recorded answers, speaking results and placement tests. Nothing is guessed.</div>'+chips())}
+/* ---------- students list ---------- */
+function listRows(){var q=(st.q||'').toLowerCase();var rows=shown().filter(function(s){return !q||String(s.name).toLowerCase().indexOf(q)>=0}).map(function(s){var a=analyze(s),f=flag(a),sp=a.speak&&a.speak.lv?a.speak.lv[2]+' '+a.speak.lv[1]+' · '+a.speak.score+'%':'-',L=overall(a);
+ return '<tr style="cursor:pointer" onclick="s3Track.open(\''+esc(s.id)+'\')"><td>'+esc(s.cls||'-')+'</td><td><b>'+esc(s.name)+'</b></td><td>'+(a.acc==null?'-':a.acc+'%')+' <span class="s3sub">'+a.n+' ans.</span></td><td>'+pill(L)+'</td><td>'+sp+'</td><td>'+esc(ago(a.x.last))+'</td><td><span class="s3pill" style="border-color:'+f.c+';color:'+f.c+'">'+f.t+'</span></td></tr>'}).join('');
+ return rows||'<tr><td colspan="7" class="s3sub">No students found.</td></tr>'}
+function renderList(v){v.innerHTML='<div style="display:grid;gap:12px;max-width:980px;margin:0 auto">'+head()+card('<input id="trk-q" class="s3in" placeholder="Search student name" value="'+esc(st.q)+'" oninput="s3Track.search(this.value)" style="margin-bottom:10px"><div style="overflow-x:auto"><table class="s3tbl"><thead><tr><th>Class</th><th>Student</th><th>Accuracy</th><th>Level</th><th>Speaking</th><th>Last active</th><th>Status</th></tr></thead><tbody id="trk-rows">'+listRows()+'</tbody></table></div><div class="s3sub" style="margin-top:8px">Tap a student for the full profile. Level uses accuracy over at least 20 answers: Strong 80%+, Developing 50-79%, Needs support below 50%.</div>')+'</div>'}
+/* ---------- student profile ---------- */
+function skillRow(name,p,n,extra){var l=lvl(p,n,5);return '<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;gap:8px;font-size:13px;flex-wrap:wrap"><span><b>'+name+'</b> '+pill(l)+'</span><b>'+(p==null?'-':p+'%')+' <span class="s3sub">'+(extra||('('+n+' answers)'))+'</span></b></div>'+bar(p,l.c)+'</div>'}
+function listHtml(arr,emptyMsg,col){return arr.length?'<ul style="margin:6px 0 0 16px;font-size:13px">'+arr.map(function(i){return '<li style="margin-bottom:6px"><b style="color:'+col+'">'+esc(i.t)+'</b> <span class="s3sub">'+esc(i.d)+'</span></li>'}).join('')+'</ul>':'<p class="s3sub" style="margin-top:6px">'+emptyMsg+'</p>'}
+function profileHtml(a,forPrint){
+ var s=a.s,x=a.x,I=insights(a),L=overall(a),B=students().length;
+ var cl=students().filter(function(z){return z.cls===s.cls});var rank=cl.map(function(z){return S.statsFor(z)}).sort(function(m,n){return n.xp-m.xp}).findIndex(function(z){return z.s.id===s.id})+1;
+ var skills=SKILLS.map(function(k){var o=a.sk[k[0]];return skillRow(k[0],pct(o.ok,o.n),o.n)}).join('');
+ var sp=a.speak&&a.speak.score!=null?skillRow('Speaking',a.speak.score,a.speak.cnt,'('+a.speak.cnt+' results, '+(a.speak.lv?a.speak.lv[1]:'')+')'):skillRow('Speaking',null,0,'(no results yet)');
+ var un=Object.keys(a.un).sort(function(m,n){return m-n}).map(function(u){var o=a.un[u],p=pct(o.ok,o.n),l=lvl(p,o.n,3);return skillRow('Unit '+u,p,o.n)}).join('')||'<p class="s3sub">No answers yet.</p>';
+ var qi=qIdx(),mis=Object.keys(a.miss).filter(function(id){return a.miss[id].bad>=2&&qi[id]}).sort(function(m,n){return a.miss[n].bad-a.miss[m].bad}).slice(0,6).map(function(id){var q=qi[id],o=a.miss[id];return '<li style="margin-bottom:6px">'+esc(q.question)+' <span class="s3sub">Answer: <b style="color:var(--ok)">'+esc(q.options[q.answer])+'</b> · missed '+o.bad+' of '+o.n+' tries</span></li>'}).join('');
+ var days=[];for(var i=13;i>=0;i--){var t=Date.now()-i*DAY;days.push([S.dayKey(t).slice(5),(a.p.days||{})[S.dayKey(t)]||0])}var mx=Math.max(1,Math.max.apply(null,days.map(function(d){return d[1]})));
+ var act='<div style="display:flex;align-items:flex-end;gap:4px;height:60px">'+days.map(function(d){return '<div title="'+d[0]+': '+d[1]+'" style="flex:1;background:var(--ac);opacity:'+(d[1]?1:.15)+';height:'+Math.max(4,d[1]/mx*56)+'px;border-radius:4px"></div>'}).join('')+'</div><div class="s3sub" style="display:flex;justify-content:space-between"><span>14 days ago</span><span>today · active '+a.act14+' of 14 days</span></div>';
+ var thin=I.thin?'<div style="margin:10px 0;padding:10px;border-radius:12px;background:var(--surf2,#eef2ff);font-size:13px">⚠️ Only '+a.n+' answers recorded so far. Strengths and weaknesses are shown only where there is enough data (8+ answers per skill, 5+ per unit). Treat them as early signs.</div>':'';
+ var kp=function(b,l){return '<div class="kpi"><b>'+b+'</b><span>'+l+'</span></div>'};
+ var note=forPrint?(a.p.note?'<div style="border-left:4px solid var(--ac);padding-left:10px">'+esc(a.p.note)+'</div>':'<p class="s3sub">No teacher comment.</p>'):'<textarea class="s3in" rows="2" placeholder="Teacher comment..." onchange="s3Note(\''+esc(s.id)+'\',this.value)">'+esc(a.p.note||'')+'</textarea>';
+ return '<div id="trk-sheet" class="bg-white rounded-2xl border p-5"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:2px solid var(--bd);padding-bottom:10px"><div><div class="s3h">'+esc(s.name)+'</div><div class="s3sub">'+(s.cls?'Class '+esc(s.cls)+' · ':'')+'Last active '+esc(ago(x.last))+' · Report date '+new Date().toLocaleDateString()+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+pill(L)+(rank?'<span class="s3pill">Class rank #'+rank+' of '+cl.length+'</span>':'')+'</div></div>'+thin+
+ '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin:14px 0">'+kp(x.xp,'XP')+kp(a.acc==null?'-':a.acc+'%','Accuracy')+kp(a.n,'Answered')+kp(x.mastered||0,'Mastered')+kp(x.best||0,'Best streak')+kp(x.ds||0,'Day streak')+'</div>'+
+ '<div class="s3sub" style="margin-bottom:6px">'+esc(trendText(a))+'</div>'+
+ '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:10px"><div><div class="s3lbl">Level in each skill</div>'+skills+sp+'</div><div><div class="s3lbl" style="color:'+COL.g+'">💪 Strengths</div>'+listHtml(I.str,'No clear strength yet. Needs more data.',COL.g)+'<div class="s3lbl" style="color:'+COL.r+';margin-top:14px">🎯 Weaknesses</div>'+listHtml(I.weak,'No clear weakness found in the data so far.',COL.r)+'</div></div>'+
+ (window.s3PlBox&&a.p.place?s3PlBox(a.p.place):'<div class="s3sub" style="margin-top:10px">Placement test: not taken yet.</div>')+(window.s3SpBox&&a.p.spk?s3SpBox(a.p.spk):'')+
+ '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:14px"><div><div class="s3lbl">Accuracy by unit</div>'+un+'</div><div><div class="s3lbl">Questions missed more than once</div>'+(mis?'<ul style="margin:6px 0 0 16px;font-size:12px">'+mis+'</ul>':'<p class="s3sub">None yet.</p>')+'<div class="s3lbl" style="margin-top:14px">Activity</div>'+act+'</div></div>'+
+ '<div class="s3lbl" style="margin-top:14px">Teacher comment</div>'+note+'<div class="s3sub" style="margin-top:10px">Speaking scores come from phone speech recognition and the AI coach, so they are approximate.</div></div>'}
+function renderProfile(v){var s=byId(st.id);if(!s){st.id=null;return renderList(v)}var a=analyze(s);
+ v.innerHTML='<div style="display:grid;gap:12px;max-width:980px;margin:0 auto"><div id="trk-ctl" class="trk-noprint" style="display:flex;gap:8px;flex-wrap:wrap"><button class="s3btn ghost" onclick="s3Track.back()">← All students</button><button class="s3btn" onclick="s3Track.print()">🖨️ Print / PDF</button><button class="s3btn ghost" onclick="s3Track.wa()">📲 WhatsApp summary</button></div>'+profileHtml(a)+'</div>'}
+/* ---------- class report ---------- */
+function classHtml(forPrint){
+ var list=shown(),A=list.map(analyze),act=A.filter(function(a){return a.n>0});
+ var tot={n:0,ok:0},sk={},un={},q={},sp=[],pl=[0,0,0],act7=0,xpSum=0,att=[];
+ SKILLS.forEach(function(k){sk[k[0]]={n:0,ok:0}});
+ A.forEach(function(a){tot.n+=a.n;tot.ok+=a.ok;xpSum+=a.x.xp||0;if(a.x.last&&Date.now()-a.x.last<7*DAY)act7++;
+  SKILLS.forEach(function(k){sk[k[0]].n+=a.sk[k[0]].n;sk[k[0]].ok+=a.sk[k[0]].ok});
+  Object.keys(a.un).forEach(function(u){var o=un[u]=un[u]||{n:0,ok:0};o.n+=a.un[u].n;o.ok+=a.un[u].ok});
+  Object.keys(a.miss).forEach(function(id){var o=q[id]=q[id]||{n:0,bad:0,who:0};o.n+=a.miss[id].n;o.bad+=a.miss[id].bad;if(a.miss[id].bad)o.who++});
+  if(a.speak&&a.speak.score!=null&&a.speak.lv)sp.push(a.speak.score);
+  if(a.p.place&&a.p.place.tot!=null){var t=a.p.place.tot;pl[t>=80?2:t>=50?1:0]++}
+  var f=flag(a);if(f.c===COL.r)att.push({a:a,f:f})});
+ var accs=act.filter(function(a){return a.n>=5}).map(function(a){return a.acc});var avgAcc=accs.length?Math.round(accs.reduce(function(m,n){return m+n},0)/accs.length):null;
+ var spAvg=sp.length?Math.round(sp.reduce(function(m,n){return m+n},0)/sp.length):null,spLv=spAvg==null?null:(window.s3SpkLevels||[[90,'Advanced'],[75,'Upper-Intermediate'],[60,'Intermediate'],[45,'Elementary'],[0,'Beginner']]).filter(function(z){return spAvg>=z[0]})[0];
+ var kp=function(b,l){return '<div class="kpi"><b>'+b+'</b><span>'+l+'</span></div>'};
+ var title=st.cls==='all'?'All classes':'Class '+esc(st.cls);
+ var skills=SKILLS.map(function(k){var o=sk[k[0]];return skillRow(k[0],pct(o.ok,o.n),o.n,'('+o.n+' answers)')}).join('')+(spAvg==null?skillRow('Speaking',null,0,'(no results yet)'):skillRow('Speaking',spAvg,sp.length,'('+sp.length+' students, '+(spLv?spLv[1]:'')+')'));
+ var str=[],weak=[];
+ SKILLS.forEach(function(k){var o=sk[k[0]],p=pct(o.ok,o.n);if(o.n<30)return;var ev=p+'% correct ('+o.n+' answers)';if(p>=80)str.push({r:p,t:k[0],d:ev});else if(p<60)weak.push({r:p,t:k[0],d:ev})});
+ var uk=Object.keys(un).filter(function(u){return un[u].n>=15}).map(function(u){return{u:u,p:pct(un[u].ok,un[u].n),n:un[u].n}}).sort(function(m,n){return m.p-n.p});
+ uk.filter(function(z){return z.p<60}).slice(0,3).forEach(function(z){weak.push({r:z.p,t:'Unit '+z.u,d:z.p+'% correct ('+z.n+' answers)'})});
+ uk.filter(function(z){return z.p>=85}).reverse().slice(0,3).forEach(function(z){str.push({r:z.p,t:'Unit '+z.u,d:z.p+'% correct ('+z.n+' answers)'})});
+ if(spAvg!=null&&sp.length>=3){if(spAvg>=75)str.push({r:spAvg,t:'Speaking',d:'class average '+spAvg+'%'});else if(spAvg<50)weak.push({r:spAvg,t:'Speaking',d:'class average '+spAvg+'%'})}
+ str.sort(function(m,n){return n.r-m.r});weak.sort(function(m,n){return m.r-n.r});
+ var qi=qIdx(),hard=Object.keys(q).filter(function(id){return q[id].n>=5&&q[id].who>=2&&qi[id]}).sort(function(m,n){return q[n].bad/q[n].n-q[m].bad/q[m].n}).slice(0,5).map(function(id){var z=qi[id],o=q[id];return '<li style="margin-bottom:6px">'+esc(z.question)+' <span class="s3sub">Answer: <b style="color:var(--ok)">'+esc(z.options[z.answer])+'</b> · '+o.who+' students wrong · '+pct(o.n-o.bad,o.n)+'% correct</span></li>'}).join('');
+ var thin=tot.n<60?'<div style="margin:10px 0;padding:10px;border-radius:12px;background:var(--surf2,#eef2ff);font-size:13px">⚠️ Only '+tot.n+' answers recorded for this group. Strengths and weaknesses show only where there are 30+ answers per skill and 15+ per unit.</div>':'';
+ var rows=A.slice().sort(function(m,n){return (n.x.xp||0)-(m.x.xp||0)}).map(function(a){var f=flag(a);return '<tr'+(forPrint?'':' style="cursor:pointer" onclick="s3Track.open(\''+esc(a.s.id)+'\')"')+'><td>'+esc(a.s.cls||'-')+'</td><td><b>'+esc(a.s.name)+'</b></td><td>'+a.x.xp+'</td><td>'+(a.acc==null?'-':a.acc+'%')+'</td><td>'+a.n+'</td><td>'+(a.speak&&a.speak.lv?a.speak.lv[1]+' '+a.speak.score+'%':'-')+'</td><td>'+(a.p.place?'L'+(a.p.place.tot>=80?3:a.p.place.tot>=50?2:1):'-')+'</td><td>'+esc(ago(a.x.last))+'</td><td><span class="s3pill" style="border-color:'+f.c+';color:'+f.c+'">'+f.t+'</span></td></tr>'}).join('');
+ var attH=att.length?'<ul style="margin:6px 0 0 16px;font-size:13px">'+att.map(function(z){return '<li><b>'+esc(z.a.s.name)+'</b> <span class="s3sub">'+esc(z.f.t)+(z.a.s.cls?' · '+esc(z.a.s.cls):'')+'</span></li>'}).join('')+'</ul>':'<p class="s3sub">Nobody flagged. Flags: no activity for 7+ days, or accuracy below 50% over 20+ answers.</p>';
+ return '<div id="trk-sheet" class="bg-white rounded-2xl border p-5"><div style="border-bottom:2px solid var(--bd);padding-bottom:10px"><div class="s3h">Class report · '+title+'</div><div class="s3sub">'+list.length+' students · Report date '+new Date().toLocaleDateString()+'</div></div>'+thin+
+ '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin:14px 0">'+kp(list.length,'Students')+kp(act7+' / '+list.length,'Active (7 days)')+kp(avgAcc==null?'-':avgAcc+'%','Avg accuracy')+kp(tot.n,'Answers')+kp(list.length?Math.round(xpSum/list.length):0,'Avg XP')+kp(spAvg==null?'-':spAvg+'%','Speaking avg')+'</div>'+
+ (spAvg!=null?'<div class="s3sub" style="margin-bottom:8px">Speaking level for the group: <b>'+(spLv?spLv[1]:'-')+'</b> · '+sp.length+' of '+list.length+' students have speaking results.</div>':'')+
+ '<div class="s3sub" style="margin-bottom:8px">Placement test: '+(pl[0]+pl[1]+pl[2]?'Level 3 '+pl[2]+' · Level 2 '+pl[1]+' · Level 1 '+pl[0]+' students':'nobody has taken it yet')+'</div>'+
+ '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px"><div><div class="s3lbl">Class level in each skill</div>'+skills+'</div><div><div class="s3lbl" style="color:'+COL.g+'">💪 Class strengths</div>'+listHtml(str.slice(0,6),'No clear strength yet. Needs more data.',COL.g)+'<div class="s3lbl" style="color:'+COL.r+';margin-top:14px">🎯 Class weaknesses</div>'+listHtml(weak.slice(0,6),'No clear weakness found in the data so far.',COL.r)+'</div></div>'+
+ '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:16px"><div><div class="s3lbl">Needs attention</div>'+attH+'</div><div><div class="s3lbl">Questions most students miss</div>'+(hard?'<ul style="margin:6px 0 0 16px;font-size:12px">'+hard+'</ul>':'<p class="s3sub">Not enough data yet (needs 5+ tries and 2+ students wrong).</p>')+'</div></div>'+
+ '<div class="s3lbl" style="margin-top:16px">Students</div><div style="overflow-x:auto"><table class="s3tbl"><thead><tr><th>Class</th><th>Student</th><th>XP</th><th>Accuracy</th><th>Answered</th><th>Speaking</th><th>Placement</th><th>Last active</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'}
+function renderClass(v){v.innerHTML='<div style="display:grid;gap:12px;max-width:980px;margin:0 auto">'+head()+'<div class="trk-noprint" style="display:flex;gap:8px;flex-wrap:wrap"><button class="s3btn" onclick="s3Track.print()">🖨️ Print / PDF</button><button class="s3btn ghost" onclick="s3Track.csv()">⬇ CSV</button></div>'+classHtml()+'</div>'}
+/* ---------- render, actions ---------- */
+function render(){var v=$('view-track');if(!v)return;if(!S.isTeacher()){v.innerHTML='';return}
+ if(!ready()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading... ⏳</div>';S3CLOUD.load().then(render);return}
+ try{if(st.mode==='classes')renderClass(v);else if(st.id)renderProfile(v);else renderList(v)}catch(e){console.warn('tracker',e);v.innerHTML='<div class="bg-white rounded-2xl border p-5">The tracker could not load. Use Reports instead.<div class="s3sub">'+esc(e&&e.message||'')+'</div></div>'}}
+function summaryText(a){var I=insights(a),t='📘 English progress: '+a.s.name+(a.s.cls?' ('+a.s.cls+')':'')+'\n⭐ XP '+a.x.xp+' · Accuracy '+(a.acc==null?'-':a.acc+'%')+' ('+a.n+' answers)\n';
+ SKILLS.forEach(function(k){var o=a.sk[k[0]];if(o.n)t+='• '+k[0]+': '+pct(o.ok,o.n)+'% ('+o.n+')\n'});
+ if(a.speak&&a.speak.score!=null)t+='• Speaking: '+a.speak.score+'%'+(a.speak.lv?' '+a.speak.lv[1]:'')+'\n';
+ if(I.str.length)t+='💪 Strengths: '+I.str.map(function(i){return i.t}).join(', ')+'\n';
+ if(I.weak.length)t+='🎯 To improve: '+I.weak.map(function(i){return i.t}).join(', ')+'\n';
+ if(a.p.note)t+='📝 Teacher: '+a.p.note;return t}
+window.s3Track={render:render,
+ mode:function(m){st.mode=m;st.id=null;render()},
+ cls:function(c){st.cls=c;st.id=null;render()},
+ open:function(id){st.mode='students';st.id=id;render();window.scrollTo({top:0})},
+ back:function(){st.id=null;render()},
+ search:function(q){st.q=q;var r=$('trk-rows');if(r)r.innerHTML=listRows()},
+ print:function(){document.body.classList.add('print-track');setTimeout(function(){print();document.body.classList.remove('print-track')},120)},
+ wa:function(){var s=byId(st.id);if(!s)return;window.open('https://wa.me/?text='+encodeURIComponent(summaryText(analyze(s))),'_blank')},
+ csv:function(){var h=['Class','Name','XP','Accuracy %','Answered'].concat(SKILLS.map(function(k){return k[0]+' %'})).concat(['Speaking %','Speaking level','Last active']);
+  var rows=shown().map(function(s){var a=analyze(s);return [s.cls||'',s.name,a.x.xp,a.acc==null?'':a.acc,a.n].concat(SKILLS.map(function(k){var o=a.sk[k[0]];return o.n?pct(o.ok,o.n):''})).concat([a.speak&&a.speak.score!=null?a.speak.score:'',a.speak&&a.speak.lv?a.speak.lv[1]:'',a.x.last?new Date(a.x.last).toLocaleDateString():'']).map(function(c){return '"'+String(c).replace(/"/g,'""')+'"'}).join(',')});
+  var b=new Blob([[h.join(',')].concat(rows).join('\n')],{type:'text/csv'}),u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download='tracker_'+(st.cls==='all'?'all':st.cls)+'.csv';document.body.appendChild(l);l.click();l.remove()}};
+window.s3TrackTest={analyze:analyze,insights:insights};
+})();
 </script>
 </body>
 </html>
