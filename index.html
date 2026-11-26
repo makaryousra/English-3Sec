@@ -6260,6 +6260,32 @@ const GEM={topic:'',url:'https://script.google.com/macros/s/AKfycbybb3qX3KLFUr_u
     res({mime:'audio/wav',data:btoa(bin)})};
    pr.onaudioprocess=e=>{if(!done)buf.push(new Float32Array(e.inputBuffer.getChannelData(0)))};src.connect(pr);pr.connect(mute);mute.connect(ctx.destination);GEM.recStop=finish;setTimeout(finish,ms)}).catch(rej)})}};
 window.S3GEM=GEM;
+/* ===== natural coach voice (Deepgram via proxy) ===== */
+(function(){const LS=window.localStorage;const g=k=>{try{return LS.getItem(k)}catch(e){return null}},st=(k,v)=>{try{LS.setItem(k,v)}catch(e){}};
+ let el=null,seq=0,cache={},off=0,note=0;
+ const DG={voice:()=>g('s3dgVoice')||'thalia',on:()=>g('s3dgOff')!=='1'&&!off,
+  stop(){seq++;if(el){const a=el;el=null;a.onended=a.onerror=null;try{a.pause()}catch(e){}}},
+  pe(){if(!DG._pe)DG._pe=new Audio();return DG._pe},
+  unlock(){try{const a=DG.pe();if(a.src)return;a.muted=true;a.src='data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQxAADwAAB9AAAAAgAAA0gAAABAAAB9AAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';const pr=a.play();if(pr&&pr.then)pr.then(()=>{a.pause();a.muted=false;a.removeAttribute('src')}).catch(()=>{a.muted=false;a.removeAttribute('src')})}catch(e){}},
+  async say(text,fallback){text=String(text||'').trim();if(!text)return;DG.stop();const my=seq;
+   if(!DG.on()){fallback();return}
+   const v=DG.voice(),key=v+'|'+text;let b64=cache[key];
+   try{if(!b64){const m=document.getElementById('rp-m')||document.getElementById('oc-m');
+     const r=await GEM.ask({mode:'tts',text:text,voice:v});
+     if(my!==seq)return;
+     if(!r.ok){if(r.error==='tts_credit'||r.error==='tts_off')off=1;if(r.error==='tts_student_limit'&&!note){note=1;try{toast('Natural voice limit for today reached. Using phone voice.')}catch(e){}}fallback();return}
+     b64=r.audio;cache[key]=b64}
+    if(my!==seq)return;
+    const a=DG.pe();el=a;a.onended=()=>{if(el===a)el=null};
+    a.onerror=()=>{if(el===a){el=null;if(my===seq)fallback()}};
+    a.src='data:audio/mpeg;base64,'+b64;await a.play()}catch(e){if(my===seq)fallback()}}};
+ window.S3DG=DG;['touchend','pointerdown','click'].forEach(ev=>document.addEventListener(ev,function f(){DG.unlock();document.removeEventListener(ev,f,true)},true));
+ try{const os=window.S3A&&S3A.stop;if(os)S3A.stop=function(){DG.stop();return os.apply(this,arguments)}}catch(e){}
+})();
+function coachSay(t){const fb=()=>{try{say(t)}catch(e){}};try{S3DG.say(t,fb)}catch(e){fb()}}
+window.s3dgPick=function(v){try{if(v==='phone'){localStorage.setItem('s3dgOff','1')}else{localStorage.removeItem('s3dgOff');localStorage.setItem('s3dgVoice',v)}}catch(e){}
+ try{S3DG.stop();coachSay('Hi! I am your English coach. Let us practice together.')}catch(e){}};
+
 function spCoachStop(){if(GEM.recStop)GEM.recStop()}
 function spCoach(){if(!SP)return;const it=SP.items[SP.i],m=$('sp-m'),a=$('sp-a');if(!GEM.url||SP.coachBusy)return;SP.coachBusy=1;const keep=a.innerHTML,sp=SP,idx=SP.i;
  try{if(rec)rec.abort()}catch(e){}try{speechSynthesis.cancel()}catch(e){}
@@ -6282,7 +6308,7 @@ async function rpTurn(said){if(!RP)return;RP.last=said;const m=$('rp-m'),a=$('rp
  const r=await GEM.ask({mode:'roleplay',topic:RP.topic,history:RP.hist.slice(-6),transcript:said||'(start the conversation with a simple question)'});
  if(!RP)return;if(!r.ok){m.textContent=GEM.why(r.error);a.innerHTML=btn('🔁 Try again','s3Game.rpRetry()')+(RP.n>=2?btn('Finish','s3Game.rpEnd()',1):'')+btn('Back','s3Game.rpMenu',1);return}
  const x=r.result||{};if(said){RP.g+=+x.grammar||0;RP.v+=+x.vocab||0;RP.r+=+x.relevant||0;RP.c++;if(x.score!=null){RP.s+=+x.score||0;RP.sn++}aiM(RP.mis,x);if(x.tip&&RP.tips.length<6)RP.tips.push(String(x.tip))}
- RP.hist.push({s:said,c:x.reply});rpLog('🤖 Coach:',x.reply||'');m.innerHTML=said&&x.tip?'💡 '+esc(x.tip):'';try{say(x.reply||'')}catch(e){}
+ RP.hist.push({s:said,c:x.reply});rpLog('🤖 Coach:',x.reply||'');m.innerHTML=said&&x.tip?'💡 '+esc(x.tip):'';try{coachSay(x.reply||'')}catch(e){}
  RP.n++;if(RP.n>=6){rpEnd();return}
  a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')+btn('🔊 Hear again','s3Game.rpHear()',1)}
 
@@ -6304,7 +6330,9 @@ function voiceMenu(){clean();aiStop();
  const all=(window.speechSynthesis?speechSynthesis.getVoices():[]).filter(v=>/^en/i.test(v.lang)),norm=l=>String(l).replace('_','-').toLowerCase();
  let vs=all.filter(v=>norm(v.lang)===norm(acc));const note=vs.length?'':'<div class="s3sub" style="margin-bottom:8px">No '+esc(acc)+' voice was found on this device.</div>';if(!vs.length)vs=all;
  const nm=v=>(v.name||'').replace(/'/g,"&#39;");
- ov('🔊 Coach voice',card('<div class="s3sub" style="margin-bottom:10px;line-height:1.6">The coach speaks with a voice that is installed on your phone. Tap a voice to hear it. Voices marked ✨ are usually the most natural.</div>'+note
+ const dgc=(()=>{try{return localStorage.getItem('s3dgOff')==='1'?'phone':(localStorage.getItem('s3dgVoice')||'thalia')}catch(e){return'thalia'}})();
+ const dgb=(id,l)=>'<button class="s3btn'+(dgc===id?'':' ghost')+'" style="display:block;width:100%;margin-bottom:8px;padding:12px;text-align:left" onclick="s3Game.voiceMenu();s3dgPick(\''+id+'\')">'+(dgc===id?'✅ ':'')+l+'</button>';
+ ov('🔊 Coach voice',card('<div class="s3lbl">Natural coach voice</div><div class="s3sub" style="margin-bottom:8px;line-height:1.6">Tap one to hear it. It takes a few seconds to load.</div>'+dgb('thalia','Thalia (woman, clear)')+dgb('helena','Helena (woman, friendly)')+dgb('apollo','Apollo (man, confident)')+dgb('draco','Draco (man, British)')+dgb('phone','Use my phone voice')+'<div class="s3lbl" style="margin-top:12px">Phone voices</div><div class="s3sub" style="margin-bottom:10px;line-height:1.6">If the natural voice is off or not available, the coach speaks with a voice that is installed on your phone. Tap a voice to hear it. Voices marked ✨ are usually the most natural.</div>'+note
   +'<button class="s3btn" style="display:block;width:100%;margin-bottom:8px;padding:12px;text-align:left" onclick="window.s3Voice(\'auto\')">Auto (best voice)</button>'
   +vs.map(v=>'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:8px;padding:12px;text-align:left" onclick="window.s3Voice(this.dataset.v)" data-v="'+esc(v.name)+'">'+esc(v.name.replace(/^Microsoft |^Google /,''))+(/natural|neural|online|enhanced|premium/i.test(v.name)?' ✨':'')+' <span class="s3sub">'+esc(v.lang)+'</span></button>').join('')
   +'<div class="s3sub" style="margin-top:8px;line-height:1.6">Want a better voice on Android? Open Settings, search for "Text-to-speech output", open the Google engine settings, then Install voice data and pick an English (US) voice. Come back and tap it here.</div>')+'<div style="text-align:center">'+btn('Back','s3Game.spk()',1)+'</div>')}
@@ -6387,10 +6415,10 @@ async function ocTurn(said){const O=OC;if(!O)return;O.last=said;const m=$('oc-m'
  if(OC!==O)return;
  if(!r.ok){m.textContent=GEM.why(r.error);a.innerHTML=btn('🔁 Try again','s3Game.ocRetry()')+(O.c>=2?btn('Finish','s3Game.ocEnd()',1):'')+btn('Back','s3Game.ocMenu()',1);return}
  const x=r.result||{};if(said){O.g+=+x.grammar||0;O.v+=+x.vocab||0;O.c++;if(x.score!=null){O.s+=+x.score||0;O.sn++}aiM(O.mis,x);if(x.tip&&O.tips.length<6)O.tips.push(String(x.tip))}
- O.hist.push({s:said,c:x.reply});ocLog('🤖 Coach:',x.reply||'');m.innerHTML=said&&x.tip?'💡 '+esc(x.tip):'';try{say(x.reply||'')}catch(e){}
+ O.hist.push({s:said,c:x.reply});ocLog('🤖 Coach:',x.reply||'');m.innerHTML=said&&x.tip?'💡 '+esc(x.tip):'';try{coachSay(x.reply||'')}catch(e){}
  O.n++;if(O.n>=9){ocEnd();return}ocBtns()}
 function ocRetry(){if(OC)ocTurn(OC.last||'')}
-function ocHear(){try{const l=OC.hist[OC.hist.length-1];say(l.c||'')}catch(e){}}
+function ocHear(){try{const l=OC.hist[OC.hist.length-1];coachSay(l.c||'')}catch(e){}}
 function ocRec(){const O=OC;if(!O)return;const a=$('oc-a');a.innerHTML='';aiMic($('oc-m'),t=>{ocLog('🧑 You:',t);ocTurn(t)},ocBtns)}
 function ocEnd(){const O=OC;if(!O)return;aiStop();try{if(rec)rec.abort()}catch(e){}
  if(!O.c){ov('🗨️ Conversation ended',card('<div class="s3sub" style="text-align:center;margin-bottom:10px">You did not say anything yet, so there is no score. Try again, it is fun!</div><div style="text-align:center">'+btn('New conversation','s3Game.ocMenu()')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));OC=null;return}
@@ -6399,7 +6427,7 @@ function ocEnd(){const O=OC;if(!O)return;aiStop();try{if(rec)rec.abort()}catch(e
  ov('🗨️ Conversation finished',card(aiEndHtml({sc,sub:'You started with: '+esc(O.topic),rows:[['Your turns',c],['Grammar',rpStars(g)],['Vocabulary',rpStars(v)]],mis:O.mis,tips:O.tips})+'<div style="margin-top:12px;text-align:center">'+btn('New conversation','s3Game.ocMenu()')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));OC=null}
 
 function rpRetry(){if(RP)rpTurn(RP.last||'')}
-function rpHear(){try{const l=RP.hist[RP.hist.length-1];say(l.c||'')}catch(e){}}
+function rpHear(){try{const l=RP.hist[RP.hist.length-1];coachSay(l.c||'')}catch(e){}}
 function rpRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition,m=$('rp-m'),a=$('rp-a');if(!R)return m.textContent='This browser cannot listen to you. Use Chrome on Android.';
  try{speechSynthesis.cancel()}catch(e){}try{rec=new R();rec.lang='en-US';rec.interimResults=false;let got=false;m.textContent='🎙️ Speak now…';
   rec.onresult=e=>{got=true;const t=e.results[0][0].transcript;rpLog('🧑 You:',t);rpTurn(t)};
@@ -6422,10 +6450,11 @@ function spPool(){if(spPoolCache&&spPoolCache.n===Q().length)return spPoolCache.
  spPoolCache={n:Q().length,p};return p}
 const SPK=()=>{if(!S.isStudent())return{n:0,sum:0,sets:0,self:0};const p=S.getProg(uid());return p.spk||{n:0,sum:0,sets:0,self:0}};
 function spMenu(){clean();SP=null;const k=SPK(),P=spPool(),avg=k.n?Math.round(k.sum/k.n):0;
- ov('🗣️ Speaking practice',card('<div class="s3sub" style="line-height:1.7;margin-bottom:10px">Listen to the sentence, then say it aloud. The app listens and shows which words were missing. Each set has 8 sentences.</div>'+
- (k.sets||k.self?'<div style="margin-bottom:10px" class="s3pill">Sets done: '+k.sets+(k.n?' · Average: '+avg+'%':'')+'</div>':'')+
- [1,2,3].map(l=>'<button class="s3btn" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.spStart('+l+')">'+['','🟢','🟡','🔴'][l]+' '+SPLV[l].n+'<br><span style="font-weight:400;font-size:12px">'+SPLV[l].d+' · '+P[l].length+' sentences</span></button>').join('')+
- (GEM.url?'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.rpMenu()">💬 Talk with the AI coach<br><span style="font-weight:400;font-size:12px">Pick a unit, 5 short turns, stars for grammar and vocabulary</span></button><button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.dlMenu()">🎭 Dialogue with a partner<br><span style="font-weight:400;font-size:12px">Listen to a dialogue, then play one of the two people</span></button><button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.ocMenu()">🗨️ Open conversation<br><span style="font-weight:400;font-size:12px">Pick a topic, then talk about anything you like</span></button>':'')+'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left" onclick="s3Game.voiceMenu()">🔊 Coach voice<br><span style="font-weight:400;font-size:12px">Choose the voice you like best</span></button><div class="s3sub" style="margin-top:6px">Works best in Chrome on Android with a microphone and internet. Scoring is approximate: it can miss words even when you said them well.</div>'))}
+ const css='<style>.spx{--g1:#6366f1;--g2:#a855f7}.spx *{box-sizing:border-box}.spx-hero{border-radius:22px;padding:20px 18px;color:#fff;background:linear-gradient(135deg,#4f46e5,#9333ea 60%,#ec4899);box-shadow:0 10px 28px rgba(99,102,241,.35);margin-bottom:16px;position:relative;overflow:hidden}.spx-hero:after{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.14)}.spx-hero h2{margin:0 0 4px;font-size:21px;font-weight:800}.spx-hero p{margin:0 0 14px;font-size:13px;opacity:.92;line-height:1.5}.spx-st{display:flex;gap:8px}.spx-st div{flex:1;background:rgba(255,255,255,.18);border-radius:14px;padding:8px 6px;text-align:center}.spx-st b{display:block;font-size:20px}.spx-st span{font-size:11px;opacity:.9}.spx-h{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut,#64748b);margin:18px 2px 8px}.spx-lv{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.spx-lv button{border:1px solid var(--bd);background:var(--surf);border-radius:18px;padding:14px 6px;text-align:center;cursor:pointer;color:var(--tx);box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .12s}.spx-lv button:active{transform:scale(.96)}.spx-lv i{display:block;font-style:normal;font-size:26px;margin-bottom:4px}.spx-lv b{display:block;font-size:15px}.spx-lv span{font-size:11px;color:var(--mut,#64748b)}.spx-c{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--bd);background:var(--surf);border-radius:18px;padding:13px;margin-bottom:9px;cursor:pointer;color:var(--tx);box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .12s}.spx-c:active{transform:scale(.98)}.spx-c .ic{flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:23px;color:#fff}.spx-c b{display:block;font-size:15px}.spx-c span{font-size:12px;color:var(--mut,#64748b);line-height:1.4}.spx-c .ar{margin-left:auto;font-size:20px;color:var(--mut,#94a3b8)}.spx-v{display:flex;align-items:center;gap:8px;justify-content:center;width:100%;border:1px dashed var(--bd);background:transparent;border-radius:14px;padding:11px;margin-top:6px;color:var(--tx);font-weight:700;font-size:13px;cursor:pointer}</style>';
+ const lv=[1,2,3].map(l=>'<button onclick="s3Game.spStart('+l+')"><i>'+['','🟢','🟡','🔴'][l]+'</i><b>'+SPLV[l].n+'</b><span>'+P[l].length+' sentences</span></button>').join('');
+ const mode=(ic,bg,t,d,fn)=>'<button class="spx-c" onclick="s3Game.'+fn+'()"><div class="ic" style="background:'+bg+'">'+ic+'</div><div><b>'+t+'</b><span>'+d+'</span></div><div class="ar">›</div></button>';
+ const ai=GEM.url?'<div class="spx-h">Talk with the AI coach</div>'+mode('💬','linear-gradient(135deg,#06b6d4,#3b82f6)','Talk with the coach','Pick a unit and have a short chat. You get a score, mistakes and tips.','rpMenu')+mode('🎭','linear-gradient(135deg,#f59e0b,#ef4444)','Dialogue with a partner','Listen to a dialogue, then play one of the two people.','dlMenu')+mode('🗨️','linear-gradient(135deg,#10b981,#14b8a6)','Open conversation','Pick a topic and talk about anything you like.','ocMenu')+'<button class="spx-v" onclick="s3Game.voiceMenu()">🔊 Coach voice</button>':'';
+ ov('🗣️ Speaking',css+'<div class="spx"><div class="spx-hero"><h2>Speak English with confidence</h2><p>Listen, repeat, then chat with your AI coach. A little every day makes a big difference.</p><div class="spx-st"><div><b>'+(k.sets||0)+'</b><span>Sets done</span></div><div><b>'+(k.n?avg+'%':'-')+'</b><span>Average</span></div><div><b>'+((k.sets||0)+(k.self||0)>0?'🔥':'🌱')+'</b><span>'+((k.sets||0)>0?'Keep going':'Start today')+'</span></div></div></div><div class="spx-h" style="margin-top:0">Listen and repeat</div><div class="spx-lv">'+lv+'</div>'+ai+'<div class="s3sub" style="margin-top:14px;text-align:center;line-height:1.6">Works best in Chrome on Android with a microphone and internet. Scoring is approximate: it can miss words even when you said them well.</div></div>')}
 function spStart(l){clean();const P=spPool()[l];if(!P||P.length<8)return S.toast('Not enough sentences');
  const by={};shuf(P).forEach(x=>(by[x.q.unit]=by[x.q.unit]||[]).push(x));const us=shuf(Object.keys(by)),items=[];let k=0;while(items.length<8&&us.some(u=>by[u].length)){const u=us[k%us.length];if(by[u].length)items.push(by[u].pop());k++}
  SP={lv:l,items,i:0,res:[],best:0,tries:0,can:!!(window.SpeechRecognition||window.webkitSpeechRecognition)&&navigator.onLine,done:false};spDraw()}
@@ -6438,9 +6467,9 @@ function spHtml(t,hit){const w=spWords(t),nw=norm(t).split(' ');
  // map original tokens to normalized tokens (tokens that normalize to nothing stay neutral)
  let k=0;return w.map(x=>{const nx=norm(x);if(!nx)return esc(x);const parts=nx.split(' ').length;let ok=true;for(let c=0;c<parts;c++){if(!hit||!hit[k+c])ok=false}k+=parts;return hit?'<span style="'+(ok?'color:var(--ok,#16a34a);font-weight:700':'color:#e11d48;font-weight:700;text-decoration:underline')+'">'+esc(x)+'</span>':esc(x)}).join(' ')}
 function spDraw(){if(GEM.recStop)GEM.recStop();clean();const it=SP.items[SP.i];SP.coachBusy=0;SP.best=0;SP.tries=0;SP.hit=null;
- const head='<div class="s3sub" style="display:flex;justify-content:space-between"><span>Sentence '+(SP.i+1)+' / 8</span><span>'+SPLV[SP.lv].n+'</span></div><div class="lsbar" style="margin:6px 0 12px"><i style="width:'+Math.round(SP.i/8*100)+'%"></i></div>';
- const body='<div id="sp-t" style="background:var(--surf2);border:1px solid var(--bd);border-radius:14px;padding:14px;font-size:18px;line-height:1.7;margin-bottom:12px">'+esc(it.t)+'</div>'+
- '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="s3btn ghost" onclick="s3Game.spHear()">🔊 Hear it</button>'+(SP.can?'<button class="s3btn" id="sp-b" onclick="s3Game.spRec()">🎤 Say it</button>':'')+'</div>'+
+ const dots=[0,1,2,3,4,5,6,7].map(j=>'<i style="flex:1;height:7px;border-radius:9px;background:'+(j<SP.i?'#22c55e':j===SP.i?'var(--ac,#6366f1)':'var(--bd,#e2e8f0)')+'"></i>').join('');const head='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="font-size:14px">Sentence '+(SP.i+1)+' of 8</b><span class="s3pill" style="font-size:12px">'+['','🟢','🟡','🔴'][SP.lv]+' '+SPLV[SP.lv].n+'</span></div><div style="display:flex;gap:4px;margin-bottom:14px">'+dots+'</div>';
+ const body='<div id="sp-t" style="background:linear-gradient(135deg,rgba(99,102,241,.10),rgba(168,85,247,.10));border:1px solid var(--bd);border-radius:20px;padding:22px 16px;font-size:21px;font-weight:600;line-height:1.7;margin-bottom:14px;text-align:center">'+esc(it.t)+'</div>'+
+ '<div style="display:flex;gap:10px"><button class="s3btn ghost" style="flex:1;padding:15px 8px;font-size:15px;border-radius:16px" onclick="s3Game.spHear()">🔊 Hear it</button>'+(SP.can?'<button class="s3btn" id="sp-b" style="flex:1;padding:15px 8px;font-size:15px;border-radius:16px" onclick="s3Game.spRec()">🎤 Say it</button>':'')+'</div>'+
  '<div id="sp-m" class="s3sub" style="margin-top:12px;line-height:1.6">'+(SP.can?'Listen first, then press Say it and repeat the sentence.':'')+'</div><div id="sp-a" style="margin-top:10px"></div>';
  ov('🗣️ Speaking practice',card(head+body)+'<div style="text-align:center">'+btn('Stop and exit','s3Game.close()',1)+'</div>');
  if(!SP.can)spManual(!(window.SpeechRecognition||window.webkitSpeechRecognition)?'This browser cannot listen to you (for example Safari on iPhone). Use Chrome on Android for scoring. You can still practise:':'You are offline, so scoring is off. You can still practise:');
