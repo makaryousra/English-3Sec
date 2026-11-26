@@ -4950,14 +4950,14 @@ function statsFor(s){if(s.sum){const m=s.sum;return{s,p:{log:[],days:{},xp:m.xp|
  const real=p.log.filter(e=>e.k!=='srs'&&e.k!=='bonus'),ok=real.filter(e=>e.ok).length,wk=Date.now()-7*864e5;
  const mastered=Object.values(b.srsMap||{}).filter(x=>x.level===2).length;
  const _tp=(window.S3CLOUD&&S3CLOUD.tp)?S3CLOUD.tp(s.id):{t:0,w:0};return{s,p,b,xp:(p.xp||0)+_tp.t,wxp:p.log.filter(e=>e.t>wk).reduce((a,e)=>a+e.xp,0)+_tp.w,att:real.length,ok,acc:real.length?Math.round(ok/real.length*100):0,cur:p.cur||0,best:p.best||0,ds:dayStreak(p.days||{}),mastered,last:p.last||0}}
-const RANKS=[[0,'🌱','Beginner'],[100,'📘','Learner'],[300,'🧭','Explorer'],[700,'🏅','Achiever'],[1500,'💎','Expert'],[3000,'👑','Master']];
+const RANKS=[[0,'🌱','Beginner'],[100,'📘','Learner'],[300,'🧭','Explorer'],[700,'🏅','Achiever'],[1500,'💎','Expert'],[3000,'👑','Master'],[5000,'⭐','Star'],[8000,'💠','Elite'],[12000,'🔥','Pro'],[18000,'🏆','Champion'],[25000,'⚔️','Warlord'],[35000,'🐉','Legend'],[50000,'🌌','Mythic']];
 const rankOf=xp=>{let k=0;RANKS.forEach((r,i)=>{if(xp>=r[0])k=i});const r=RANKS[k],n=RANKS[k+1];return{i:k,ic:r[1],n:r[2],next:n?n[2]:null,need:n?n[0]-xp:0,pct:n?Math.round((xp-r[0])/(n[0]-r[0])*100):100}};
-const BDG=[['first','👣','First Steps','Answer 10 questions',x=>x.att>=10],['s5','🔥','Streak 5','5 correct answers in a row',x=>x.best>=5],['s10','⚡','Streak 10','10 correct in a row',x=>x.best>=10],['s20','🚀','Streak 20','20 correct in a row',x=>x.best>=20],
+const LC=(x,f)=>{try{let n=0;(x.p.log||[]).forEach(e=>{if(f(e))n++});return n}catch(e){return 0}};const HR=(x,a,b)=>LC(x,e=>{const h=new Date(e.t).getHours();return h>=a&&h<b});const GAP14=x=>{try{const ks=Object.keys(x.p.days||{}).sort();for(let i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};const BDG=[['first','👣','First Steps','Answer 10 questions',x=>x.att>=10],['s5','🔥','Streak 5','5 correct answers in a row',x=>x.best>=5],['s10','⚡','Streak 10','10 correct in a row',x=>x.best>=10],['s20','🚀','Streak 20','20 correct in a row',x=>x.best>=20],
 ['d3','📅','3-Day Habit','Practise 3 days in a row',x=>x.ds>=3],['d7','🗓️','Week Warrior','Practise 7 days in a row',x=>x.ds>=7],['d14','🏕️','Two Weeks Strong','Practise 14 days in a row',x=>x.ds>=14],
 ['sh','🎯','Sharpshooter','90% accuracy after 20 answers',x=>x.att>=20&&x.acc>=90],['ace','🧠','Accuracy Ace','85% accuracy after 100 answers',x=>x.att>=100&&x.acc>=85],
 ['m10','🌟','Mastery 10','Master 10 questions',x=>x.mastered>=10],['m25','🏆','Master','Master 25 questions',x=>x.mastered>=25],['m50','🎓','Grand Master','Master 50 questions',x=>x.mastered>=50],
 ['a100','📚','Bookworm','Answer 100 questions',x=>x.att>=100],['a300','📖','Scholar','Answer 300 questions',x=>x.att>=300],['a600','🦉','Wise Owl','Answer 600 questions',x=>x.att>=600],
-['x500','⭐','500 XP','Earn 500 XP',x=>x.xp>=500],['x1000','✨','1000 XP','Earn 1000 XP',x=>x.xp>=1000],['x2500','🌠','2500 XP','Earn 2500 XP',x=>x.xp>=2500],['scout','🗺️','Site Scout','Finish the welcome quest',x=>((x.p&&x.p.log)||[]).some(e=>e.c==='Quest complete')]];
+['x500','⭐','500 XP','Earn 500 XP',x=>x.xp>=500],['x1000','✨','1000 XP','Earn 1000 XP',x=>x.xp>=1000],['x2500','🌠','2500 XP','Earn 2500 XP',x=>x.xp>=2500],['x5000','⭐','5,000 XP','Earn 5,000 XP. Serious business.',x=>x.xp>=5000],['x10000','💫','10,000 XP','Earn 10,000 XP.',x=>x.xp>=10000],['x25000','🌠','25,000 XP','Earn 25,000 XP.',x=>x.xp>=25000],['x50000','🌌','50,000 XP','Earn 50,000 XP. Mythic territory.',x=>x.xp>=50000],['a1000','🐝','Busy Bee','Answer 1,000 questions.',x=>x.att>=1000],['a2500','🦾','The Machine','Answer 2,500 questions. Are you human?',x=>x.att>=2500],['a5000','🏭','Question Factory','Answer 5,000 questions. Wow.',x=>x.att>=5000],['s30','☄️','Streak 30','30 correct answers in a row.',x=>x.best>=30],['s50','💥','Streak 50','50 correct in a row. Unstoppable.',x=>x.best>=50],['s100','🧨','Streak 100','100 correct in a row. Call the news.',x=>x.best>=100],['d30','📆','Monthly Habit','Practise 30 days in a row.',x=>x.ds>=30],['d60','🗓️','Two Months Strong','Practise 60 days in a row.',x=>x.ds>=60],['d100','🛡️','Centurion','Practise 100 days in a row. Legend behavior.',x=>x.ds>=100],['m100','💪','Mastery 100','Master 100 questions.',x=>x.mastered>=100],['m250','🧗','Mastery 250','Master 250 questions.',x=>x.mastered>=250],['m500','🏔️','Mastery 500','Master 500 questions. The mountain is yours.',x=>x.mastered>=500],['ls50','🎧','Listening Hero','Answer 50 listening questions.',x=>LC(x,e=>e.k==='ls')>=50],['ls150','🎼','Listening Legend','Answer 150 listening questions. Ears of steel.',x=>LC(x,e=>e.k==='ls')>=150],['sp25','🎤','Speaking Star','Practise speaking 25 times.',x=>LC(x,e=>e.c==='Speaking')>=25],['sp75','📢','Speaking Legend','Practise speaking 75 times. Loud and proud.',x=>LC(x,e=>e.c==='Speaking')>=75],['rd10','📖','Reading Machine','Finish 10 reading passages.',x=>LC(x,e=>String(e.c||'').indexOf('Reading:')===0)>=10],['rd30','📚','Library Lion','Finish 30 reading passages.',x=>LC(x,e=>String(e.c||'').indexOf('Reading:')===0)>=30],['wr10','✍️','Writer','Finish 10 writing tasks.',x=>LC(x,e=>String(e.c||'').indexOf('Writing')===0)>=10],['wr30','🖋️','Author','Finish 30 writing tasks. Shakespeare is watching.',x=>LC(x,e=>String(e.c||'').indexOf('Writing')===0)>=30],['tr50','🌐','Translator','Finish 50 translations.',x=>LC(x,e=>e.k==='tr')>=50],['tr150','🗺️','Translation Legend','Finish 150 translations.',x=>LC(x,e=>e.k==='tr')>=150],['rw50','✏️','Rewriter','Finish 50 rewrites.',x=>LC(x,e=>e.k==='rw')>=50],['rw150','📝','Rewrite Legend','Finish 150 rewrites.',x=>LC(x,e=>e.k==='rw')>=150],['g20','🎮','Gamer','Play 20 games.',x=>LC(x,e=>e.c==='Game')>=20],['g60','🕹️','Game Boss','Play 60 games. It is still studying, trust us.',x=>LC(x,e=>e.c==='Game')>=60],['q10','⚡','Quick 5 Fan','Finish Quick 5 ten times.',x=>LC(x,e=>e.c==='Quick 5')>=10],['q30','🌩️','Quick 5 Addict','Finish Quick 5 thirty times.',x=>LC(x,e=>e.c==='Quick 5')>=30],['ex5','🧪','Exam Taker','Finish 5 mock exams.',x=>((x.p.exams||[]).length>=5)],['ex15','🎓','Exam Veteran','Finish 15 mock exams. The exam fears you.',x=>((x.p.exams||[]).length>=15)],['night','🦉','Night Owl','Answer 10 questions after midnight.',x=>HR(x,0,5)>=10],['early','🌅','Early Bird','Answer 10 questions before 7 AM.',x=>HR(x,5,7)>=10],['comeback','🔁','Comeback Kid','Come back after 2 weeks away. Welcome back.',GAP14],['wxp1000','🚀','Weekly 1,000','Earn 1,000 XP in one week.',x=>(x.wxp||0)>=1000],['wxp2500','🛸','Weekly 2,500','Earn 2,500 XP in one week. Alien level.',x=>(x.wxp||0)>=2500],['scout','🗺️','Site Scout','Finish the welcome quest',x=>((x.p&&x.p.log)||[]).some(e=>e.c==='Quest complete')]];
 const badges=x=>BDG.filter(b=>b[4](x)).map(b=>b[1]+' '+b[2]);
 const ach=(function(){const sk=id=>'s3ach_'+id;
  function pop(ic,t,s){const o=document.createElement('div');o.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%) scale(.6);z-index:99999;background:var(--surf,#fff);color:var(--tx,#111);border:2px solid var(--ac,#4f46e5);border-radius:20px;padding:18px 26px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);opacity:0;transition:all .35s cubic-bezier(.3,1.6,.5,1);max-width:86vw';o.innerHTML='<div style="font-size:46px">'+ic+'</div><div style="font-weight:800;font-size:17px">'+esc(t)+'</div><div style="font-size:13px;opacity:.75">'+esc(s)+'</div>';document.body.appendChild(o);requestAnimationFrame(()=>{o.style.opacity=1;o.style.transform='translateX(-50%) scale(1)'});setTimeout(()=>{o.style.opacity=0;setTimeout(()=>o.remove(),400)},3200);o.onclick=()=>o.remove()}
@@ -5053,7 +5053,7 @@ function renderBoard(){const v=$('view-board');if(window.S3CLOUD&&S3CLOUD.on&&!S
  const pod=[1,0,2].filter(i=>rows[i]).map(i=>'<div class="pod p'+(i+1)+'"><div style="font-size:26px">'+['🥇','🥈','🥉'][i]+'</div><b style="cursor:pointer" onclick="s3Com&&s3Com.open(\''+esc(rows[i].s.id)+'\')">'+esc(rows[i].s.name)+'</b><span>'+val(rows[i])+' XP</span><div style="font-size:11px">🔥 '+rows[i].best+' best</div></div>').join('');
  v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="s3h">🏆 Class Leaderboard</div><div class="s3sub">+10 XP per correct answer · +5 streak bonus · +20 when you master a question · +15 rewrite · +10 translation</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+clsSel()+(window.s3Com?'<button class="s3btn ghost" onclick="s3Com.friends()">'+(isTeacher()?'👥 Friendships':'👥 Friends')+'</button>':'')+'<button class="s3btn '+(boardMode==='all'?'':'ghost')+'" onclick="s3Board(\'all\')">All time</button><button class="s3btn '+(boardMode==='week'?'':'ghost')+'" onclick="s3Board(\'week\')">This week</button></div></div>'+
  (rows.length?'<div class="podium" style="margin:18px 0">'+pod+'</div><div style="overflow-x:auto"><table class="s3tbl"><tr><th>#</th><th>Student</th><th>XP</th><th>🔥 Streak</th><th>Best</th><th>📅 Days</th><th>Accuracy</th><th>Mastered</th><th>Badges</th></tr>'+
- rows.map((x,i)=>'<tr style="'+(x.s.id===me?'background:var(--acs)':'')+'"><td>'+(i+1)+'</td><td>'+rankOf(x.xp).ic+' <b style="cursor:pointer;text-decoration:underline dotted" onclick="s3Com&&s3Com.open(\''+esc(x.s.id)+'\')">'+esc(x.s.name)+'</b>'+(x.s.cls?' <span class="s3sub">'+esc(x.s.cls)+'</span>':'')+(x.s.id===me?' (you)':'')+'</td><td><b>'+val(x)+'</b></td><td>'+x.cur+'</td><td>'+x.best+'</td><td>'+x.ds+'</td><td>'+x.acc+'%</td><td>'+x.mastered+'</td><td style="font-size:13px" title="'+esc(badges(x).join(', '))+'">'+(badges(x).map(b=>b.split(' ')[0]).join(' ')||'—')+'</td></tr>').join('')+'</table></div>':'<p class="s3sub" style="margin-top:14px">No students yet — the teacher can add them in the Students tab.</p>')+'</div>'}
+ rows.map((x,i)=>'<tr style="'+(x.s.id===me?'background:var(--acs)':'')+'"><td>'+(i+1)+'</td><td>'+(window.s3Me?'<span title="'+s3Me._frame(s3Me._lvl(x.xp))[1]+' frame" style="position:relative">'+rankOf(x.xp).ic+'<span style="position:absolute;top:-4px;right:-5px;width:9px;height:9px;border-radius:50%;background:'+s3Me._frame(s3Me._lvl(x.xp))[2]+'"></span></span> ':rankOf(x.xp).ic+' ')+'<b style="cursor:pointer;text-decoration:underline dotted" onclick="s3Com&&s3Com.open(\''+esc(x.s.id)+'\')">'+esc(x.s.name)+'</b>'+(x.s.cls?' <span class="s3sub">'+esc(x.s.cls)+'</span>':'')+(x.s.id===me?' (you)':'')+'</td><td><b>'+val(x)+'</b></td><td>'+x.cur+'</td><td>'+x.best+'</td><td>'+x.ds+'</td><td>'+x.acc+'%</td><td>'+x.mastered+'</td><td style="font-size:13px;white-space:nowrap" title="'+esc(badges(x).join(', '))+'">'+(badges(x).slice(0,6).map(b=>b.split(' ')[0]).join(' ')+(badges(x).length>6?' <span class="s3sub">+'+(badges(x).length-6)+'</span>':'')||'—')+'</td></tr>').join('')+'</table></div>':'<p class="s3sub" style="margin-top:14px">No students yet — the teacher can add them in the Students tab.</p>')+'</div>'}
 
 /* ---------- REPORTS ---------- */
 let repId=null;window.s3ViewRep=id=>{repId=id;switchTab('report')};
@@ -6227,31 +6227,40 @@ const SK=[['g','Grammar',12],['v','Vocabulary',10],['r','Reading',8],['l','Liste
 const LINK=/\b(however|although|though|despite|in spite|because|therefore|moreover|besides|as a result|in addition|on the other hand|whereas|unless|in order to|so that|consequently|nevertheless)\b/i;
 let T=null;
 const pk=()=>'s3pl_p_'+uid();
+const ANC=[{"id": "n1", "cefr": 1, "category": "Grammar", "question": "She ___ a teacher.", "options": ["am", "is", "are", "be"], "answer": 1, "unit": 0}, {"id": "n2", "cefr": 1, "category": "Grammar", "question": "I ___ from Egypt.", "options": ["am", "is", "are", "be"], "answer": 0, "unit": 0}, {"id": "n3", "cefr": 1, "category": "Grammar", "question": "___ you like tea?", "options": ["Is", "Are", "Do", "Does"], "answer": 2, "unit": 0}, {"id": "n4", "cefr": 1, "category": "Grammar", "question": "There ___ two books on the table.", "options": ["is", "am", "are", "be"], "answer": 2, "unit": 0}, {"id": "n5", "cefr": 1, "category": "Main Vocabulary", "question": "Monday, Tuesday and Wednesday are days of the ___.", "options": ["month", "week", "year", "hour"], "answer": 1, "unit": 0}, {"id": "n6", "cefr": 1, "category": "Grammar", "question": "My brother ___ football every day.", "options": ["play", "playing", "plays", "to play"], "answer": 2, "unit": 0}, {"id": "n7", "cefr": 1, "category": "Main Vocabulary", "question": "The opposite of \"big\" is ___.", "options": ["small", "tall", "long", "old"], "answer": 0, "unit": 0}, {"id": "n8", "cefr": 1, "category": "Grammar", "question": "This is my mother. ___ name is Mona.", "options": ["He", "His", "Her", "She"], "answer": 2, "unit": 0}, {"id": "n9", "cefr": 1, "category": "Grammar", "question": "I have ___ apple in my bag.", "options": ["a", "an", "the", "two"], "answer": 1, "unit": 0}, {"id": "n10", "cefr": 1, "category": "Grammar", "question": "Where ___ you live?", "options": ["are", "is", "does", "do"], "answer": 3, "unit": 0}, {"id": "n11", "cefr": 1, "category": "Main Vocabulary", "question": "You use a ___ to write.", "options": ["chair", "door", "pen", "bed"], "answer": 2, "unit": 0}, {"id": "n12", "cefr": 1, "category": "Grammar", "question": "They ___ at school now.", "options": ["is", "am", "was", "are"], "answer": 3, "unit": 0}, {"id": "n13", "cefr": 5, "category": "Grammar", "question": "Hardly ___ the station when the train left.", "options": ["we had reached", "had we reached", "we reached", "did we reach"], "answer": 1, "unit": 0}, {"id": "n14", "cefr": 5, "category": "Grammar", "question": "The report is said ___ by an independent committee.", "options": ["to review", "to be reviewing", "to have been reviewed", "having review"], "answer": 2, "unit": 0}, {"id": "n15", "cefr": 5, "category": "Main Vocabulary", "question": "Her argument was so ___ that nobody could challenge it.", "options": ["fragile", "vague", "trivial", "cogent"], "answer": 3, "unit": 0}, {"id": "n16", "cefr": 5, "category": "Grammar", "question": "Had I known about the delay, I ___ earlier.", "options": ["would have left", "would leave", "had left", "will have left"], "answer": 0, "unit": 0}, {"id": "n17", "cefr": 5, "category": "Main Vocabulary", "question": "Critics called the new policy a ___ attempt to hide the real problem.", "options": ["generous", "superficial", "fertile", "spacious"], "answer": 1, "unit": 0}, {"id": "n18", "cefr": 5, "category": "Grammar", "question": "No sooner had she finished speaking ___ the audience began to applaud.", "options": ["when", "then", "than", "that"], "answer": 2, "unit": 0}, {"id": "n19", "cefr": 5, "category": "Main Vocabulary", "question": "She refused to ___ control of the company, even under pressure.", "options": ["relish", "relieve", "relate", "relinquish"], "answer": 3, "unit": 0}, {"id": "n20", "cefr": 5, "category": "Grammar", "question": "It is high time the government ___ serious action.", "options": ["took", "take", "will take", "has taken"], "answer": 0, "unit": 0}, {"id": "n21", "cefr": 5, "category": "Main Vocabulary", "question": "The two ideas are not mutually ___, so we can do both.", "options": ["excluded", "exclusive", "exclusion", "excluding"], "answer": 1, "unit": 0}, {"id": "n22", "cefr": 5, "category": "Grammar", "question": "Not only ___ late, but he also forgot the documents.", "options": ["he arrived", "arrived he", "did he arrive", "he did arrive"], "answer": 2, "unit": 0}, {"id": "n23", "cefr": 5, "category": "Grammar", "question": "The findings, ___ were surprising, led to a new theory.", "options": ["which some of", "some of which", "some which", "of some which"], "answer": 1, "unit": 0}, {"id": "n24", "cefr": 5, "category": "Main Vocabulary", "question": "His ___ attitude to deadlines caused serious problems.", "options": ["cordial", "candid", "cautious", "cavalier"], "answer": 3, "unit": 0}];
+const CF=['A1','A2','B1','B2','C1'],CFN={A1:'Beginner',A2:'Elementary',B1:'Intermediate',B2:'Upper-intermediate',C1:'Advanced'};
+const STEP=q=>q.cefr||({e:2,m:3,h:4}[window.S3_LV&&S3_LV[q.id]]||3);
+const mb32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 const PT_SKIP=new Set([31718,30514,30751,30054,30055,30056,30094,30147,30177,30259,30372,30381,30460,30513,30520,30621,30645,30666,30687,30786,30823,30827,30890,30956,30962,30979,30092,30192]);/* placement only: questions flagged for teacher review */
 const PT_OK=q=>!PT_SKIP.has(q.id)&&(q.question.match(/\.{3,}|_{3,}/g)||[]).length<=1&&!/ \/ /.test(q.question);
 async function buildTest(){const bank=Q().filter(PT_OK);if(bank.length<100)return null;let items=[];
  const used=new Set(),take=(list,n)=>{const r=spread(list.filter(q=>!used.has(q.id)),n);r.forEach(q=>used.add(q.id));return r};
- const isW=q=>q.category==='Grammar'&&(!BLANK.test(q.question)||LINK.test(q.options.join(' ')));take(bank.filter(q=>q.category==='Grammar'&&!isW(q)),12).forEach(q=>items.push({sk:'g',q}));
- take(bank.filter(ISVOC),7).forEach(q=>items.push({sk:'v',q}));take(bank.filter(q=>q.category.indexOf('Idiom')>=0),3).forEach(q=>items.push({sk:'v',q}));
+ const isW=q=>q.category==='Grammar'&&(!BLANK.test(q.question)||LINK.test(q.options.join(' ')));const P={};P.g=bank.filter(q=>q.category==='Grammar'&&!isW(q)).concat(ANC.filter(a=>a.category==='Grammar'));for(let i=0;i<12;i++)items.push({sk:'g',ad:1});
+ P.v=bank.filter(q=>ISVOC(q)||q.category.indexOf('Idiom')>=0).concat(ANC.filter(a=>a.category!=='Grammar'));for(let i=0;i<10;i++)items.push({sk:'v',ad:1});
  const wl=bank.filter(isW);take(wl,6).forEach(q=>items.push({sk:'w',q}));
  let rd=[];try{rd=await s3RW.load('read')||[]}catch(e){}
  shuf(rd.filter(p=>p.qs.length>=4)).slice(0,2).forEach(p=>{const idx=shuf(p.qs.map((q,i)=>i)).slice(0,4);items.push({sk:'r',p,qs:idx.map(i=>{const q=p.qs[i],o=shuf(q.o.map((_,j)=>j));return{q:q.q,options:o.map(j=>q.o[j]),answer:o.indexOf(q.a),unit:p.unit}})})});
  const lis=bank.filter(q=>BLANK.test(q.question)&&(ISVOC(q)||q.category==='Grammar')&&full(q).split(' ').length<=18);
- take(lis.filter(ISVOC),5).concat(take(lis.filter(q=>q.category==='Grammar'),3)).forEach(q=>items.push({sk:'l',q}));
+ P.l=lis.concat(ANC);for(let i=0;i<8;i++)items.push({sk:'l',ad:1});
  const sp=lis.filter(q=>full(q).split(' ').length>=5&&full(q).split(' ').length<=12);take(sp,6).forEach(q=>items.push({sk:'s',q}));
  const order={g:0,v:1,r:2,l:3,w:4,s:5};items.sort((a,b)=>order[a.sk]-order[b.sk]);
- const cnt={};items.forEach(i=>cnt[i.sk]=(cnt[i.sk]||0)+(i.qs?i.qs.length:1));return{items,cnt}}
+ const cnt={};items.forEach(i=>cnt[i.sk]=(cnt[i.sk]||0)+(i.qs?i.qs.length:1));return{items,cnt,P,used}}
 function flat(){const f=[];T.items.forEach((it,ii)=>{if(it.qs)it.qs.forEach((q,qi)=>f.push({it,ii,qi,sk:it.sk}));else f.push({it,ii,sk:it.sk})});return f}
-function savePr(){S.ls.set(pk(),{ids:T.items.map(i=>i.q?i.q.id:i.p.id),a:T.a,i:T.i})}
+function savePr(){S.ls.set(pk(),{seed:T.seed,a:T.a,i:T.i})}
+function resolve(f){const it=f.it;if(!it.ad||it.q)return;const pool=T.P[it.sk].filter(q=>!T.used.has(q.id));let best=[],bd=9;pool.forEach(q=>{const d=Math.abs(STEP(q)-T.cur);if(d<bd){bd=d;best=[q]}else if(d===bd)best.push(q)});const q=best.length?best[Math.floor(T.rng()*best.length)]:pool[0];T.used.add(q.id);it.q=q;it.step=STEP(q);it.cur=T.cur}
+function adapt(f,ok){if(!f.it.ad)return;T.hist.push([f.it.cur,ok?1:0]);T.cur=Math.max(1,Math.min(5,T.cur+(ok?1:-1)))}
 function placeStart(){clean();const old=readPlace();
  if(old){return placeResult(old)}
  const pr=S.ls.get(pk(),null);
- ov('🧭 Placement test',card('<div class="s3sub" style="line-height:1.7">50 questions: Grammar, Vocabulary, Reading, Listening, Writing skills and Speaking.<br>It takes about 25 minutes. You can stop and continue later. Find your level in each skill and get a study plan.<br>Please use headphones for Listening and a quiet place for Speaking.</div><div style="margin-top:12px">'+btn(pr&&pr.i?'▶ Continue ('+pr.i+'/50)':'▶ Start the test','s3Game.placeGo()')+'</div>'));}
-async function placeGo(){ov('🧭 Placement test',card('Preparing…'));const t=await buildTest();if(!t){ov('🧭 Placement test',card('The question bank is not ready. Please try again.'));return}
- T=t;T.a={};T.i=0;const pr=S.ls.get(pk(),null);if(pr&&pr.ids&&pr.ids.join()===t.items.map(i=>i.q?i.q.id:i.p.id).join())Object.assign(T,{a:pr.a,i:pr.i});
- T.f=flat();T.total=T.f.length;if(T.i>=T.total)T.i=0;pdraw()}
+ ov('🧭 Placement test',card('<div class="s3sub" style="line-height:1.7">50 questions: Grammar, Vocabulary, Reading, Listening, Writing skills and Speaking.<br>It takes about 25 minutes. You can stop and continue later. The questions adapt to you: harder when you answer right, easier when you answer wrong. At the end you get your English level from A1 to C1, your level in each skill and a study plan.<br>Please use headphones for Listening and a quiet place for Speaking.</div><div style="margin-top:12px">'+btn(pr&&pr.i?'▶ Continue ('+pr.i+'/50)':'▶ Start the test','s3Game.placeGo()')+'</div>'));}
+async function placeGo(){ov('🧭 Placement test',card('Preparing…'));const pr0=S.ls.get(pk(),null);const seed=(pr0&&pr0.seed)||((Math.random()*4294967295)>>>0);const mr=Math.random;Math.random=mb32(seed);let t;try{t=await buildTest()}finally{Math.random=mr}
+ if(!t){ov('🧭 Placement test',card('The question bank is not ready. Please try again.'));return}
+ T=t;T.a={};T.i=0;T.seed=seed;T.rng=mb32(seed^0x9e3779b9);T.cur=3;T.hist=[];if(pr0&&pr0.seed===seed&&pr0.a)Object.assign(T,{a:pr0.a,i:pr0.i});
+ T.f=flat();T.total=T.f.length;if(T.i>=T.total)T.i=0;
+ for(let k=0;k<T.i;k++){resolve(T.f[k]);adapt(T.f[k],T.a[k])}
+ pdraw()}
 function qtxt(f){return f.it.qs?f.it.qs[f.qi].q:f.it.q.question}
-function pdraw(){clean();const f=T.f[T.i];if(!f){return pfinish()}const sk=SK.find(s=>s[0]===f.sk);const head='<div class="s3sub" style="display:flex;justify-content:space-between"><span>Question '+(T.i+1)+' / '+T.total+'</span><span>'+sk[1]+'</span></div><div class="lsbar" style="margin:6px 0 12px"><i style="width:'+Math.round(T.i/T.total*100)+'%"></i></div>';let body='';
+function pdraw(){clean();const f=T.f[T.i];if(!f){return pfinish()}resolve(f);const sk=SK.find(s=>s[0]===f.sk);const head='<div class="s3sub" style="display:flex;justify-content:space-between"><span>Question '+(T.i+1)+' / '+T.total+'</span><span>'+sk[1]+'</span></div><div class="lsbar" style="margin:6px 0 12px"><i style="width:'+Math.round(T.i/T.total*100)+'%"></i></div>';let body='';
  const key=T.i;
  if(f.sk==='r'){const q=f.it.qs[f.qi];body=(f.qi===0||true?'<details '+(f.qi===0?'open':'')+' style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">📖 '+esc(f.it.p.title)+'</summary>'+f.it.p.text.map(t=>'<p style="font-size:15px;line-height:1.7;margin:8px 0">'+esc(t)+'</p>').join('')+'</details>':'')+'<div style="font-weight:700;margin-bottom:10px">'+esc(q.q)+'</div>'+q.options.map((o,j)=>optB(o,j,'s3Game.pans')).join('')}
  else if(f.sk==='l'){const q=f.it.q;body='<div style="text-align:center;margin-bottom:10px"><button class="s3btn" style="font-size:18px;padding:14px 22px" onclick="s3Game.hear()">🔊 Play the sentence</button><div class="s3sub" style="margin-top:6px">Listen. Choose the word or phrase you hear in the gap.</div></div>'+q.options.map((o,j)=>optB(o,j,'s3Game.pans')).join('');setTimeout(()=>say(full(q)),400)}
@@ -6259,8 +6268,8 @@ function pdraw(){clean();const f=T.f[T.i];if(!f){return pfinish()}const sk=SK.fi
  else{const q=f.it.q;body='<div style="font-weight:700;margin-bottom:10px;line-height:1.5">'+esc(q.question)+'</div>'+q.options.map((o,j)=>optB(o,j,'s3Game.pans')).join('')}
  ov('🧭 Placement test',card(head+body)+'<div style="text-align:center">'+btn('Pause and exit','s3Game.close()',1)+'</div>')}
 function hear(){const f=T.f[T.i];say(full(f.it.q))}
-function pans(j){const f=T.f[T.i];if(T.a[T.i]!==undefined)return;const q=f.it.qs?f.it.qs[f.qi]:f.it.q;T.a[T.i]=j===q.answer?1:0;savePr();T.i++;setTimeout(pdraw,150)}
-function spDone(ok){T.a[T.i]=ok?1:0;savePr();T.i++;pdraw()}
+function pans(j){const f=T.f[T.i];if(T.a[T.i]!==undefined)return;const q=f.it.qs?f.it.qs[f.qi]:f.it.q;T.a[T.i]=j===q.answer?1:0;adapt(f,T.a[T.i]);T.i++;savePr();setTimeout(pdraw,150)}
+function spDone(ok){T.a[T.i]=ok?1:0;T.i++;savePr();pdraw()}
 function speak(){const f=T.f[T.i],txt=full(f.it.q),R=window.SpeechRecognition||window.webkitSpeechRecognition,r=$('sp-r'),s=$('sp-s');
  const manual=msg=>{r.innerHTML=msg+'<br>Say the sentence aloud, then check yourself.';s.innerHTML=btn('✅ I said it clearly','s3Game.spDone(1)')+btn('Not yet','s3Game.spDone(0)',1)};
  if(!R||!navigator.onLine){manual(!R?'Speech recognition is not available on this browser.':'You are offline.');return}
@@ -6270,14 +6279,14 @@ function speak(){const f=T.f[T.i],txt=full(f.it.q),R=window.SpeechRecognition||w
 const LV=p=>p>=80?3:p>=50?2:1,LVN=['','Level 1 · Foundation','Level 2 · Developing','Level 3 · Strong'];
 function pfinish(){const sc={},n={};SK.forEach(s=>{sc[s[0]]=0;n[s[0]]=0});const wu={};
  T.f.forEach((f,i)=>{n[f.sk]++;if(T.a[i])sc[f.sk]++;else{const u=f.it.qs?f.it.qs[f.qi].unit:f.it.q.unit;if(f.sk!=='s'&&u)wu[u]=(wu[u]||0)+1}});
- const place={t:Date.now(),sk:{},wu:Object.entries(wu).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>+e[0]),tot:0};let s=0,m=0;SK.forEach(k=>{place.sk[k[0]]=[sc[k[0]],n[k[0]]];s+=sc[k[0]];m+=n[k[0]]});place.tot=Math.round(s/m*100);
+ const place={t:Date.now(),sk:{},wu:Object.entries(wu).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>+e[0]),tot:0};let s=0,m=0;SK.forEach(k=>{place.sk[k[0]]=[sc[k[0]],n[k[0]]];s+=sc[k[0]];m+=n[k[0]]});place.tot=Math.round(s/m*100);{const h=T.hist||[],l=h.slice(-10).map(x=>x[0]);l.push(T.cur||3);const est=l.reduce((a,b)=>a+b,0)/l.length;place.est=Math.round(est*10)/10;place.cefr=CF[Math.max(0,Math.min(4,Math.floor(est+.25)-1))];place.hist=h.map(x=>x[0]+(x[1]?'+':'-')).join('')}
  if(S.isStudent()){const p=S.getProg(uid());const first=!p.place;p.place=place;if(!p.placeFirst)p.placeFirst=place;S.saveProg(p);if(first)S.addXP(20,'Placement test')}else S.ls.set('s3pl_r_'+uid(),place);
  S.ls.set(pk(),null);placeResult(place)}
 function readPlace(){if(S.isStudent()){const p=S.getProg(uid());return p.place||null}return S.ls.get('s3pl_r_'+uid(),null)}
 function placeResult(P){const rows=SK.map(k=>{const [a,b]=P.sk[k[0]],pc=b?Math.round(a/b*100):0,lv=LV(pc);return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:14px"><b>'+k[1]+'</b><span>'+a+'/'+b+' · '+['','🔴','🟡','🟢'][lv]+' L'+lv+'</span></div><div class="lsbar"><i style="width:'+pc+'%"></i></div></div>'}).join('');
  const arr=SK.map(k=>({k:k[1],id:k[0],pc:P.sk[k[0]][1]?P.sk[k[0]][0]/P.sk[k[0]][1]:0})).sort((a,b)=>a.pc-b.pc),weak=arr.slice(0,2).map(x=>x.k).join(' and ');
  const dl=LV(Math.round((P.sk.g[0]+P.sk.w[0])/((P.sk.g[1]+P.sk.w[1])||1)*100)),dn=['','Easy','Medium','Hard'][dl];
- ov('🧭 My level',card('<div style="text-align:center;margin-bottom:12px"><div style="font-size:44px">'+['','🌱','📈','🚀'][LV(P.tot)]+'</div><div style="font-size:20px;font-weight:800">'+LVN[LV(P.tot)]+'</div><div class="s3sub">Overall '+P.tot+'%</div></div>'+rows)+
+ ov('🧭 My level',card('<div style="text-align:center;margin-bottom:12px"><div style="font-size:44px">'+['','🌱','📈','🚀'][LV(P.tot)]+'</div>'+(P.cefr?'<div style="font-size:36px;font-weight:900;color:var(--ac)">'+P.cefr+'</div><div style="font-size:16px;font-weight:700">Your English level (estimate)</div><div class="s3sub">'+CFN[P.cefr]+'</div>':'<div style="font-size:20px;font-weight:800">'+LVN[LV(P.tot)]+'</div><div class="s3sub">Retake the test to get your level from A1 to C1</div>')+'<div class="s3sub">Overall '+P.tot+'%</div></div>'+rows)+
  card('<b>📌 Your study plan</b><ul style="margin:8px 0 0 18px;list-style:disc;font-size:14px;line-height:1.7"><li>Focus first on: <b>'+weak+'</b></li>'+(P.wu.length?'<li>Review units: <b>'+P.wu.join(', ')+'</b> (open the Question Bank and choose the unit)</li>':'')+'<li>Writing tab, Dialogue: start with <b>'+dn+'</b> dialogues</li><li>Reading: start with the first passage of each unit and aim for 3 correct in a row</li><li>Play 🎮 Speed Round and Word Match 10 minutes a day</li></ul><div class="s3sub" style="margin-top:8px">Writing skills tests sentence building and linkers, not free writing. Speaking is approximate.</div>')+
  '<div style="text-align:center">'+btn('🎯 Practise my weak areas','s3Game.rec()')+btn('Open Question Bank','s3Game.close();switchTab(\'bank\')',1)+btn('Retake the test','s3Game.retake()',1)+'</div>')}
 function retake(){if(!confirm('Retake the placement test? Your first result is kept.'))return;if(S.isStudent()){const p=S.getProg(uid());delete p.place;S.saveProg(p)}else S.ls.set('s3pl_r_'+uid(),null);placeStart()}
@@ -6305,8 +6314,8 @@ window.s3DailyHook=function(p,Rn){const d=S.dayKey();p.dl=p.dl||{};const first=!
  const M={3:15,7:40,14:80,30:200},b=Math.min(n,7)*2+(M[n]||0);p.dstreak=n;p.dbest=Math.max(p.dbest||0,n);
  if(b){p.xp=(p.xp||0)+b;p.log.push({t:Date.now(),q:'bonus',u:0,c:'Daily streak '+n,ok:1,xp:b,k:'bonus'})}
  try{S.toast('🔥 Daily streak: '+n+(n>1?' days':' day')+' · +'+b+' XP')}catch(e){}};
-window.s3PlBadge=P=>{if(!P)return '<span class="s3sub">-</span>';return '<b>L'+LV(P.tot)+'</b> <span class="s3sub">'+P.tot+'%</span>'};
-window.s3PlBox=P=>{if(!P)return '';return '<div style="margin:12px 0;padding:10px;border:1px solid var(--bd);border-radius:12px"><b>🧭 Placement level: '+LVN[LV(P.tot)]+' ('+P.tot+'%)</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+SK.map(k=>{const a=P.sk[k[0]];return '<span class="s3pill">'+k[1]+' '+a[0]+'/'+a[1]+'</span>'}).join('')+'</div>'+(P.wu&&P.wu.length?'<div class="s3sub" style="margin-top:6px">Weak units: '+P.wu.join(', ')+'</div>':'')+'<div class="s3sub">Taken '+new Date(P.t).toLocaleDateString()+'</div></div>'};
+window.s3PlBadge=P=>{if(!P)return '<span class="s3sub">-</span>';return '<b>'+(P.cefr||('L'+LV(P.tot)))+'</b> <span class="s3sub">'+P.tot+'%</span>'};
+window.s3PlBox=P=>{if(!P)return '';return '<div style="margin:12px 0;padding:10px;border:1px solid var(--bd);border-radius:12px"><b>🧭 Placement level: '+(P.cefr?P.cefr+' (estimate) · ':'')+LVN[LV(P.tot)]+' ('+P.tot+'%)</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+SK.map(k=>{const a=P.sk[k[0]];return '<span class="s3pill">'+k[1]+' '+a[0]+'/'+a[1]+'</span>'}).join('')+'</div>'+(P.wu&&P.wu.length?'<div class="s3sub" style="margin-top:6px">Weak units: '+P.wu.join(', ')+'</div>':'')+'<div class="s3sub">Taken '+new Date(P.t).toLocaleDateString()+'</div></div>'};
 
 /* ===== GEMINI COACH (optional; falls back to local scoring) ===== */
 const GEM={topic:'',url:'https://script.google.com/macros/s/AKfycbybb3qX3KLFUr_uaxt0jhYy-WZErn2E4DWeNCoyqdgGOort6SUVFz7-j3IpjnXcCs75/exec',lim:30,
@@ -6946,7 +6955,7 @@ C.hwLoad=async function(){hwT=Date.now();const CLS=S().CLS(),F=fb.F,me=S().SESS(
 C.hwAdd=async function(o){try{await fb.F.setDoc(fb.F.doc(fb.db,'homework',o.id),o);await C.hwLoad();return true}catch(e){S().toast(msg(e));return false}};
 C.hwDel=async function(id){try{await fb.F.deleteDoc(fb.F.doc(fb.db,'homework',id));await C.hwLoad()}catch(e){S().toast(msg(e))}};
 C.hwGoal=async function(g){try{await fb.F.setDoc(fb.F.doc(fb.db,'homework','_goal'),{goal:g})}catch(e){}};
-C.shareText=function(s){const url=location.href.split('?')[0].split('#')[0];return 'Hi '+s.name+'! Your login for the Secondary 3 English Prep site:\nUsername: '+s.un+'\nPassword: '+s.pw+'\nLink: '+url+'\nPlease keep it private.'};
+C.shareText=function(s){const url=location.href.split('?')[0].split('#')[0];const fn=String(s.name||'').trim().split(/\s+/)[0];return 'Hi '+fn+'! 🎓\nGood news: your English practice is open 24/7. Bad news: no more excuses 😎\nUsername: '+s.un+'\nPassword: '+s.pw+'\nLink: '+url+'\nKeep your password safe, like your Wi-Fi password 🤫'};
 C.share=function(id,mode){const s=S().CLS().students.find(x=>x.id===id);if(!s||!s.un||!s.pw)return S().toast('No login saved for this student');const t=C.shareText(s);
  if(mode){window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');return}
  const ok=()=>S().toast('✅ Copied login for '+s.name),fb2=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok()}catch(e){S().toast('Could not copy')}ta.remove()};
@@ -6987,8 +6996,8 @@ const SHOP=[['bk','b','📚 Bookworm badge',20],['gg','b','🎓 Grammar Guru bad
  ['t1','t','Title: The Challenger',25],['t2','t','Title: Idiom Master',40],['t3','t','Title: Fast Fingers',50],['nc','n','Name colour: Teal',60],['gn','g','Card background: Night',60],['gs','g','Card background: Sunrise',60]];
 const DT=[['d5',5,'Bronze Duelist'],['d15',15,'Silver Duelist'],['d30',30,'Gold Duelist'],['d60',60,'Champion']];
 const BG={gn:'linear-gradient(135deg,#1e1b4b,#312e81);color:#fff',gs:'linear-gradient(135deg,#fde68a,#fdba74)'};
-const FR=[[30,'Master','#7c3aed'],[20,'Diamond','#06b6d4'],[15,'Platinum','#64748b'],[10,'Gold','#f59e0b'],[5,'Bronze','#b45309'],[1,'Plain','#cbd5e1']];
-const PRE=['🦁','🐯','🦊','🐼','🐸','🦉','🐙','🦄','🐬','🚀','⚽','🎮'],PC=['#f59e0b','#f97316','#ef4444','#64748b','#22c55e','#8b5cf6','#ec4899','#a855f7','#06b6d4','#3b82f6','#16a34a','#6366f1'];
+const FR=[[110,'Mythic','#f43f5e'],[85,'Galaxy','#a855f7'],[65,'Inferno','#ef4444'],[50,'Crystal','#38bdf8'],[38,'Titanium','#94a3b8'],[30,'Master','#7c3aed'],[20,'Diamond','#06b6d4'],[15,'Platinum','#64748b'],[10,'Gold','#f59e0b'],[5,'Bronze','#b45309'],[1,'Plain','#cbd5e1']];
+const PRE=['🦁','🐯','🦊','🐼','🐸','🦉','🐙','🦄','🐬','🚀','⚽','🎮','🦖','⭐','🐳','🤖','🦅','🏆','⚡','🐉','👑','🐝','🐺','🦇','🌅','🔥','💎','🧠','🎧','🎤','📖','✍️','🌐','👾','🔁','⚔️'],PC=['#f59e0b','#f97316','#ef4444','#64748b','#22c55e','#8b5cf6','#ec4899','#a855f7','#06b6d4','#3b82f6','#16a34a','#6366f1','#65a30d','#eab308','#0ea5e9','#334155','#0d9488','#b45309','#facc15','#7c2d12','#fbbf24','#ca8a04','#57534e','#1e293b','#fb923c','#b91c1c','#0284c7','#7c3aed','#0f766e','#be185d','#78350f','#166534','#0891b2','#4d7c0f','#9f1239','#dc2626'];
 const avInner=(av,name,sz)=>{if(av&&av.indexOf('data:image/jpeg;base64,')===0)return '<img alt="" src="'+av+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';const m=/^p(\d{1,2})$/.exec(av||'');if(m&&PRE[+m[1]])return '<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;border-radius:50%;background:'+PC[+m[1]]+';font-size:'+Math.round(sz*.5)+'px">'+PRE[+m[1]]+'</span>';return '<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;border-radius:50%;background:#6366f1;color:#fff;font-weight:800;font-size:'+Math.round(sz*.42)+'px">'+esc((FN(name)||'?')[0].toUpperCase())+'</span>'};
 const lvl=xp=>Math.floor((xp||0)/150)+1;
 const frame=l=>FR.find(f=>l>=f[0]);
@@ -7045,7 +7054,7 @@ async function shop(msg){const s=SS();if(!s||s.role==='teacher'||needNet())retur
   '<div class="mc"><div style="font-weight:800;margin-bottom:4px">Duel-only titles (not for sale)</div>'+DT.map(d=>'<div class="mr"><span>'+d[2]+'</span><span>'+(W.w>=d[1]?'✓ unlocked':d[1]+' wins')+'</span></div>').join('')+'</div>';
   ov('🛍️ Shop · 🪙 '+W.tk,h)}catch(e){ov('Shop','<div class="mc">Could not load. '+esc((e&&e.code)||'')+'</div>')}}
 async function buy(id){const x=fx(),p=price(id);if(!x||!p)return;try{const W=await wget(x.uid);if(W.own.includes(id))return shop();if(W.tk<p)return shop('Not enough tokens.');W.tk-=p;W.own=W.own.concat([id]);await wput(x.uid,W,false);shop()}catch(e){shop('Could not buy: '+((e&&e.code)||e))}}
-async function eq(id){const x=fx(),i=SHOP.find(z=>z[0]===id);if(!x||!i)return;try{const W=await wget(x.uid);if(!W.own.includes(id))return;W.eq[i[1]]=W.eq[i[1]]===id?'':id;await wput(x.uid,W,false);shop()}catch(e){shop('Could not save: '+((e&&e.code)||e))}}
+async function eq(id){const x=fx(),i=SHOP.find(z=>z[0]===id);if(!x||!i)return;try{const W=await wget(x.uid);if(!W.own.includes(id))return;W.eq[i[1]]=W.eq[i[1]]===id?'':id;await wput(x.uid,W,false);try{if(window.s3Com&&s3Com.pubEq)s3Com.pubEq(W.eq)}catch(e){}shop()}catch(e){shop('Could not save: '+((e&&e.code)||e))}}
 /* ---- challenges ---- */
 async function chal(msg){const s=SS();if(!s||s.role==='teacher')return;if(needNet())return;const x=fx(),F=x.F;ov('🤝 Duel Challenges','<div class="mc">Loading…</div>');
  try{const [bs,ds]=await Promise.all([F.getDocs(F.collection(x.db,'board')),F.getDocs(F.query(F.collection(x.db,'duels'),F.where('tid','==',x.uid)))]);
@@ -7059,7 +7068,7 @@ function send(id,name){close();s3Duel.home();s3Duel.create(id,name)}
 function accept(code){close();s3Duel.home();s3Duel.join(code)}
 
 /* ---- profile picture: presets are instant, photos need teacher approval ---- */
-async function pic(msg){const x=fx();if(!x)return;ov('Change picture',(msg?'<div class="mc" style="color:#b91c1c">'+esc(msg)+'</div>':'')+'<div class="mc"><div style="font-weight:800;margin-bottom:6px">Pick an avatar (instant)</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+PRE.map((e,i)=>'<button onclick="s3Me.preset('+i+')" style="width:100%;aspect-ratio:1;border-radius:50%;border:0;background:'+PC[i]+';font-size:30px">'+e+'</button>').join('')+'</div></div><div class="mc"><div style="font-weight:800;margin-bottom:4px">Or use a photo</div><div class="s3sub" style="margin-bottom:8px">Your teacher checks it first. Until then you keep your current picture.</div><label class="s3btn" style="display:inline-block;cursor:pointer">Choose photo<input id="me-file" type="file" accept="image/*" style="display:none" onchange="s3Me.photo(this)"></label></div>')}
+async function pic(msg){const x=fx();if(!x)return;ov('Change picture',(msg?'<div class="mc" style="color:#b91c1c">'+esc(msg)+'</div>':'')+'<div class="mc"><div style="font-weight:800;margin-bottom:6px">Pick an avatar (instant) · more unlock in 🎁 Rewards</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'+PRE.slice(0,12).map((e,i)=>'<button onclick="s3Me.preset('+i+')" style="width:100%;aspect-ratio:1;border-radius:50%;border:0;background:'+PC[i]+';font-size:30px">'+e+'</button>').join('')+'</div></div><div class="mc"><div style="font-weight:800;margin-bottom:4px">Or use a photo</div><div class="s3sub" style="margin-bottom:8px">Your teacher checks it first. Until then you keep your current picture.</div><label class="s3btn" style="display:inline-block;cursor:pointer">Choose photo<input id="me-file" type="file" accept="image/*" style="display:none" onchange="s3Me.photo(this)"></label></div>')}
 async function preset(i){const x=fx();try{await x.F.updateDoc(x.F.doc(x.db,'wallet',x.uid),{av:'p'+i,pv:''})}catch(e){try{const W=await wget(x.uid);if(!W._ex)await wput(x.uid,W,false);await x.F.updateDoc(x.F.doc(x.db,'wallet',x.uid),{av:'p'+i,pv:''})}catch(e2){return pic('Could not save: '+((e2&&e2.code)||e2))}}profile()}
 function shrink(file){return new Promise((ok,no)=>{const im=new Image(),u=URL.createObjectURL(file);im.onerror=()=>no('Could not read this picture');im.onload=()=>{URL.revokeObjectURL(u);const s=Math.min(im.width,im.height),c=document.createElement('canvas');c.width=c.height=96;c.getContext('2d').drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,96,96);let q=.72,d=c.toDataURL('image/jpeg',q);while(d.length>15000&&q>.3){q-=.1;d=c.toDataURL('image/jpeg',q)}d.length>15000?no('Picture is too detailed. Try another one.'):ok(d)};im.src=u})}
 async function photo(inp){const f=inp.files&&inp.files[0],x=fx();if(!f||!x)return;try{const d=await shrink(f);const W=await wget(x.uid);if(!W._ex)await wput(x.uid,W,false);await x.F.updateDoc(x.F.doc(x.db,'wallet',x.uid),{pv:d});ov('Sent','<div class="mc" style="text-align:center"><div style="width:96px;height:96px;margin:6px auto;border-radius:50%;overflow:hidden">'+avInner(d,'',96)+'</div>Your teacher will check your picture. It shows after approval.<div style="margin-top:10px">'+mb('Back to profile','s3Me.profile()')+'</div></div>')}catch(e){pic(typeof e==='string'?e:'Could not send: '+((e&&e.code)||e))}}
@@ -7071,7 +7080,7 @@ async function appr(id){const x=fx();try{const s=await x.F.getDoc(x.F.doc(x.db,'
 async function rej(id,all){const x=fx();try{await x.F.updateDoc(x.F.doc(x.db,'wallet',id),all?{av:'',pv:''}:{pv:''})}catch(e){}pics()}
 function duel(){const s=SS();if(s&&s.role==='teacher')s3Duel.teacher();else s3Duel.home()}
 let hn=0;const ht=setInterval(()=>{hn++;const s=SS();if(hn>60)return clearInterval(ht);if(s&&s.role==='student'&&fx()&&!sessionStorage.getItem('s3_home')){sessionStorage.setItem('s3_home','1');clearInterval(ht);profile()}},500);
-window.s3Me={pic,preset,photo,pics,appr,rej,confetti,profile,shop,buy,eq,chal,filt,send,accept,duel,close,duelEnd,classEnd,_lvl:lvl,_frame:frame};
+window.s3Me={pic,preset,photo,pics,appr,rej,confetti,profile,shop,buy,eq,chal,filt,send,accept,duel,close,duelEnd,classEnd,_lvl:lvl,_frame:frame,_FR:FR,_PRE:PRE,_wget:wget};
 })();
 </script>
 <script id="s3-duel">
@@ -7966,13 +7975,14 @@ window.s3TrackTest={analyze:analyze,insights:insights};
 (function(){
 var S=function(){return window.S3},fx=function(){return window.S3CLOUD&&S3CLOUD.fbx?S3CLOUD.fbx():null};
 var esc=function(s){return S().esc(s)},MAXF=30;
-var RANKS=[[0,'\ud83c\udf31','Beginner'],[100,'\ud83d\udcd8','Learner'],[300,'\ud83e\udded','Explorer'],[700,'\ud83c\udfc5','Achiever'],[1500,'\ud83d\udc8e','Expert'],[3000,'\ud83d\udc51','Master']];
+var RANKS=[[0,'\ud83c\udf31','Beginner'],[100,'\ud83d\udcd8','Learner'],[300,'\ud83e\udded','Explorer'],[700,'\ud83c\udfc5','Achiever'],[1500,'\ud83d\udc8e','Expert'],[3000,'\ud83d\udc51','Master'],[5000,'\u2b50','Star'],[8000,'\ud83d\udca0','Elite'],[12000,'\ud83d\udd25','Pro'],[18000,'\ud83c\udfc6','Champion'],[25000,'\u2694\ufe0f','Warlord'],[35000,'\ud83d\udc09','Legend'],[50000,'\ud83c\udf0c','Mythic']];
 var BDG=[['first','\ud83d\udc63','First Steps',function(x){return x.att>=10}],['s5','\ud83d\udd25','Streak 5',function(x){return x.best>=5}],['s10','\u26a1','Streak 10',function(x){return x.best>=10}],['s20','\ud83d\ude80','Streak 20',function(x){return x.best>=20}],
 ['d3','\ud83d\udcc5','3-Day Habit',function(x){return x.ds>=3}],['d7','\ud83d\uddd3\ufe0f','Week Warrior',function(x){return x.ds>=7}],['d14','\ud83c\udfd5\ufe0f','Two Weeks Strong',function(x){return x.ds>=14}],
 ['sh','\ud83c\udfaf','Sharpshooter',function(x){return x.att>=20&&x.acc>=90}],['ace','\ud83e\udde0','Accuracy Ace',function(x){return x.att>=100&&x.acc>=85}],
 ['m10','\ud83c\udf1f','Mastery 10',function(x){return x.mastered>=10}],['m25','\ud83c\udfc6','Master',function(x){return x.mastered>=25}],['m50','\ud83c\udf93','Grand Master',function(x){return x.mastered>=50}],
 ['a100','\ud83d\udcda','Bookworm',function(x){return x.att>=100}],['a300','\ud83d\udcd6','Scholar',function(x){return x.att>=300}],['a600','\ud83e\udd89','Wise Owl',function(x){return x.att>=600}],
 ['x500','\u2b50','500 XP',function(x){return x.xp>=500}],['x1000','\u2728','1000 XP',function(x){return x.xp>=1000}],['x2500','\ud83c\udf20','2500 XP',function(x){return x.xp>=2500}]];
+var LC=function(x,f){try{var n=0;(x.p.log||[]).forEach(function(e){if(f(e))n++});return n}catch(e){return 0}};var HR=function(x,a,b){return LC(x,function(e){var h=new Date(e.t).getHours();return h>=a&&h<b})};var GAP14=function(x){try{var ks=Object.keys(x.p.days||{}).sort();for(var i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};BDG.push(['x5000','\u2b50','5,000 XP',function(x){return x.xp>=5000}],['x10000','\ud83d\udcab','10,000 XP',function(x){return x.xp>=10000}],['x25000','\ud83c\udf20','25,000 XP',function(x){return x.xp>=25000}],['x50000','\ud83c\udf0c','50,000 XP',function(x){return x.xp>=50000}],['a1000','\ud83d\udc1d','Busy Bee',function(x){return x.att>=1000}],['a2500','\ud83e\uddbe','The Machine',function(x){return x.att>=2500}],['a5000','\ud83c\udfed','Question Factory',function(x){return x.att>=5000}],['s30','\u2604\ufe0f','Streak 30',function(x){return x.best>=30}],['s50','\ud83d\udca5','Streak 50',function(x){return x.best>=50}],['s100','\ud83e\udde8','Streak 100',function(x){return x.best>=100}],['d30','\ud83d\udcc6','Monthly Habit',function(x){return x.ds>=30}],['d60','\ud83d\uddd3\ufe0f','Two Months Strong',function(x){return x.ds>=60}],['d100','\ud83d\udee1\ufe0f','Centurion',function(x){return x.ds>=100}],['m100','\ud83d\udcaa','Mastery 100',function(x){return x.mastered>=100}],['m250','\ud83e\uddd7','Mastery 250',function(x){return x.mastered>=250}],['m500','\ud83c\ufdd4\ufe0f','Mastery 500',function(x){return x.mastered>=500}],['ls50','\ud83c\udfa7','Listening Hero',function(x){return LC(x,function(e){return e.k==='ls'})>=50}],['ls150','\ud83c\udfbc','Listening Legend',function(x){return LC(x,function(e){return e.k==='ls'})>=150}],['sp25','\ud83c\udfa4','Speaking Star',function(x){return LC(x,function(e){return e.c==='Speaking'})>=25}],['sp75','\ud83d\udce2','Speaking Legend',function(x){return LC(x,function(e){return e.c==='Speaking'})>=75}],['rd10','\ud83d\udcd6','Reading Machine',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Reading:')===0})>=10}],['rd30','\ud83d\udcda','Library Lion',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Reading:')===0})>=30}],['wr10','\u270d\ufe0f','Writer',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Writing')===0})>=10}],['wr30','\ud83d\udd8b\ufe0f','Author',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Writing')===0})>=30}],['tr50','\ud83c\udf10','Translator',function(x){return LC(x,function(e){return e.k==='tr'})>=50}],['tr150','\ud83d\uddfa\ufe0f','Translation Legend',function(x){return LC(x,function(e){return e.k==='tr'})>=150}],['rw50','\u270f\ufe0f','Rewriter',function(x){return LC(x,function(e){return e.k==='rw'})>=50}],['rw150','\ud83d\udcdd','Rewrite Legend',function(x){return LC(x,function(e){return e.k==='rw'})>=150}],['g20','\ud83c\udfae','Gamer',function(x){return LC(x,function(e){return e.c==='Game'})>=20}],['g60','\ud83d\udd79\ufe0f','Game Boss',function(x){return LC(x,function(e){return e.c==='Game'})>=60}],['q10','\u26a1','Quick 5 Fan',function(x){return LC(x,function(e){return e.c==='Quick 5'})>=10}],['q30','\ud83c\udf29\ufe0f','Quick 5 Addict',function(x){return LC(x,function(e){return e.c==='Quick 5'})>=30}],['ex5','\ud83e\uddea','Exam Taker',function(x){return (x.p.exams||[]).length>=5}],['ex15','\ud83c\udf93','Exam Veteran',function(x){return (x.p.exams||[]).length>=15}],['night','\ud83e\udd89','Night Owl',function(x){return HR(x,0,5)>=10}],['early','\ud83c\udf05','Early Bird',function(x){return HR(x,5,7)>=10}],['comeback','\ud83d\udd01','Comeback Kid',GAP14],['wxp1000','\ud83d\ude80','Weekly 1,000',function(x){return (x.wxp||0)>=1000}],['wxp2500','\ud83d\udec8','Weekly 2,500',function(x){return (x.wxp||0)>=2500}]);
 var rankOf=function(xp){var k=0;RANKS.forEach(function(r,i){if(xp>=r[0])k=i});return RANKS[k]};
 var SKN=[['g','Grammar'],['v','Vocabulary'],['r','Reading'],['l','Listening'],['w','Writing skills'],['s','Speaking']];
 var C={fset:new Set(),mine:null,req:{inc:[],out:[]},blocks:[],fl:[],dis:false,locked:false,loaded:false};window.s3Com=C;
@@ -7990,13 +8000,15 @@ function statOf(s){return S().statsFor(s)}
 function boardRow(id){var s=rows().filter(function(x){return x.id===id})[0];return s?{s:s,x:statOf(s)}:null}
 function badgesOf(x){return BDG.filter(function(b){return b[3](x)})}
 function nameOf(id){var r=boardRow(id);return r?r.s.name:'Student'}
+var TT={t1:'The Challenger',t2:'Idiom Master',t3:'Fast Fingers'},BB={bk:'📚 Bookworm',gg:'🎓 Grammar Guru',ww:'🪄 Word Wizard',ss:'⚡ Speed Star'};
+function tb(p){var h='';if(p&&TT[p.tt])h+='<div style="font-size:13px;font-weight:700;color:var(--ac,#4f46e5)">'+TT[p.tt]+'</div>';if(p&&BB[p.bd])h+='<div style="margin-top:4px"><span class="bd">'+BB[p.bd]+' badge</span></div>';return h}
 /* ---------- loading my social state ---------- */
 C.isFriend=function(id){return C.fset.has(id)};
 C.load=async function(){var u=me();if(!u||S().isTeacher())return;
  try{var r=await Promise.all([getAll('friendships','a',u),getAll('friendships','b',u),getAll('friendRequests','to',u),getAll('friendRequests','from',u),getAll('blocks','by',u),F().getDoc(dref('publicProfiles',u))]);
   C.fl=r[0].concat(r[1]);C.fset=new Set(C.fl.map(function(d){return d.a===u?d.b:d.a}));
   C.req.inc=r[2].filter(function(d){return d.st==='pending'});C.req.out=r[3].filter(function(d){return d.st==='pending'});
-  C.blocks=r[4];var p=r[5].exists()?r[5].data():{};C.locked=!!p.locked;C.dis=!!p.fdis;C.loaded=true}catch(e){C.loaded=false;C.err=errMsg(e)}
+  C.blocks=r[4];var p=r[5].exists()?r[5].data():{};C.mypp=p;C.locked=!!p.locked;C.dis=!!p.fdis;C.loaded=true}catch(e){C.loaded=false;C.err=errMsg(e)}
  };
 C.sync=async function(){var u=me(),s=S().SESS&&S().SESS();if(!u||!s||s.role==='teacher')return;
  var k='s3com_'+u,last=+(localStorage.getItem(k)||0);if(Date.now()-last<6*3600*1000)return;
@@ -8005,7 +8017,9 @@ C.sync=async function(){var u=me(),s=S().SESS&&S().SESS();if(!u||!s||s.role==='t
   await F().setDoc(dref('friendProfiles',u),{sk:sk,last:p.last||0,cur:st.cur||0,updated:Date.now()});
   var pp=await F().getDoc(dref('publicProfiles',u));if(!pp.exists())await F().setDoc(dref('publicProfiles',u),{locked:false,updated:Date.now()});
   localStorage.setItem(k,String(Date.now()))}catch(e){}};
-C.boot=async function(){if(!me()||S().isTeacher())return;await C.load();C.sync();if(window.s3BoardCls&&$('view-board')&&$('view-board').offsetParent!==null)window.s3BoardCls(window.__s3bc||'all')};
+C.pubEq=async function(eq){var u=me();if(!u||S().isTeacher())return;try{eq=eq||{};var t=eq.t||'',b=eq.b||'',m=C.mypp||{};if((m.tt||'')===t&&(m.bd||'')===b)return;if(!t&&!b&&!m.tt&&!m.bd)return;await F().setDoc(dref('publicProfiles',u),{tt:t,bd:b,updated:Date.now()},{merge:true});C.mypp=Object.assign({},m,{tt:t,bd:b})}catch(e){}};
+C.pubSync=async function(){var u=me();if(!u||S().isTeacher())return;var k='s3comeq_'+u;try{if(Date.now()-(+(localStorage.getItem(k)||0))<6*3600*1000)return;if(window.s3Me&&s3Me._wget){var W=await s3Me._wget(u);if(W)await C.pubEq(W.eq||{});localStorage.setItem(k,String(Date.now()))}}catch(e){}};
+C.boot=async function(){if(!me()||S().isTeacher())return;await C.load();C.sync();C.pubSync();if(window.s3BoardCls&&$('view-board')&&$('view-board').offsetParent!==null)window.s3BoardCls(window.__s3bc||'all')};
 /* ---------- overlay ---------- */
 function ov(title,html){var o=$('s3com-ov');if(!o){o=document.createElement('div');o.id='s3com-ov';o.style.cssText='position:fixed;inset:0;z-index:99991;background:rgba(15,23,42,.55);display:flex;align-items:flex-end;justify-content:center';
  o.addEventListener('click',function(e){if(e.target===o)C.close()});document.body.appendChild(o)}
@@ -8018,7 +8032,7 @@ C.open=async function(id){var u=me(),teacher=S().isTeacher(),R=boardRow(id);if(!
   var g=await Promise.all([F().getDoc(dref('publicProfiles',id)),(self||friend||teacher)?F().getDoc(dref('friendProfiles',id)).catch(function(){return null}):Promise.resolve(null),getAll('cheers','to',id).catch(function(){return[]})]);
   pub=g[0].exists()?g[0].data():{};fr=g[1]&&g[1].exists()?g[1].data():null;cheers=g[2]}catch(e){}
  var x=R.x,rk=rankOf(x.xp),locked=!!pub.locked&&!self&&!teacher,box=function(h){return '<div class="cd">'+h+'</div>'};
- var head='<div class="cd" style="text-align:center"><div style="width:84px;height:84px;margin:4px auto;border-radius:50%;background:var(--ac,#4f46e5);color:#fff;font-size:34px;font-weight:800;display:flex;align-items:center;justify-content:center">'+esc((R.s.name||'?').trim().charAt(0).toUpperCase())+'</div><div style="font-size:22px;font-weight:800">'+esc(R.s.name)+'</div>'+(locked?'':'<div class="mu">'+esc(R.s.cls||'')+'</div>')+'<div style="margin-top:4px;font-size:15px">'+rk[1]+' <b>'+rk[2]+'</b>'+(locked?'':' \u00b7 '+x.xp+' XP')+'</div></div>';
+ var head='<div class="cd" style="text-align:center"><div style="width:84px;height:84px;margin:4px auto;border-radius:50%;border:5px solid '+(window.s3Me?s3Me._frame(s3Me._lvl(x.xp))[2]:'#cbd5e1')+';background:var(--ac,#4f46e5);color:#fff;font-size:34px;font-weight:800;display:flex;align-items:center;justify-content:center">'+esc((R.s.name||'?').trim().charAt(0).toUpperCase())+'</div><div style="font-size:22px;font-weight:800">'+esc(R.s.name)+'</div>'+(locked?'':tb(pub))+(locked?'':'<div class="mu">'+esc(R.s.cls||'')+'</div>')+'<div style="margin-top:4px;font-size:15px">'+rk[1]+' <b>'+rk[2]+'</b>'+(locked?'':' \u00b7 '+x.xp+' XP')+'</div></div>';
  var body='';
  if(locked){body=box('<div class="mu" style="text-align:center">\ud83d\udd12 This student keeps the profile private.</div>')}
  else{
@@ -8106,13 +8120,15 @@ const seen=k=>{try{const s=S();if(!s.isStudent())return false;const p=s.getProg(
 const award=(xp,label)=>{const s=S();if(seen(label))return false;s.addXP(xp,label);return true};
 
 /* ---------- missions ---------- */
-const LBL={m1:'Quest: First Blood',m2:'Quest: Ear Check',m3:'Quest: Daily Dose',m4:'Quest: Say What?',m5:'Quest: Fame Check'};
+const LBL={m1:'Quest: First Blood',m2:'Quest: Ear Check',m3:'Quest: Daily Dose',m4:'Quest: Say What?',m5:'Quest: Fame Check',m6:'Quest: Treasure Hunter',m7:'Quest: Know Thyself'};
 const MISSIONS=[
  {id:'m1',ic:'🩸',t:'First Blood',d:'Answer 1 question in the Question Bank.',go:()=>goTab('bank')},
  {id:'m2',ic:'👂',t:'Ear Check',d:'Answer 1 question in Listening. Yes, really listen.',go:()=>goTab('listen')},
  {id:'m3',ic:'⚡',t:'Daily Dose',d:"Finish today's Quick 5 in Challenges.",go:()=>goTab('play')},
  {id:'m4',ic:'🗣️',t:'Say What?',d:'Say 1 sentence in Speaking. Out loud!',go:()=>{if(window.s3Game&&s3Game.spk)s3Game.spk();else goTab('play')}},
- {id:'m5',ic:'🏆',t:'Fame Check',d:'Open the Leaderboard and find your name.',go:()=>goTab('board')}
+ {id:'m5',ic:'🏆',t:'Fame Check',d:'Open the Leaderboard and find your name.',go:()=>goTab('board')},
+ {id:'m6',ic:'🎁',t:'Treasure Hunter',d:'Open 🎁 Rewards from the menu and check your frames and avatars.',go:()=>{closeSheet();try{if(window.s3Loot)s3Loot.open()}catch(e){}}},
+ {id:'m7',ic:'🧭',t:'Know Thyself',d:'Take the placement test and get your level, A1 to C1. It adapts to you, like a good teacher.',go:()=>{closeSheet();try{s3Game.place()}catch(e){goTab('play')}}}
 ];
 const questDone=()=>MISSIONS.every(m=>seen(LBL[m.id]));
 const doneCount=()=>MISSIONS.filter(m=>seen(LBL[m.id])).length;
@@ -8130,13 +8146,20 @@ try{const _so=window.selectOption;if(_so)window.selectOption=function(){const r=
 try{const _le=S().logEv;S().logEv=function(){const r=_le.apply(this,arguments);try{if(arguments[3]==='ls')complete('m2')}catch(e){}return r}}catch(e){}
 try{const _ax=S().addXP;S().addXP=function(){const r=_ax.apply(this,arguments);try{if(arguments[1]==='Quick 5')complete('m3');if(arguments[1]==='Speaking')complete('m4')}catch(e){}return r}}catch(e){}
 try{const _st=window.switchTab;if(_st)window.switchTab=function(){const r=_st.apply(this,arguments);try{if(arguments[0]==='board')complete('m5')}catch(e){}return r}}catch(e){}
+/* lazy hooks: rewards panel + placement test (those modules load after this script) */
+let _lootHooked=false;
+setInterval(()=>{try{
+ if(!stu()||questDone())return;
+ if(!_lootHooked&&window.s3Loot&&s3Loot.open){_lootHooked=true;const _lo=s3Loot.open;s3Loot.open=function(){const r=_lo.apply(this,arguments);try{complete('m6')}catch(e){}return r}}
+ const _p=S().getProg(S().SESS().id);if(_p&&_p.place)complete('m7')
+}catch(e){}},1500);
 
 /* ---------- quest pill + sheet ---------- */
 let pill=null;
 function showPill(){
  if(!stu()||questDone())return;
  if(!pill){pill=document.createElement('button');pill.style.cssText='position:fixed;right:12px;bottom:14px;z-index:99970;border:2px solid var(--ac,#4f46e5);background:var(--surf,#fff);color:var(--tx,#0f172a);border-radius:999px;padding:9px 14px;font-weight:800;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer';pill.onclick=openSheet;document.body.appendChild(pill)}
- pill.textContent='🗺️ Quest '+doneCount()+'/5';pill.style.display='block'}
+ pill.textContent='🗺️ Quest '+doneCount()+'/7';pill.style.display='block'}
 function hidePill(){if(pill)pill.style.display='none'}
 let sheet=null;
 function openSheet(){if(!stu())return;closeSheet();
@@ -8149,7 +8172,7 @@ function openSheet(){if(!stu())return;closeSheet();
   +'</div>'}).join('');
  bg.innerHTML='<div style="width:100%;max-width:560px;max-height:86vh;overflow:auto;background:var(--surf,#fff);color:var(--tx,#0f172a);border-radius:22px 22px 0 0;padding:18px;box-sizing:border-box">'
   +'<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🗺️ New Recruit Quest</b><button style="border:1px solid var(--bd,#e2e8f0);background:var(--surf2,#f1f5f9);color:inherit;border-radius:10px;width:34px;height:34px;font-size:15px;cursor:pointer" data-qclose="1">✕</button></div>'
-  +'<div style="font-size:13px;opacity:.75;margin:6px 0 10px">5 small missions. Finish them all: +40 XP and the 🗺️ Site Scout badge. '+doneCount()+'/5 done.</div>'
+  +'<div style="font-size:13px;opacity:.75;margin:6px 0 10px">7 small missions. Finish them all: +50 XP and the 🗺️ Site Scout badge. '+doneCount()+'/7 done.</div>'
   +rows+'</div>';
  document.body.appendChild(bg);sheet=bg;
  bg.querySelectorAll('[data-qgo]').forEach(b=>b.onclick=()=>{const m=MISSIONS.find(x=>x.id===b.getAttribute('data-qgo'));if(m)m.go()});
@@ -8159,10 +8182,11 @@ function renderSheet(){if(sheet){openSheet()}}
 
 /* ---------- spotlight tour ---------- */
 const STEPS=[
- {sel:'#s3-chip',t:'This is YOU 👋',b:'Your rank, XP and 🔥 streak live here. Open the app every day or the fire goes out. No pressure. OK, a little pressure.'},
- {sel:'button[aria-label="Menu"]',t:'The magic menu',b:'Everything hides in here: Bank, Reading, Listening, Speaking, Games. Like a restaurant menu, but free.'},
+ {sel:'#s3-chip',t:'This is YOU 👋',b:'Your rank, XP and 🔥 streak live here. Tap the chip to see all 13 ranks, from Beginner to 🌌 Mythic, and your badge collection. Open the app every day or the fire goes out. No pressure. OK, a little pressure.'},
+ {sel:'button[aria-label="Menu"]',t:'The magic menu',b:'Everything hides in here: Bank, Reading, Listening, Speaking, Games, 🎁 Rewards, and the 🧭 placement test that finds your English level from A1 to C1. Like a restaurant menu, but free.'},
  {sel:'#filter-section',t:'Find your questions',b:'Pick your unit and lesson, or type a word. The list gets smaller. Magic.'},
  {sel:'#questions-container>*',t:'Tap and earn',b:'Choose an answer. Right = +10 XP. Wrong = the question goes to Mastery jail and comes back tomorrow. You win either way.'},
+ {sel:'#s3-chip',t:'Loot time 🎁',b:'New goodies: avatar frames up to level 110, 24 milestone avatars to unlock, and bonus XP every week you study hard. Open 🎁 Rewards from the menu and see what you already won.'},
  {sel:'button[aria-label="Settings"]',t:'Your controls',b:'Colors, voice speed, and this tour (if you ever miss it) are in here. Tour over. Now: missions!'}
 ];
 let T=null;
@@ -8213,6 +8237,170 @@ const boot=setInterval(()=>{tries++;try{
  if(tries>90)clearInterval(boot)},700);
 window.s3Tour={start:startTour,quest:openSheet};
 })();
+/* placement-test announcement banner: waits until the tour has been seen */
+(function(){let n=0,t0=0;const iv=setInterval(()=>{n++;try{const s=window.S3;if(!s||!s.isStudent())return;const id=s.SESS().id;
+ const bar=document.getElementById('s3-plb');const p=s.getProg(id);
+ if(p.place||s.ls.get('s3plb_'+id,0)){if(bar)bar.remove();return}
+ if(!s.ls.get('s3tour_v1_'+id,0))return;
+ if(!t0)t0=Date.now();if(Date.now()-t0<25000||bar)return;
+ const d=document.createElement('div');d.id='s3-plb';d.style.cssText='position:fixed;left:10px;right:10px;top:10px;z-index:9000;background:var(--surf,#fff);border:2px solid var(--ac,#2563eb);border-radius:14px;padding:12px;box-shadow:0 6px 24px rgba(0,0,0,.2);max-width:460px;margin:0 auto;font-size:14px';
+ d.innerHTML='<b>🧭 Placement test</b><div style="margin:4px 0 8px;line-height:1.5">Find your English level from A1 to C1. The questions adapt to you.</div><div style="display:flex;gap:8px"><button class="s3btn" id="s3-plb-go">Start</button><button class="s3btn ghost" id="s3-plb-no">Later</button></div>';
+ document.body.appendChild(d);
+ document.getElementById('s3-plb-go').onclick=()=>{s.ls.set('s3plb_'+id,1);d.remove();try{s3Game.place()}catch(e){}};
+ document.getElementById('s3-plb-no').onclick=()=>{s.ls.set('s3plb_'+id,1);d.remove()}}catch(e){}if(n>1200)clearInterval(iv)},1500)})();
 </script>
+<script id="s3-loot">
+/* S3 UPGRADE: progression loot — weekly XP milestones, unlockable milestone
+   avatars, rewards panel (frames + avatars), unlock pops.
+   Client-side only: uses existing addXP / saveProg / s3Me.preset paths. */
+(function(){
+const $=id=>document.getElementById(id);
+const S=()=>window.S3;
+const stu=()=>{try{return S()&&S().isStudent()}catch(e){return false}};
+const toast=m=>{try{S().toast(m)}catch(e){}};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---- milestone avatars: [preIdx, emoji, name, requirement, test(x,W)] ---- */
+const LC=(x,f)=>{try{let n=0;(x.p.log||[]).forEach(e=>{if(f(e))n++});return n}catch(e){return 0}};
+const HR=(x,a,b)=>LC(x,e=>{const h=new Date(e.t).getHours();return h>=a&&h<b});
+const GAP14=x=>{try{const ks=Object.keys(x.p.days||{}).sort();for(let i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};
+const MAV=[
+ [12,'🦖','Dino','Reach Master rank (3,000 XP)',x=>x.xp>=3000],
+ [13,'⭐','Star','Earn 5,000 XP',x=>x.xp>=5000],
+ [14,'🐳','Whale','Earn 8,000 XP',x=>x.xp>=8000],
+ [15,'🤖','Robot','Earn 10,000 XP',x=>x.xp>=10000],
+ [16,'🦅','Eagle','Earn 12,000 XP',x=>x.xp>=12000],
+ [17,'🏆','Champ','Earn 18,000 XP',x=>x.xp>=18000],
+ [18,'⚡','Bolt','Earn 25,000 XP',x=>x.xp>=25000],
+ [19,'🐉','Dragon','Earn 35,000 XP (Legend)',x=>x.xp>=35000],
+ [20,'👑','King','Earn 50,000 XP (Mythic)',x=>x.xp>=50000],
+ [21,'🐝','Bee','Answer 1,000 questions',x=>x.att>=1000],
+ [22,'🐺','Wolf','Answer 2,500 questions',x=>x.att>=2500],
+ [23,'🦇','Bat','Answer 10 questions after midnight',x=>HR(x,0,5)>=10],
+ [24,'🌅','Sunny','Answer 10 questions before 7 AM',x=>HR(x,5,7)>=10],
+ [25,'🔥','Flame','50 correct answers in a row',x=>x.best>=50],
+ [26,'💎','Gem','90% accuracy after 100 answers',x=>x.att>=100&&x.acc>=90],
+ [27,'🧠','Brain','Master 250 questions',x=>x.mastered>=250],
+ [28,'🎧','DJ','Answer 150 listening questions',x=>LC(x,e=>e.k==='ls')>=150],
+ [29,'🎤','Singer','Practise speaking 75 times',x=>LC(x,e=>e.c==='Speaking')>=75],
+ [30,'📖','Reader','Finish 30 reading passages',x=>LC(x,e=>String(e.c||'').indexOf('Reading:')===0)>=30],
+ [31,'✍️','Author','Finish 30 writing tasks',x=>LC(x,e=>String(e.c||'').indexOf('Writing')===0)>=30],
+ [32,'🌐','Translator','Finish 150 translations',x=>LC(x,e=>e.k==='tr')>=150],
+ [33,'👾','Alien','Play 60 games',x=>LC(x,e=>e.c==='Game')>=60],
+ [34,'🔁','Comeback','Return after 2 weeks away',GAP14],
+ [35,'⚔️','Warrior','Win 50 duels',(x,W)=>!!(W&&W.w>=50)]
+];
+const stats=()=>{try{const s=S();return s.statsFor({id:s.SESS().id,name:s.SESS().name})}catch(e){return null}};
+const wallet=async()=>{try{const x=(window.S3CLOUD&&S3CLOUD.fbx)?S3CLOUD.fbx():null;if(!x)return null;
+ const d=await x.F.getDoc(x.F.doc(x.db,'wallet',x.uid));return d.exists()?d.data():null}catch(e){return null}};
+
+/* ---- unlock tracking + pops ---- */
+const seenKey=()=>'s3loot_seen_'+S().SESS().id;
+function pop(ic,t,s){const o=document.createElement('div');
+ o.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%) scale(.6);z-index:99999;background:var(--surf,#fff);color:var(--tx,#111);border:2px solid var(--ac,#4f46e5);border-radius:20px;padding:18px 26px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);opacity:0;transition:all .35s cubic-bezier(.3,1.6,.5,1);max-width:86vw';
+ o.innerHTML='<div style="font-size:46px">'+ic+'</div><div style="font-weight:800;font-size:17px">'+esc(t)+'</div><div style="font-size:13px;opacity:.75">'+esc(s)+'</div>';
+ document.body.appendChild(o);requestAnimationFrame(()=>{o.style.opacity=1;o.style.transform='translateX(-50%) scale(1)'});
+ setTimeout(()=>{o.style.opacity=0;setTimeout(()=>o.remove(),400)},3400);o.onclick=()=>o.remove()}
+function checkUnlocks(W){
+ if(!stu())return;
+ const x=stats();if(!x)return;
+ const raw=localStorage.getItem(seenKey());
+ let seen;try{seen=JSON.parse(raw||'[]')}catch(e){seen=[]}
+ if(raw===null){/* first run after the update: grant already-earned avatars silently, pop only future unlocks */
+  MAV.forEach(m=>{try{if(m[4](x,W))seen.push(m[0])}catch(e){}});
+  try{localStorage.setItem(seenKey(),JSON.stringify(seen))}catch(e){}
+  return}
+ const fresh=[];
+ MAV.forEach(m=>{if(seen.includes(m[0]))return;if(m[4](x,W)){seen.push(m[0]);fresh.push(m)}});
+ if(fresh.length){try{localStorage.setItem(seenKey(),JSON.stringify(seen))}catch(e){}
+  let i=0;const show=()=>{if(i>=fresh.length)return;const m=fresh[i++];pop(m[1],'Avatar unlocked: '+m[2],'Find it in 🎁 Rewards');setTimeout(show,3600)};show()}}
+
+/* ---- weekly XP milestone bonuses (one per tier per week, existing addXP path) ---- */
+const WEEK=()=>Math.floor(Date.now()/(7*864e5));
+const TIERS=[[300,50],[800,150],[2000,400]];
+function weeklyBonus(){
+ if(!stu())return;
+ const x=stats();if(!x)return;
+ const k='s3wkb_'+S().SESS().id;let st;try{st=JSON.parse(localStorage.getItem(k)||'{}')}catch(e){st={}}
+ if(st.wk!==WEEK())st={wk:WEEK(),got:[]};
+ TIERS.forEach(t=>{
+  if((x.wxp||0)>=t[0]&&!st.got.includes(t[0])){
+   st.got.push(t[0]);
+   try{S().addXP(t[1],'Weekly bonus: '+t[0]+' XP week');toast('🎁 Weekly bonus! +'+t[1]+' XP for passing '+t[0]+' XP this week')}catch(e){}}});
+ try{localStorage.setItem(k,JSON.stringify(st))}catch(e){}}
+
+/* ---- tick: hooked into refreshChip (runs after every XP change) ---- */
+let lastTick=0;
+function tick(){const n=Date.now();if(n-lastTick<2500)return;lastTick=n;
+ try{weeklyBonus()}catch(e){}
+ try{checkUnlocks(null)}catch(e){}}
+try{const _rc=S().refreshChip;S().refreshChip=function(){const r=_rc.apply(this,arguments);tick();return r}}catch(e){}
+try{const _st=S().start;S().start=function(){const r=_st.apply(this,arguments);setTimeout(tick,800);return r}}catch(e){}
+setInterval(()=>{try{tick()}catch(e){}},30000);
+/* duel avatar: re-check with wallet after a duel ends */
+try{if(window.s3Me&&s3Me.duelEnd){const _de=s3Me.duelEnd;s3Me.duelEnd=function(){const r=_de.apply(this,arguments);wallet().then(W=>checkUnlocks(W));return r}}}catch(e){}
+
+/* ---- rewards panel ---- */
+let ov=null;
+function close(){if(ov){ov.remove();ov=null}}
+async function open(){
+ if(!stu())return;
+ close();
+ ov=document.createElement('div');ov.id='s3-loot-ov';
+ ov.style.cssText='position:fixed;inset:0;z-index:99994;background:var(--bg,#f1f5f9);color:var(--tx,#0f172a);overflow:auto;-webkit-overflow-scrolling:touch;padding:14px';
+ document.body.appendChild(ov);
+ ov.innerHTML='<div style="max-width:560px;margin:0 auto"><div class="mc">Loading…</div></div>';
+ const x=stats();if(!x){ov.innerHTML='<div class="mc">Sign in first.</div>';return}
+ const W=await wallet();
+ checkUnlocks(W);
+ try{weeklyBonus()}catch(e){}
+ const lvl=window.s3Me?s3Me._lvl(x.xp):1,fr=window.s3Me?s3Me._frame(lvl):[1,'Plain','#cbd5e1'];
+ const FR=(window.s3Me&&s3Me._FR)||[],PRE=(window.s3Me&&s3Me._PRE)||[];
+ const nxt=FR.slice().reverse().find(f=>f[0]>lvl);
+ const wpm=(W&&W.av)?/^p(\d{1,2})$/.exec(W.av):null;
+ const cur=(wpm&&PRE[+wpm[1]])||(S().getProg(S().SESS().id)||{}).avatar||'🙂';
+ const seen=(()=>{try{return JSON.parse(localStorage.getItem(seenKey())||'[]')}catch(e){return[]}});
+ const unl=m=>m[4](x,W);
+ const card=h=>'<div style="background:var(--surf,#fff);border:1px solid var(--bd,#e2e8f0);border-radius:18px;padding:14px;margin-bottom:12px">'+h+'</div>';
+ let h='<div style="max-width:560px;margin:0 auto">'
+  +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:20px">🎁 Rewards</b><button onclick="s3Loot.close()" style="border:1px solid var(--bd,#e2e8f0);background:var(--surf2,#f1f5f9);color:inherit;border-radius:10px;width:36px;height:36px;font-size:16px;cursor:pointer">✕</button></div>';
+ h+=card('<div style="display:flex;align-items:center;gap:14px"><div style="width:64px;height:64px;border-radius:50%;border:5px solid '+fr[2]+';display:flex;align-items:center;justify-content:center;font-size:30px;background:var(--surf2,#f1f5f9)">'+(cur||'🙂')+'</div>'
+  +'<div style="flex:1"><div style="font-weight:800;font-size:16px">Level '+lvl+' · '+fr[1]+' frame</div><div style="font-size:13px;opacity:.7">'+(nxt?'Next: '+nxt[1]+' frame at level '+nxt[0]+' ('+(nxt[0]-lvl)+' levels to go)':'Top frame reached. You are the final boss.')+'</div><div style="font-size:13px;opacity:.7;margin-top:2px">🪙 Tokens and the Shop are in 🪪 Profile.</div></div></div>');
+ h+=card('<div style="font-weight:800;margin-bottom:8px">🖼️ Frames <span style="font-weight:600;font-size:12px;opacity:.6">(unlock by level, automatic)</span></div>'
+  +FR.map(f=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd,#e2e8f0)"><span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:'+f[2]+';margin-right:8px;vertical-align:-2px"></span>'+f[1]+'</span><b style="font-size:12.5px">'+(lvl>=f[0]?'✓ Yours':'🔒 Level '+f[0])+'</b></div>').join(''));
+ h+=card('<div style="font-weight:800;margin-bottom:8px">😎 Milestone avatars <span style="font-weight:600;font-size:12px;opacity:.6">(tap to wear)</span></div>'
+  +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
+  +MAV.map(m=>{const ok=unl(m),sel=cur===m[1];
+   return '<button data-av="'+m[0]+'" '+(ok?'':'disabled')+' style="border:2px solid '+(sel?'var(--ac,#4f46e5)':'var(--bd,#e2e8f0)')+';border-radius:14px;padding:8px 4px;background:'+(ok?'var(--surf2,#f1f5f9)':'transparent')+';cursor:'+(ok?'pointer':'default')+';opacity:'+(ok?1:.45)+';text-align:center;color:inherit">'
+   +'<div style="font-size:26px">'+(ok?m[1]:'🔒')+'</div><div style="font-size:11px;font-weight:700">'+m[2]+'</div><div style="font-size:10px;opacity:.65;line-height:1.25">'+(ok?(sel?'Wearing ✓':m[3]):m[3])+'</div></button>'}).join('')
+  +'</div><div style="font-size:12px;opacity:.65;margin-top:8px">The 12 free avatars are in 🪪 Profile → Change picture.</div>');
+ h+='</div>';
+ ov.innerHTML=h;
+ ov.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>pick(+b.getAttribute('data-av')))}
+function pick(idx){
+ const m=MAV.find(z=>z[0]===idx);if(!m)return;
+ try{const s=S(),p=s.getProg(s.SESS().id);p.avatar=m[1];s.saveProg(p);s.refreshChip()}catch(e){}
+ try{if(window.s3Me&&s3Me.preset)s3Me.preset(idx)}catch(e){}
+ toast(m[1]+' '+m[2]+' is your new look');
+ open()}
+
+/* ---- entries: drawer button + settings row ---- */
+setInterval(()=>{try{
+ const dr=$('s3-drawer');
+ if(dr&&dr.classList.contains('open')&&!$('s3-loot-btn')){
+  const b=document.createElement('button');b.className='it';b.id='s3-loot-btn';b.innerHTML='🎁 Rewards';
+  b.onclick=()=>{try{s3Shell.closeD()}catch(e){};open()};
+  const h4=[...dr.querySelectorAll('h4')].find(x=>/Home/i.test(x.textContent));
+  if(h4)h4.insertAdjacentElement('afterend',b)}
+ const body=$('s3-set-body');
+ if(body&&!$('s3-loot-row')){
+  const r=document.createElement('div');r.className='row';r.id='s3-loot-row';
+  r.innerHTML='<span>🎁 Rewards</span>';
+  const b=document.createElement('button');b.className='s3btn';b.textContent='Frames and avatars';b.onclick=()=>{try{s3Shell.closeS()}catch(e){};setTimeout(open,300)};
+  r.appendChild(b);body.appendChild(r)}}catch(e){}},1200);
+window.s3Loot={open,close,check:()=>{weeklyBonus();checkUnlocks(null)}};
+})();
+</script>
+
 </body>
 </html>
