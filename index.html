@@ -4907,8 +4907,8 @@ window.s3Login=function(){
  if(gateMode==='teacher'){if(hash($('g-tp').value)!==CLS.teacher.pass)return err('Wrong passcode.');SESS={role:'teacher',name:CLS.teacher.name}}
  else{const s=CLS.students.find(x=>x.id===$('g-sn').value);if(!s||hash($('g-sp').value)!==s.pin)return err('Wrong PIN. Ask your teacher if you forgot it.');SESS={role:'student',id:s.id,name:s.name};const p=getProg(s.id);p.last=Date.now();ls.set(progKey(s.id),p)}
  ls.set(K_SESS,SESS);start()};
-window.s3Logout=function(){if(window.S3CLOUD&&S3CLOUD.on)S3CLOUD.beforeLogout();SESS=null;ls.set(K_SESS,null);resetState();gate()};
-function start(){gate();loadBlob();refreshAll();switchTab('bank');fillVoiceSel();greet()}
+window.s3Logout=function(){if(window.S3CLOUD&&S3CLOUD.on)S3CLOUD.beforeLogout();SESS=null;ls.set(K_SESS,null);resetState();if(window.s3Wall)s3Wall.clear();gate()};
+function start(){gate();loadBlob();refreshAll();switchTab('bank');fillVoiceSel();greet();if(window.s3Wall)s3Wall.apply()}
 function greet(){try{let n='';if(SESS.role==='teacher')n=(localStorage.getItem('s3_tname')||'').trim();else n=String(SESS.name||'').trim().split(/\s+/)[0];n=n||(SESS.role==='teacher'?'Teacher':'');const t='Welcome back'+(n?', '+n:'')+'!';let g=document.getElementById('s3-greet');if(!g){g=document.createElement('div');g.id='s3-greet';g.setAttribute('role','status');g.style.cssText='position:fixed;left:50%;top:14px;transform:translate(-50%,-12px);max-width:86vw;padding:10px 20px;border-radius:999px;background:#4f46e5;color:#fff;font:700 16px system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:99999;pointer-events:none;opacity:0;transition:opacity .35s,transform .35s;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';document.body.appendChild(g)}g.textContent='\uD83D\uDC4B '+t;requestAnimationFrame(()=>{g.style.opacity='1';g.style.transform='translate(-50%,0)'});clearTimeout(window.__s3g);window.__s3g=setTimeout(()=>{g.style.opacity='0';g.style.transform='translate(-50%,-12px)'},2600)}catch(e){}}
 
 /* ---------- TEACHER: STUDENTS ---------- */
@@ -6334,7 +6334,7 @@ const moved=[];
 function openS(){let h='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">⚙️ Settings</b><button class="s3ib" onclick="s3Shell.closeS()">✕</button></div>';
  sh.innerHTML=h+'<div id="s3-set-body"></div>';const body=$('s3-set-body');
  const add=(label,node)=>{if(!node)return;const r=document.createElement('div');r.className='row';r.innerHTML='<span>'+label+'</span>';node.style.display='';r.appendChild(node);body.appendChild(r)};
- add('Theme',$('s3-theme'));add('Accent',$('voice-accent'));add('Speed',$('voice-rate'));
+ add('Theme',$('s3-theme'));if(window.s3Wall)body.appendChild(s3Wall.row());add('Accent',$('voice-accent'));add('Speed',$('voice-rate'));
  const bk=$('s3-bkbtn');if(bk){bk.style.display='';const r=document.createElement('div');r.className='row';r.appendChild(bk);body.appendChild(r)}
  const rs=document.querySelector('#stats-ribbon [onclick*=eset]');const r2=document.createElement('div');r2.className='row';r2.innerHTML='<button class="s3btn ghost" onclick="s3Shell.closeS();(document.querySelector(\'#stats-ribbon [onclick*=eset]\')||{click(){}}).click()">♻️ Reset my progress</button>';if(rs)body.appendChild(r2);
  const who0=window.S3&&S3.SESS&&S3.SESS();if(who0&&who0.role==='teacher'){const r4=document.createElement('div');r4.className='row';r4.innerHTML='<span>Greeting name</span><input id="s3-tn" class="s3in" maxlength="30" placeholder="Your first name" style="max-width:150px" value="'+S3.esc(localStorage.getItem('s3_tname')||'')+'"><button class="s3btn" onclick="var v=document.getElementById(\'s3-tn\').value.trim();localStorage.setItem(\'s3_tname\',v);S3.toast(v?\'Saved. Greeting name: \'+v:\'Greeting name cleared\')">Save</button>';body.appendChild(r4)}
@@ -6345,6 +6345,34 @@ window.s3Shell={closeD,closeS,go};}
 boot();
 })();
 
+</script>
+<script id="s3-wall">
+(function(){
+const DB='s3wall',ST='k';let cur=null;
+const uid=()=>{try{const w=window.S3&&S3.SESS&&S3.SESS();return w?(w.role==='teacher'?'teacher':(w.id||w.name||'x')):'x'}catch(e){return 'x'}};
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(ST);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const get=async k=>{try{const d=await idb();return await new Promise(r=>{const q=d.transaction(ST).objectStore(ST).get(k);q.onsuccess=()=>r(q.result||null);q.onerror=()=>r(null)})}catch(e){return null}};
+const put=async(k,v)=>{const d=await idb();return new Promise((res,rej)=>{const t=d.transaction(ST,'readwrite');if(v==null)t.objectStore(ST).delete(k);else t.objectStore(ST).put(v,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})};
+function hsl(h,s,l,a){return 'hsla('+Math.round(h)+','+Math.round(s*100)+'%,'+Math.round(l*100)+'%,'+(a==null?1:a)+')'}
+function analyse(img){const c=document.createElement('canvas');c.width=c.height=24;const x=c.getContext('2d');x.drawImage(img,0,0,24,24);const d=x.getImageData(0,0,24,24).data;let L=0,n=0,sx=0,sy=0,sw=0;
+ for(let i=0;i<d.length;i+=4){const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b);L+=.2126*r+.7152*g+.0722*b;n++;const s=mx?(mx-mn)/mx:0;if(s>.2&&mx>.2){let h;const dd=mx-mn;if(mx===r)h=((g-b)/dd)%6;else if(mx===g)h=(b-r)/dd+2;else h=(r-g)/dd+4;h*=60;if(h<0)h+=360;const w=s*mx;sx+=Math.cos(h*Math.PI/180)*w;sy+=Math.sin(h*Math.PI/180)*w;sw+=w}}
+ L/=n;let h=sw>0?Math.atan2(sy,sx)*180/Math.PI:222;if(h<0)h+=360;const sat=sw/n;return{dark:L<.45,h,s:Math.min(.8,Math.max(.45,sat*3))}}
+function vars(a){const h=a.h,s=a.s;if(a.dark)return{'--surf':hsl(h,.3,.1,.82),'--surf2':hsl(h,.3,.16,.78),'--bd':hsl(h,.3,.4,.5),'--tx':'#f1f5f9','--mu':'#cbd5e1','--ac':hsl(h,s,.66),'--ac2':hsl(h,s,.55),'--acs':hsl(h,.4,.24,.85),'--acb':hsl(h,.4,.4),'--acink':hsl(h,.8,.88),'--acd':hsl(h,.5,.1),'--glow':'transparent'};
+ return{'--surf':'rgba(255,255,255,.88)','--surf2':hsl(h,.4,.96,.82),'--bd':hsl(h,.3,.7,.5),'--tx':'#0f172a','--mu':'#475569','--ac':hsl(h,s,.4),'--ac2':hsl(h,s,.32),'--acs':hsl(h,.7,.95,.9),'--acb':hsl(h,.6,.82),'--acink':hsl(h,.6,.22),'--acd':hsl(h,.5,.14),'--glow':'transparent'}}
+function clear(){const r=document.documentElement;[...r.style].filter(p=>p.startsWith('--')).forEach(p=>r.style.removeProperty(p));r.classList.remove('s3wp');const e=document.getElementById('s3-wp');if(e)e.style.backgroundImage='none';cur=null;try{const t=localStorage.getItem('s3_theme');if(t)r.setAttribute('data-theme',t)}catch(e){}}
+function show(rec){if(!rec||!rec.url)return clear();const r=document.documentElement;let e=document.getElementById('s3-wp');if(!e){e=document.createElement('div');e.id='s3-wp';e.style.cssText='position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;pointer-events:none';document.body.appendChild(e)}
+ e.style.backgroundImage='url('+rec.url+')';r.setAttribute('data-theme',rec.a.dark?'dark':'light');const v=vars(rec.a);for(const k in v)r.style.setProperty(k,v[k]);r.classList.add('s3wp');cur=rec}
+let objUrl=null;
+async function apply(){try{const rec=await get(uid());if(!rec||!rec.blob){clear();return}if(objUrl)URL.revokeObjectURL(objUrl);objUrl=URL.createObjectURL(rec.blob);show({url:objUrl,a:rec.a})}catch(e){}}
+function load(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);res(im)};im.onerror=()=>rej(new Error('bad image'));im.src=u})}
+async function pick(file){try{const im=await load(file);const m=Math.min(1,900/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*m);c.height=Math.round(im.naturalHeight*m);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+ const a=analyse(im);const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.72));await put(uid(),{blob,a});await apply();if(window.S3)S3.toast('Wallpaper set')}catch(e){if(window.S3)S3.toast('Could not use that image')}}
+async function remove(){try{await put(uid(),null)}catch(e){}clear();if(window.S3)S3.toast('Wallpaper removed')}
+const css=document.createElement('style');css.textContent='html.s3wp{background:var(--surf2)}html.s3wp body{background:transparent!important}';document.head.appendChild(css);
+const t0=window.s3Theme;window.s3Theme=function(t){if(t0)t0(t);if(cur){apply()}};
+window.s3Wall={apply,clear,pick,remove,has:()=>!!cur,
+ row(){const r=document.createElement('div');r.className='row';r.innerHTML='<span>Wallpaper</span><span style="display:flex;gap:6px"><button class="s3btn" id="s3-wpb">Choose</button>'+(cur?'<button class="s3btn ghost" id="s3-wpr">Remove</button>':'')+'</span>';const f=document.createElement('input');f.type='file';f.accept='image/*';f.style.display='none';f.onchange=()=>{if(f.files[0]){pick(f.files[0]);if(window.s3Shell)s3Shell.closeS()}};r.appendChild(f);r.querySelector('#s3-wpb').onclick=()=>f.click();const rb=r.querySelector('#s3-wpr');if(rb)rb.onclick=()=>{remove();if(window.s3Shell)s3Shell.closeS()};return r}};
+})();
 </script>
 <script id="s3-cloud">
 (function(){
