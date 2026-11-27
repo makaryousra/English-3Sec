@@ -8140,7 +8140,7 @@ C.beforeLogout=function(){S().ls.set(LAST,null);C.offline=false;const done=()=>f
 C.fresh=()=>Date.now()-loadedAt<60000;
 C.load=function(){return S().isTeacher()?C.loadTeacher():C.loadBoard()};
 C.loadBoard=async function(){const CLS=S().CLS(),me=S().SESS();try{const q=await fb.F.getDocs(fb.F.collection(fb.db,'board'));const list=[];q.forEach(d=>{const x=d.data();if(me&&d.id===me.id)list.push({id:d.id,name:x.name,cls:x.cls});else list.push({id:d.id,name:x.name,cls:x.cls,sum:{xp:x.xp,wxp:x.wxp,cur:x.cur,best:x.best,ds:x.ds,acc:x.acc,att:x.att,mastered:x.mastered,last:x.last}})});
- CLS.students=list;loadedAt=Date.now();if(!C._bc&&me){C._bc=1;if(me.cls&&window.s3BoardCls)window.s3BoardCls(me.cls)}}catch(e){loadedAt=Date.now();S().toast(msg(e))}};
+ CLS.students=list;loadedAt=Date.now()}catch(e){loadedAt=Date.now();S().toast(msg(e))}};
 C.loadTeacher=async function(){const CLS=S().CLS(),F=fb.F;try{const[ss,sc]=await Promise.all([F.getDocs(F.collection(fb.db,'students')),F.getDocs(F.collection(fb.db,'secrets'))]);const secs={};sc.forEach(d=>secs[d.id]=d.data());const list=[],mem={};
  ss.forEach(d=>{const x=d.data(),p=Object.assign({log:[],xp:0,best:0,cur:0,days:{},last:0},parse(x.prog,{}));p.note=x.note||'';mem['p'+d.id]=p;mem['b'+d.id]=parse(x.blob,{});mem['t'+d.id]=x.tpLog||{};const c=secs[d.id]||{};list.push({id:d.id,name:x.name,cls:x.cls,un:x.username||c.username||'',pw:c.pw||'',created:x.created||0})});
  C.mem=mem;CLS.students=list;loadedAt=Date.now();syncPicker(list)}catch(e){loadedAt=Date.now();S().toast(msg(e))}};
