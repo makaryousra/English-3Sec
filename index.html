@@ -2455,6 +2455,694 @@ window.S3REMAP={V:V,blob:remapBlob};
           "let's attend the university career fair tomorrow, shall we"
         ],
         explanation: "Suggestions beginning with 'Let's' always take the question tag 'shall we?'."
+      },
+      {
+        id: "rw13", unit: 1, grammarTopic: "Present Perfect with 'for' (negative)",
+        prompt: "They last cleaned the emergency ward two days ago.",
+        keyword: "for",
+        hint: "Subject + haven't/hasn't + P.P. + for + period of time.",
+        modelAnswer: "They haven't cleaned the emergency ward for two days.",
+        acceptableAnswers: [
+          "they havent cleaned the emergency ward for two days",
+          "they have not cleaned the emergency ward for two days"
+        ],
+        explanation: "When we know the last time something happened, use the negative Present Perfect with 'for' + the period ('for two days')."
+      },
+      {
+        id: "rw14", unit: 1, grammarTopic: "Present Perfect with 'already'",
+        prompt: "The nurse started her night shift a few minutes ago.",
+        keyword: "already",
+        hint: "Subject + has/have + already + P.P.",
+        modelAnswer: "The nurse has already started her night shift.",
+        acceptableAnswers: [
+          "the nurse has already started her night shift"
+        ],
+        explanation: "'Already' in the Present Perfect means something happened sooner than expected, here 'a few minutes ago'."
+      },
+      {
+        id: "rw15", unit: 1, grammarTopic: "Present Perfect Continuous (duration)",
+        prompt: "The doctors began their rounds at 8 o'clock and they are still doing them.",
+        keyword: "have been",
+        hint: "Subject + have been + V-ing + since/for.",
+        modelAnswer: "The doctors have been doing their rounds since 8 o'clock.",
+        acceptableAnswers: [
+          "the doctors have been doing their rounds since 8 oclock"
+        ],
+        explanation: "An action that started at a point in the past and is still continuing uses Present Perfect Continuous + 'since'."
+      },
+      {
+        id: "rw16", unit: 1, grammarTopic: "It's the first time + Present Perfect",
+        prompt: "Omar has never seen an operation before.",
+        keyword: "first time",
+        hint: "It's the first time + subject + has/have + P.P.",
+        modelAnswer: "It's the first time Omar has seen an operation.",
+        acceptableAnswers: [
+          "its the first time omar has seen an operation",
+          "it is the first time omar has seen an operation",
+          "its the first time that omar has seen an operation"
+        ],
+        explanation: "'It's the first time' is followed by the Present Perfect, not the Past Simple."
+      },
+      {
+        id: "rw17", unit: 1, grammarTopic: "Present Perfect with 'yet' (question)",
+        prompt: "Has the ambulance arrived or not? We are still waiting for it.",
+        keyword: "yet",
+        hint: "Has/Have + subject + P.P. + yet?",
+        modelAnswer: "Has the ambulance arrived yet?",
+        acceptableAnswers: [
+          "has the ambulance arrived yet"
+        ],
+        explanation: "'Yet' in questions asks whether something expected has happened up to now; it comes at the end."
+      },
+      {
+        id: "rw18", unit: 2, grammarTopic: "Reported Statements (will → would)",
+        prompt: "Sara said to me, \"I will email you the report tomorrow.\"",
+        keyword: "the following day",
+        hint: "said to me → told me; will → would; tomorrow → the following day.",
+        modelAnswer: "Sara told me that she would email me the report the following day.",
+        acceptableAnswers: [
+          "sara told me that she would email me the report the following day",
+          "sara told me she would email me the report the following day",
+          "sara said that she would email me the report the following day"
+        ],
+        explanation: "In reported speech 'will' becomes 'would' and 'tomorrow' becomes 'the following day'."
+      },
+      {
+        id: "rw19", unit: 2, grammarTopic: "Reported Statements (can → could)",
+        prompt: "The engineer said, \"I can fix the machine today.\"",
+        keyword: "could",
+        hint: "Subject + said (that) + subject + could + infinitive + that day.",
+        modelAnswer: "The engineer said that he could fix the machine that day.",
+        acceptableAnswers: [
+          "the engineer said that he could fix the machine that day",
+          "the engineer said he could fix the machine that day"
+        ],
+        explanation: "'Can' changes to 'could' and 'today' to 'that day' in reported speech."
+      },
+      {
+        id: "rw20", unit: 2, grammarTopic: "Reported Commands (tell + object + to)",
+        prompt: "The teacher said to the students, \"Open your books to page fifty.\"",
+        keyword: "told",
+        hint: "Subject + told + object + to + infinitive.",
+        modelAnswer: "The teacher told the students to open their books to page fifty.",
+        acceptableAnswers: [
+          "the teacher told the students to open their books to page fifty"
+        ],
+        explanation: "Positive commands are reported with 'told + object + to-infinitive'."
+      },
+      {
+        id: "rw21", unit: 2, grammarTopic: "Reported Advice (advise + object + to)",
+        prompt: "The doctor said to me, \"You should drink more water every day.\"",
+        keyword: "advised",
+        hint: "Subject + advised + object + to + infinitive.",
+        modelAnswer: "The doctor advised me to drink more water every day.",
+        acceptableAnswers: [
+          "the doctor advised me to drink more water every day"
+        ],
+        explanation: "'You should...' as advice is reported with 'advised + object + to-infinitive'."
+      },
+      {
+        id: "rw22", unit: 2, grammarTopic: "Reported Requests (ask + object + to)",
+        prompt: "Mona said to her brother, \"Please help me carry these boxes.\"",
+        keyword: "asked",
+        hint: "Subject + asked + object + to + infinitive (drop 'please').",
+        modelAnswer: "Mona asked her brother to help her carry those boxes.",
+        acceptableAnswers: [
+          "mona asked her brother to help her carry those boxes"
+        ],
+        explanation: "Polite requests are reported with 'asked + object + to-infinitive', and 'these' becomes 'those'."
+      },
+      {
+        id: "rw23", unit: 3, grammarTopic: "Modal Deduction: can't have",
+        prompt: "I am sure that the fishermen didn't go out during the storm.",
+        keyword: "can't",
+        hint: "Subject + can't have + P.P.",
+        modelAnswer: "The fishermen can't have gone out during the storm.",
+        acceptableAnswers: [
+          "the fishermen cant have gone out during the storm",
+          "the fishermen cannot have gone out during the storm"
+        ],
+        explanation: "When we are sure something did NOT happen in the past, use 'can't have + past participle'."
+      },
+      {
+        id: "rw24", unit: 3, grammarTopic: "Modal Deduction: might have",
+        prompt: "Perhaps the missing boat reached the island safely; nobody knows.",
+        keyword: "might",
+        hint: "Subject + might have + P.P.",
+        modelAnswer: "The missing boat might have reached the island safely.",
+        acceptableAnswers: [
+          "the missing boat might have reached the island safely",
+          "the missing boat may have reached the island safely"
+        ],
+        explanation: "'Perhaps' + past event is expressed with 'might/may have + past participle' (a possible past)."
+      },
+      {
+        id: "rw25", unit: 3, grammarTopic: "Criticism: should have",
+        prompt: "The driver didn't check the tyres before the long trip, and that was a mistake.",
+        keyword: "should have",
+        hint: "Subject + should have + P.P. (the action did not happen).",
+        modelAnswer: "The driver should have checked the tyres before the long trip.",
+        acceptableAnswers: [
+          "the driver should have checked the tyres before the long trip"
+        ],
+        explanation: "'Should have + P.P.' criticizes something that was not done in the past."
+      },
+      {
+        id: "rw26", unit: 3, grammarTopic: "Unnecessary action: needn't have",
+        prompt: "We took umbrellas, but it didn't rain at all.",
+        keyword: "needn't have",
+        hint: "Subject + needn't have + P.P.",
+        modelAnswer: "We needn't have taken umbrellas.",
+        acceptableAnswers: [
+          "we neednt have taken umbrellas",
+          "we need not have taken umbrellas"
+        ],
+        explanation: "'Needn't have + P.P.' means the action was done but turned out to be unnecessary."
+      },
+      {
+        id: "rw27", unit: 3, grammarTopic: "Obligation: have to",
+        prompt: "It is necessary for all visitors to wear a safety helmet on the site.",
+        keyword: "have to",
+        hint: "All visitors + have to + infinitive.",
+        modelAnswer: "All visitors have to wear a safety helmet on the site.",
+        acceptableAnswers: [
+          "all visitors have to wear a safety helmet on the site",
+          "all visitors must wear a safety helmet on the site"
+        ],
+        explanation: "'It is necessary for someone to...' is rewritten as 'have to / must + infinitive'."
+      },
+      {
+        id: "rw28", unit: 4, grammarTopic: "Comparative: not as ... as",
+        prompt: "This documentary is less frightening than the one we watched last week.",
+        keyword: "not as",
+        hint: "Subject + is not as + adjective + as.",
+        modelAnswer: "This documentary is not as frightening as the one we watched last week.",
+        acceptableAnswers: [
+          "this documentary is not as frightening as the one we watched last week",
+          "this documentary isnt as frightening as the one we watched last week"
+        ],
+        explanation: "'Less frightening than' means the same as 'not as frightening as'."
+      },
+      {
+        id: "rw29", unit: 4, grammarTopic: "too ... to",
+        prompt: "The water was so cold that we couldn't swim in it.",
+        keyword: "too",
+        hint: "too + adjective + to-infinitive replaces 'so ... that ... couldn't'.",
+        modelAnswer: "The water was too cold to swim in.",
+        acceptableAnswers: [
+          "the water was too cold to swim in",
+          "the water was too cold for us to swim in"
+        ],
+        explanation: "'So cold that we couldn't swim' is rewritten as 'too cold to swim'."
+      },
+      {
+        id: "rw30", unit: 4, grammarTopic: "adjective + enough to",
+        prompt: "The whale was so big that the boat seemed tiny beside it.",
+        keyword: "big enough",
+        hint: "The whale was big enough + to...",
+        modelAnswer: "The whale was big enough to make the boat seem tiny beside it.",
+        acceptableAnswers: [
+          "the whale was big enough to make the boat seem tiny beside it"
+        ],
+        explanation: "'So big that...' can be rewritten as 'adjective + enough + to-infinitive'."
+      },
+      {
+        id: "rw31", unit: 4, grammarTopic: "Hyphenated Compound Adjectives (age)",
+        prompt: "The museum displayed a statue that was three thousand years old.",
+        keyword: "three-thousand-year-old",
+        hint: "a + number-year-old + noun (singular inside the compound).",
+        modelAnswer: "The museum displayed a three-thousand-year-old statue.",
+        acceptableAnswers: [
+          "the museum displayed a three-thousand-year-old statue"
+        ],
+        explanation: "In hyphenated compound adjectives the noun stays singular: 'a three-thousand-year-old statue'."
+      },
+      {
+        id: "rw32", unit: 4, grammarTopic: "-ed / -ing Adjectives",
+        prompt: "The documentary about deep-sea creatures amazed us completely.",
+        keyword: "amazing",
+        hint: "The documentary was + -ing adjective.",
+        modelAnswer: "The documentary about deep-sea creatures was amazing.",
+        acceptableAnswers: [
+          "the documentary about deep-sea creatures was amazing"
+        ],
+        explanation: "The thing that causes the feeling takes the '-ing' adjective ('amazing'); the person who feels it takes '-ed'."
+      },
+      {
+        id: "rw33", unit: 5, grammarTopic: "Causative with 'get' (passive form)",
+        prompt: "Someone delivers our groceries to our home every Friday.",
+        keyword: "get",
+        hint: "We + get + object + P.P.",
+        modelAnswer: "We get our groceries delivered to our home every Friday.",
+        acceptableAnswers: [
+          "we get our groceries delivered to our home every friday"
+        ],
+        explanation: "Causative with 'get': 'get + object + past participle' when someone else does the service for us."
+      },
+      {
+        id: "rw34", unit: 5, grammarTopic: "Causative with 'have' (active form)",
+        prompt: "The mechanic will repair my car tomorrow.",
+        keyword: "have",
+        hint: "I + will have + the mechanic + repair (base verb) + object.",
+        modelAnswer: "I will have the mechanic repair my car tomorrow.",
+        acceptableAnswers: [
+          "i will have the mechanic repair my car tomorrow",
+          "ill have the mechanic repair my car tomorrow"
+        ],
+        explanation: "Active causative: 'have + person + base verb' when we arrange for someone to do the job."
+      },
+      {
+        id: "rw35", unit: 5, grammarTopic: "Causative: get + person + to",
+        prompt: "The manager persuaded the IT team to update the company's website.",
+        keyword: "got",
+        hint: "The manager + got + the IT team + to + update...",
+        modelAnswer: "The manager got the IT team to update the company's website.",
+        acceptableAnswers: [
+          "the manager got the it team to update the companys website"
+        ],
+        explanation: "'Get + person + to-infinitive' means to persuade or arrange for someone to do something."
+      },
+      {
+        id: "rw36", unit: 5, grammarTopic: "Causative with 'have' (passive form, past)",
+        prompt: "A professional photographer took our graduation photos last week.",
+        keyword: "had",
+        hint: "We + had + our graduation photos + taken...",
+        modelAnswer: "We had our graduation photos taken last week.",
+        acceptableAnswers: [
+          "we had our graduation photos taken last week"
+        ],
+        explanation: "'Have + object + past participle' in the Past Simple for a service we arranged."
+      },
+      {
+        id: "rw37", unit: 5, grammarTopic: "Causative (negative experience)",
+        prompt: "A pickpocket stole Hoda's phone while she was shopping.",
+        keyword: "had",
+        hint: "Hoda + had + her phone + stolen...",
+        modelAnswer: "Hoda had her phone stolen while she was shopping.",
+        acceptableAnswers: [
+          "hoda had her phone stolen while she was shopping"
+        ],
+        explanation: "The same 'have + object + P.P.' structure describes something bad that happened to someone."
+      },
+      {
+        id: "rw38", unit: 6, grammarTopic: "Reported Yes/No Questions (if)",
+        prompt: "Nabil said to me, \"Did you enjoy the trip to Alexandria?\"",
+        keyword: "if",
+        hint: "Nabil asked me + if + subject + Past Simple (no 'did').",
+        modelAnswer: "Nabil asked me if I had enjoyed the trip to Alexandria.",
+        acceptableAnswers: [
+          "nabil asked me if i had enjoyed the trip to alexandria",
+          "nabil asked me whether i had enjoyed the trip to alexandria",
+          "nabil asked me if i enjoyed the trip to alexandria"
+        ],
+        explanation: "Yes/no questions are reported with 'asked + if/whether' and statement word order without 'did'."
+      },
+      {
+        id: "rw39", unit: 6, grammarTopic: "Reported Wh-Questions (present → past)",
+        prompt: "He asked me, \"Where do you work?\"",
+        keyword: "where",
+        hint: "He asked me + where + I + worked (no 'do').",
+        modelAnswer: "He asked me where I worked.",
+        acceptableAnswers: [
+          "he asked me where i worked"
+        ],
+        explanation: "In reported questions remove 'do/does/did' and use statement order; the Present Simple becomes Past Simple."
+      },
+      {
+        id: "rw40", unit: 6, grammarTopic: "Reported Questions (will → would)",
+        prompt: "Dina asked me, \"When will you apply for the job?\"",
+        keyword: "when",
+        hint: "Dina asked me + when + I + would + apply...",
+        modelAnswer: "Dina asked me when I would apply for the job.",
+        acceptableAnswers: [
+          "dina asked me when i would apply for the job"
+        ],
+        explanation: "'Will' in a direct question becomes 'would' in reported speech, with statement word order."
+      },
+      {
+        id: "rw41", unit: 6, grammarTopic: "Reported Questions with 'whether'",
+        prompt: "The interviewer said to her, \"Have you worked in a team before?\"",
+        keyword: "whether",
+        hint: "asked her + whether + she + had worked...",
+        modelAnswer: "The interviewer asked her whether she had worked in a team before.",
+        acceptableAnswers: [
+          "the interviewer asked her whether she had worked in a team before",
+          "the interviewer asked her if she had worked in a team before"
+        ],
+        explanation: "Present Perfect yes/no questions are reported with 'if/whether' + Past Perfect."
+      },
+      {
+        id: "rw42", unit: 6, grammarTopic: "Reported Questions (why, past → past perfect)",
+        prompt: "Karim said to Salma, \"Why did you miss the meeting yesterday?\"",
+        keyword: "why",
+        hint: "asked Salma + why + she + had missed + the day before.",
+        modelAnswer: "Karim asked Salma why she had missed the meeting the day before.",
+        acceptableAnswers: [
+          "karim asked salma why she had missed the meeting the day before",
+          "karim asked salma why she had missed the meeting the previous day"
+        ],
+        explanation: "'Why did you...' becomes 'why she had + P.P.', and 'yesterday' becomes 'the day before'."
+      },
+      {
+        id: "rw43", unit: 7, grammarTopic: "Hardly ... when",
+        prompt: "As soon as the passengers boarded the train, it left the station.",
+        keyword: "Hardly",
+        hint: "Hardly + had + subject + P.P. + when + Past Simple.",
+        modelAnswer: "Hardly had the passengers boarded the train when it left the station.",
+        acceptableAnswers: [
+          "hardly had the passengers boarded the train when it left the station"
+        ],
+        explanation: "'Hardly had + subject + P.P. + when' replaces 'as soon as' and needs inversion."
+      },
+      {
+        id: "rw44", unit: 7, grammarTopic: "Scarcely ... when",
+        prompt: "As soon as we arrived at the airport, our flight was announced.",
+        keyword: "Scarcely",
+        hint: "Scarcely + had + subject + P.P. + when + Past Simple.",
+        modelAnswer: "Scarcely had we arrived at the airport when our flight was announced.",
+        acceptableAnswers: [
+          "scarcely had we arrived at the airport when our flight was announced"
+        ],
+        explanation: "'Scarcely ... when' works exactly like 'hardly ... when', with inversion after it."
+      },
+      {
+        id: "rw45", unit: 7, grammarTopic: "By the time + Past Perfect",
+        prompt: "The rescue team reached the village, but the flood had already destroyed the bridge.",
+        keyword: "By the time",
+        hint: "By the time + Past Simple, + Past Perfect.",
+        modelAnswer: "By the time the rescue team reached the village, the flood had destroyed the bridge.",
+        acceptableAnswers: [
+          "by the time the rescue team reached the village the flood had destroyed the bridge"
+        ],
+        explanation: "'By the time + Past Simple' is followed by Past Perfect for the earlier action."
+      },
+      {
+        id: "rw46", unit: 7, grammarTopic: "After + Past Perfect",
+        prompt: "First the tourists checked in at the hotel, and then they went to the beach.",
+        keyword: "After",
+        hint: "After + subject + had + P.P., + Past Simple.",
+        modelAnswer: "After the tourists had checked in at the hotel, they went to the beach.",
+        acceptableAnswers: [
+          "after the tourists had checked in at the hotel they went to the beach"
+        ],
+        explanation: "'After' + Past Perfect shows which of the two past actions happened first."
+      },
+      {
+        id: "rw47", unit: 7, grammarTopic: "It wasn't until ... that",
+        prompt: "The plane didn't take off until the fog had cleared.",
+        keyword: "wasn't until",
+        hint: "It wasn't until + the fog had cleared + that + the plane took off.",
+        modelAnswer: "It wasn't until the fog had cleared that the plane took off.",
+        acceptableAnswers: [
+          "it wasnt until the fog had cleared that the plane took off"
+        ],
+        explanation: "'Not ... until' at the start becomes the fixed structure 'It wasn't until ... that'."
+      },
+      {
+        id: "rw48", unit: 8, grammarTopic: "Passive (Present Simple)",
+        prompt: "The cleaners wash the museum's glass walls twice a week.",
+        keyword: "are washed",
+        hint: "Object + are/is + P.P. (+ by agent).",
+        modelAnswer: "The museum's glass walls are washed twice a week.",
+        acceptableAnswers: [
+          "the museums glass walls are washed twice a week"
+        ],
+        explanation: "When the doer is unknown or unimportant, drop it: Object + 'are washed' + time phrase."
+      },
+      {
+        id: "rw49", unit: 8, grammarTopic: "Passive (Present Perfect)",
+        prompt: "The authorities have just opened the new aquarium to the public.",
+        keyword: "been",
+        hint: "Object + has/have + just + been + P.P.",
+        modelAnswer: "The new aquarium has just been opened to the public.",
+        acceptableAnswers: [
+          "the new aquarium has just been opened to the public"
+        ],
+        explanation: "Present Perfect Passive: 'has/have + been + past participle'."
+      },
+      {
+        id: "rw50", unit: 8, grammarTopic: "Passive (Future with will)",
+        prompt: "Engineers will build a new bridge across the Nile next year.",
+        keyword: "will be",
+        hint: "Object + will be + P.P. (+ by agent).",
+        modelAnswer: "A new bridge will be built across the Nile next year.",
+        acceptableAnswers: [
+          "a new bridge will be built across the nile next year",
+          "a new bridge will be built across the nile by engineers next year"
+        ],
+        explanation: "Future passive: Object + 'will be + past participle'; the agent 'by engineers' is optional."
+      },
+      {
+        id: "rw51", unit: 8, grammarTopic: "Passive (Modal: must)",
+        prompt: "Visitors must not touch the ancient statues.",
+        keyword: "must not be",
+        hint: "Object + must not be + P.P. (+ by agent).",
+        modelAnswer: "The ancient statues must not be touched.",
+        acceptableAnswers: [
+          "the ancient statues must not be touched",
+          "the ancient statues mustnt be touched"
+        ],
+        explanation: "Modal passive: 'must not be + past participle'; drop the general subject 'Visitors'."
+      },
+      {
+        id: "rw52", unit: 8, grammarTopic: "Passive (Past Continuous)",
+        prompt: "They were repairing the old lighthouse all day yesterday.",
+        keyword: "being",
+        hint: "Object + was/were + being + P.P.",
+        modelAnswer: "The old lighthouse was being repaired all day yesterday.",
+        acceptableAnswers: [
+          "the old lighthouse was being repaired all day yesterday"
+        ],
+        explanation: "Past Continuous Passive: 'was/were + being + past participle'."
+      },
+      {
+        id: "rw53", unit: 9, grammarTopic: "Gerund after 'enjoy'",
+        prompt: "My little cousin really likes watching documentaries about space.",
+        keyword: "enjoys",
+        hint: "Subject + enjoys + V-ing.",
+        modelAnswer: "My little cousin enjoys watching documentaries about space.",
+        acceptableAnswers: [
+          "my little cousin enjoys watching documentaries about space"
+        ],
+        explanation: "'Enjoy' is always followed by a gerund (V-ing), never a to-infinitive."
+      },
+      {
+        id: "rw54", unit: 9, grammarTopic: "To-infinitive after 'decided'",
+        prompt: "Nour made a decision to study astronomy at university.",
+        keyword: "decided",
+        hint: "Subject + decided + to + infinitive.",
+        modelAnswer: "Nour decided to study astronomy at university.",
+        acceptableAnswers: [
+          "nour decided to study astronomy at university"
+        ],
+        explanation: "'Made a decision to do' is rewritten as 'decided to do'."
+      },
+      {
+        id: "rw55", unit: 9, grammarTopic: "look forward to + gerund",
+        prompt: "The students are very excited about visiting the planetarium next month.",
+        keyword: "forward",
+        hint: "Subject + look forward to + V-ing.",
+        modelAnswer: "The students look forward to visiting the planetarium next month.",
+        acceptableAnswers: [
+          "the students look forward to visiting the planetarium next month",
+          "the students are looking forward to visiting the planetarium next month"
+        ],
+        explanation: "After 'look forward to' the verb takes '-ing', because 'to' here is a preposition."
+      },
+      {
+        id: "rw56", unit: 9, grammarTopic: "Infinitive of Purpose",
+        prompt: "Astronauts train for years because they want to prepare for life in space.",
+        keyword: "to",
+        hint: "Subject + verb + (object) + to + infinitive.",
+        modelAnswer: "Astronauts train for years to prepare for life in space.",
+        acceptableAnswers: [
+          "astronauts train for years to prepare for life in space",
+          "astronauts train for years in order to prepare for life in space",
+          "astronauts train for years so as to prepare for life in space"
+        ],
+        explanation: "'Because they want to...' of purpose becomes a simple to-infinitive of purpose."
+      },
+      {
+        id: "rw57", unit: 9, grammarTopic: "prefer + gerund",
+        prompt: "I like reading science fiction more than watching films.",
+        keyword: "prefer",
+        hint: "Subject + prefer + V-ing + to + V-ing.",
+        modelAnswer: "I prefer reading science fiction to watching films.",
+        acceptableAnswers: [
+          "i prefer reading science fiction to watching films"
+        ],
+        explanation: "'Like X more than Y' becomes 'prefer X-ing to Y-ing'."
+      },
+      {
+        id: "rw58", unit: 10, grammarTopic: "Relative Clauses ('whose')",
+        prompt: "The scientist won the award. Her research protected thousands of sea turtles.",
+        keyword: "whose",
+        hint: "The scientist + whose + research + protected ... + won the award.",
+        modelAnswer: "The scientist whose research protected thousands of sea turtles won the award.",
+        acceptableAnswers: [
+          "the scientist whose research protected thousands of sea turtles won the award"
+        ],
+        explanation: "Use 'whose' to join a person to something that belongs to them ('her research')."
+      },
+      {
+        id: "rw59", unit: 10, grammarTopic: "Non-defining Relative ('which')",
+        prompt: "The Suez Canal was opened in 1869. It connects the Mediterranean Sea to the Red Sea.",
+        keyword: "which",
+        hint: "The Suez Canal, which + was opened in 1869, + connects...",
+        modelAnswer: "The Suez Canal, which was opened in 1869, connects the Mediterranean Sea to the Red Sea.",
+        acceptableAnswers: [
+          "the suez canal which was opened in 1869 connects the mediterranean sea to the red sea"
+        ],
+        explanation: "Extra information about a thing goes in a non-defining clause with 'which' between commas."
+      },
+      {
+        id: "rw60", unit: 10, grammarTopic: "Joining Sentences with 'that'",
+        prompt: "I borrowed a novel from the library last week. It is fascinating.",
+        keyword: "that",
+        hint: "The novel + that + I borrowed from the library last week + is fascinating.",
+        modelAnswer: "The novel that I borrowed from the library last week is fascinating.",
+        acceptableAnswers: [
+          "the novel that i borrowed from the library last week is fascinating",
+          "the novel i borrowed from the library last week is fascinating"
+        ],
+        explanation: "Two sentences about the same thing join with 'that' (which can also be omitted after the noun)."
+      },
+      {
+        id: "rw61", unit: 10, grammarTopic: "Relative Clauses ('whom')",
+        prompt: "The guide was very helpful. We spoke to him at the temple.",
+        keyword: "whom",
+        hint: "The guide + to whom + we spoke... / The guide (who/whom) we spoke to...",
+        modelAnswer: "The guide to whom we spoke at the temple was very helpful.",
+        acceptableAnswers: [
+          "the guide to whom we spoke at the temple was very helpful",
+          "the guide whom we spoke to at the temple was very helpful",
+          "the guide who we spoke to at the temple was very helpful"
+        ],
+        explanation: "Formal style puts the preposition before 'whom': 'to whom we spoke'."
+      },
+      {
+        id: "rw62", unit: 10, grammarTopic: "Relative Clauses ('when')",
+        prompt: "I still remember the day. We visited the pyramids on that day.",
+        keyword: "when",
+        hint: "the day + when + we visited the pyramids (drop 'on that day').",
+        modelAnswer: "I still remember the day when we visited the pyramids.",
+        acceptableAnswers: [
+          "i still remember the day when we visited the pyramids"
+        ],
+        explanation: "Use 'when' to refer back to a time expression like 'the day'."
+      },
+      {
+        id: "rw63", unit: 11, grammarTopic: "Comparative + than",
+        prompt: "Travelling by train is not as fast as travelling by plane.",
+        keyword: "faster",
+        hint: "not as fast as = slower than / the other way is faster than.",
+        modelAnswer: "Travelling by plane is faster than travelling by train.",
+        acceptableAnswers: [
+          "travelling by plane is faster than travelling by train",
+          "travelling by train is slower than travelling by plane"
+        ],
+        explanation: "'Not as fast as' means the other means of transport 'is faster than' it."
+      },
+      {
+        id: "rw64", unit: 11, grammarTopic: "the + comparative ... the + comparative",
+        prompt: "If you practise more, you will make fewer mistakes.",
+        keyword: "the more",
+        hint: "The more + you practise, + the fewer + mistakes you make.",
+        modelAnswer: "The more you practise, the fewer mistakes you will make.",
+        acceptableAnswers: [
+          "the more you practise the fewer mistakes you will make"
+        ],
+        explanation: "Double comparative structure: 'The more ..., the fewer ...'."
+      },
+      {
+        id: "rw65", unit: 11, grammarTopic: "one of the + superlative",
+        prompt: "The Nile is longer than nearly all the rivers in the world.",
+        keyword: "one of",
+        hint: "The Nile is + one of the + superlative + plural noun.",
+        modelAnswer: "The Nile is one of the longest rivers in the world.",
+        acceptableAnswers: [
+          "the nile is one of the longest rivers in the world"
+        ],
+        explanation: "'Longer than nearly all' means 'one of the longest'; note the plural 'rivers'."
+      },
+      {
+        id: "rw66", unit: 11, grammarTopic: "much/far + comparative",
+        prompt: "This year's exam was a lot easier than last year's exam.",
+        keyword: "much",
+        hint: "This year's exam was + much + easier + than...",
+        modelAnswer: "This year's exam was much easier than last year's exam.",
+        acceptableAnswers: [
+          "this years exam was much easier than last years exam",
+          "this years exam was far easier than last years exam"
+        ],
+        explanation: "'A lot' before a comparative is replaced by 'much' or 'far'."
+      },
+      {
+        id: "rw67", unit: 11, grammarTopic: "Superlative with 'the' + present perfect",
+        prompt: "I have never read such an interesting novel before.",
+        keyword: "the most",
+        hint: "It is + the most + adjective + novel + I have ever read.",
+        modelAnswer: "It is the most interesting novel I have ever read.",
+        acceptableAnswers: [
+          "it is the most interesting novel i have ever read"
+        ],
+        explanation: "'Never ... such a ... before' becomes 'the most ... I have ever + P.P.'."
+      },
+      {
+        id: "rw68", unit: 12, grammarTopic: "Question Tags (negative statement)",
+        prompt: "The graduates didn't attend the career fair yesterday,",
+        keyword: "did they",
+        hint: "Negative Past Simple statement → positive tag with 'did'.",
+        modelAnswer: "The graduates didn't attend the career fair yesterday, did they?",
+        acceptableAnswers: [
+          "the graduates didnt attend the career fair yesterday did they",
+          "the graduates did not attend the career fair yesterday did they"
+        ],
+        explanation: "A negative statement takes a positive tag with the same auxiliary ('didn't ... did they?')."
+      },
+      {
+        id: "rw69", unit: 12, grammarTopic: "Question Tags (positive statement)",
+        prompt: "Your brother has applied for the apprenticeship,",
+        keyword: "hasn't he",
+        hint: "Positive Present Perfect statement → negative tag with 'has'.",
+        modelAnswer: "Your brother has applied for the apprenticeship, hasn't he?",
+        acceptableAnswers: [
+          "your brother has applied for the apprenticeship hasnt he"
+        ],
+        explanation: "A positive statement takes a negative tag: 'has ... hasn't he?'."
+      },
+      {
+        id: "rw70", unit: 12, grammarTopic: "Question Tags (imperative)",
+        prompt: "Send me your university application before Friday,",
+        keyword: "will you",
+        hint: "Imperatives take the tag 'will you?'.",
+        modelAnswer: "Send me your university application before Friday, will you?",
+        acceptableAnswers: [
+          "send me your university application before friday will you"
+        ],
+        explanation: "Commands and requests take 'will you?' as their question tag."
+      },
+      {
+        id: "rw71", unit: 12, grammarTopic: "Question Tags ('there is')",
+        prompt: "There is a lecture about career planning tonight,",
+        keyword: "isn't there",
+        hint: "There is ... → isn't there?",
+        modelAnswer: "There is a lecture about career planning tonight, isn't there?",
+        acceptableAnswers: [
+          "there is a lecture about career planning tonight isnt there"
+        ],
+        explanation: "Sentences starting with 'there is/are' keep 'there' in the tag."
+      },
+      {
+        id: "rw72", unit: 12, grammarTopic: "Question Tags (modal: can)",
+        prompt: "You can help me fill in this application form,",
+        keyword: "can't you",
+        hint: "Positive statement with 'can' → negative tag 'can't you?'.",
+        modelAnswer: "You can help me fill in this application form, can't you?",
+        acceptableAnswers: [
+          "you can help me fill in this application form cant you"
+        ],
+        explanation: "Modal tags repeat the modal verb: 'can ... can't you?'."
       }
     ];
 
