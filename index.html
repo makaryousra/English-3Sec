@@ -5652,7 +5652,7 @@ const LC=(x,f)=>{try{let n=0;(x.p.log||[]).forEach(e=>{if(f(e))n++});return n}ca
 ['sh','🎯','Sharpshooter','90% accuracy after 20 answers',x=>x.att>=20&&x.acc>=90],['ace','🧠','Accuracy Ace','85% accuracy after 100 answers',x=>x.att>=100&&x.acc>=85],
 ['m10','🌟','Mastery 10','Master 10 questions',x=>x.mastered>=10],['m25','🏆','Master','Master 25 questions',x=>x.mastered>=25],['m50','🎓','Grand Master','Master 50 questions',x=>x.mastered>=50],
 ['a100','📚','Bookworm','Answer 100 questions',x=>x.att>=100],['a300','📖','Scholar','Answer 300 questions',x=>x.att>=300],['a600','🦉','Wise Owl','Answer 600 questions',x=>x.att>=600],
-['x500','⭐','500 XP','Earn 500 XP',x=>x.xp>=500],['x1000','✨','1000 XP','Earn 1000 XP',x=>x.xp>=1000],['x2500','🌠','2500 XP','Earn 2500 XP',x=>x.xp>=2500],['x5000','⭐','5,000 XP','Earn 5,000 XP. Serious business.',x=>x.xp>=5000],['x10000','💫','10,000 XP','Earn 10,000 XP.',x=>x.xp>=10000],['x25000','🌠','25,000 XP','Earn 25,000 XP.',x=>x.xp>=25000],['x50000','🌌','50,000 XP','Earn 50,000 XP. Mythic territory.',x=>x.xp>=50000],['a1000','🐝','Busy Bee','Answer 1,000 questions.',x=>x.att>=1000],['a2500','🦾','The Machine','Answer 2,500 questions. Are you human?',x=>x.att>=2500],['a5000','🏭','Question Factory','Answer 5,000 questions. Wow.',x=>x.att>=5000],['s30','☄️','Streak 30','30 correct answers in a row.',x=>x.best>=30],['s50','💥','Streak 50','50 correct in a row. Unstoppable.',x=>x.best>=50],['s100','🧨','Streak 100','100 correct in a row. Call the news.',x=>x.best>=100],['d30','📆','Monthly Habit','Practise 30 days in a row.',x=>x.ds>=30],['d60','🗓️','Two Months Strong','Practise 60 days in a row.',x=>x.ds>=60],['d100','🛡️','Centurion','Practise 100 days in a row. Legend behavior.',x=>x.ds>=100],['m100','💪','Mastery 100','Master 100 questions.',x=>x.mastered>=100],['m250','🧗','Mastery 250','Master 250 questions.',x=>x.mastered>=250],['m500','🏔️','Mastery 500','Master 500 questions. The mountain is yours.',x=>x.mastered>=500],['ls50','🎧','Listening Hero','Answer 50 listening questions.',x=>LC(x,e=>e.k==='ls')>=50],['ls150','🎼','Listening Legend','Answer 150 listening questions. Ears of steel.',x=>LC(x,e=>e.k==='ls')>=150],['sp25','🎤','Speaking Star','Practise speaking 25 times.',x=>LC(x,e=>e.c==='Speaking')>=25],['sp75','📢','Speaking Legend','Practise speaking 75 times. Loud and proud.',x=>LC(x,e=>e.c==='Speaking')>=75],['rd10','📖','Reading Machine','Finish 10 reading passages.',x=>LC(x,e=>String(e.c||'').indexOf('Reading:')===0)>=10],['rd30','📚','Library Lion','Finish 30 reading passages.',x=>LC(x,e=>String(e.c||'').indexOf('Reading:')===0)>=30],['wr10','✍️','Writer','Finish 10 writing tasks.',x=>LC(x,e=>String(e.c||'').indexOf('Writing')===0)>=10],['wr30','🖋️','Author','Finish 30 writing tasks. Shakespeare is watching.',x=>LC(x,e=>String(e.c||'').indexOf('Writing')===0)>=30],['tr50','🌐','Translator','Finish 50 translations.',x=>LC(x,e=>e.k==='tr')>=50],['tr150','🗺️','Translation Legend','Finish 150 translations.',x=>LC(x,e=>e.k==='tr')>=150],['rw50','✏️','Rewriter','Finish 50 rewrites.',x=>LC(x,e=>e.k==='rw')>=50],['rw150','📝','Rewrite Legend','Finish 150 rewrites.',x=>LC(x,e=>e.k==='rw')>=150],['g20','🎮','Gamer','Play 20 games.',x=>LC(x,e=>e.c==='Game')>=20],['g60','🕹️','Game Boss','Play 60 games. It is still studying, trust us.',x=>LC(x,e=>e.c==='Game')>=60],['q10','⚡','Quick 5 Fan','Finish Quick 5 ten times.',x=>LC(x,e=>e.c==='Quick 5')>=10],['q30','🌩️','Quick 5 Addict','Finish Quick 5 thirty times.',x=>LC(x,e=>e.c==='Quick 5')>=30],['ex5','🧪','Exam Taker','Finish 5 mock exams.',x=>((x.p.exams||[]).length>=5)],['ex15','🎓','Exam Veteran','Finish 15 mock exams. The exam fears you.',x=>((x.p.exams||[]).length>=15)],['night','🦉','Night Owl','Answer 10 questions after midnight.',x=>HR(x,0,5)>=10],['early','🌅','Early Bird','Answer 10 questions before 7 AM.',x=>HR(x,5,7)>=10],['comeback','🔁','Comeback Kid','Come back after 2 weeks away. Welcome back.',GAP14],['wxp1000','🚀','Weekly 1,000','Earn 1,000 XP in one week.',x=>(x.wxp||0)>=1000],['wxp2500','🛸','Weekly 2,500','Earn 2,500 XP in one week. Alien level.',x=>(x.wxp||0)>=2500],['scout','🗺️','Site Scout','Finish the welcome quest',x=>((x.p&&x.p.log)||[]).some(e=>e.c==='Quest complete')]];
+['x500','⭐','2,500 XP','Earn 2,500 XP',x=>x.xp>=2500],['x1000','✨','5,000 XP','Earn 5,000 XP. Serious business.',x=>x.xp>=5000],['x2500','🌠','12,500 XP','Earn 12,500 XP.',x=>x.xp>=12500],['x5000','⭐','25,000 XP','Earn 25,000 XP.',x=>x.xp>=25000],['x10000','💫','50,000 XP','Earn 50,000 XP. Mythic territory.',x=>x.xp>=50000],['x25000','🌠','125,000 XP','Earn 125,000 XP.',x=>x.xp>=125000],['x50000','🌌','250,000 XP','Earn 250,000 XP. Beyond mythic.',x=>x.xp>=250000],['a1000','🐝','Busy Bee','Answer 1,000 questions.',x=>x.att>=1000],['a2500','🦾','The Machine','Answer 2,500 questions. Are you human?',x=>x.att>=2500],['a5000','🏭','Question Factory','Answer 15,000 questions. Wow.',x=>x.att>=15000],['s30','☄️','Streak 30','30 correct answers in a row.',x=>x.best>=30],['s50','💥','Streak 50','50 correct in a row. Unstoppable.',x=>x.best>=50],['s100','🧨','Streak 100','100 correct in a row. Call the news.',x=>x.best>=100],['d30','📆','Monthly Habit','Practise 30 days in a row.',x=>x.ds>=30],['d60','🗓️','Two Months Strong','Practise 60 days in a row.',x=>x.ds>=60],['d100','🛡️','Centurion','Practise 100 days in a row. Legend behavior.',x=>x.ds>=100],['m100','💪','Mastery 100','Master 100 questions.',x=>x.mastered>=100],['m250','🧗','Mastery 250','Master 250 questions.',x=>x.mastered>=250],['m500','🏔️','Mastery 1,500','Master 1,500 questions. The mountain is yours.',x=>x.mastered>=1500],['ls50','🎧','Listening Hero','Answer 50 listening questions.',x=>LC(x,e=>e.k==='ls')>=50],['ls150','🎼','Listening Legend','Answer 450 listening questions. Ears of steel.',x=>LC(x,e=>e.k==='ls')>=450],['sp25','🎤','Speaking Star','Practise speaking 25 times.',x=>LC(x,e=>e.c==='Speaking')>=25],['sp75','📢','Speaking Legend','Practise speaking 225 times. Loud and proud.',x=>LC(x,e=>e.c==='Speaking')>=225],['rd10','📖','Reading Machine','Finish 10 reading passages.',x=>LC(x,e=>String(e.c||'').indexOf('Reading:')===0)>=10],['rd30','📚','Library Lion','Finish 90 reading passages.',x=>LC(x,e=>String(e.c||'').indexOf('Reading:')===0)>=90],['wr10','✍️','Writer','Finish 10 writing tasks.',x=>LC(x,e=>String(e.c||'').indexOf('Writing')===0)>=10],['wr30','🖋️','Author','Finish 90 writing tasks. Shakespeare is watching.',x=>LC(x,e=>String(e.c||'').indexOf('Writing')===0)>=90],['tr50','🌐','Translator','Finish 50 translations.',x=>LC(x,e=>e.k==='tr')>=50],['tr150','🗺️','Translation Legend','Finish 450 translations.',x=>LC(x,e=>e.k==='tr')>=450],['rw50','✏️','Rewriter','Finish 50 rewrites.',x=>LC(x,e=>e.k==='rw')>=50],['rw150','📝','Rewrite Legend','Finish 450 rewrites.',x=>LC(x,e=>e.k==='rw')>=450],['g20','🎮','Gamer','Play 20 games.',x=>LC(x,e=>e.c==='Game')>=20],['g60','🕹️','Game Boss','Play 180 games. It is still studying, trust us.',x=>LC(x,e=>e.c==='Game')>=180],['q10','⚡','Quick 5 Fan','Finish Quick 5 ten times.',x=>LC(x,e=>e.c==='Quick 5')>=10],['q30','🌩️','Quick 5 Addict','Finish Quick 5 ninety times.',x=>LC(x,e=>e.c==='Quick 5')>=90],['ex5','🧪','Exam Taker','Finish 5 mock exams.',x=>((x.p.exams||[]).length>=5)],['ex15','🎓','Exam Veteran','Finish 15 mock exams. The exam fears you.',x=>((x.p.exams||[]).length>=15)],['night','🦉','Night Owl','Answer 10 questions after midnight.',x=>HR(x,0,5)>=10],['early','🌅','Early Bird','Answer 10 questions before 7 AM.',x=>HR(x,5,7)>=10],['comeback','🔁','Comeback Kid','Come back after 2 weeks away. Welcome back.',GAP14],['wxp1000','🚀','Weekly 1,000','Earn 1,000 XP in one week.',x=>(x.wxp||0)>=1000],['wxp2500','🛸','Weekly 2,500','Earn 2,500 XP in one week. Alien level.',x=>(x.wxp||0)>=2500],['scout','🗺️','Site Scout','Finish the welcome quest',x=>((x.p&&x.p.log)||[]).some(e=>e.c==='Quest complete')]];
 const badges=x=>BDG.filter(b=>b[4](x)).map(b=>b[1]+' '+b[2]);
 const ach=(function(){const sk=id=>'s3ach_'+id;
  function pop(ic,t,s){const o=document.createElement('div');o.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%) scale(.6);z-index:99999;background:var(--surf,#fff);color:var(--tx,#111);border:2px solid var(--ac,#4f46e5);border-radius:20px;padding:18px 26px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);opacity:0;transition:all .35s cubic-bezier(.3,1.6,.5,1);max-width:86vw';o.innerHTML='<div style="font-size:46px">'+ic+'</div><div style="font-weight:800;font-size:17px">'+esc(t)+'</div><div style="font-size:13px;opacity:.75">'+esc(s)+'</div>';document.body.appendChild(o);requestAnimationFrame(()=>{o.style.opacity=1;o.style.transform='translateX(-50%) scale(1)'});setTimeout(()=>{o.style.opacity=0;setTimeout(()=>o.remove(),400)},3200);o.onclick=()=>o.remove()}
@@ -6988,7 +6988,7 @@ const btn=(t,f,g)=>'<button class="s3btn'+(g?' ghost':'')+'" style="margin:3px" 
 const optB=(o,j,fn,st)=>'<button '+(st?'disabled ':'')+'onclick="'+fn+'('+j+')" style="'+(st||'border:1px solid var(--bd);background:var(--surf2)')+';display:block;width:100%;text-align:left;padding:12px;border-radius:12px;margin-bottom:8px;cursor:pointer;color:var(--tx);font-size:15px"><b>'+'ABCD'[j]+'.</b> '+esc(o)+'</button>';
 const OKS='border:2px solid var(--ok);background:var(--okbg)',NOS='border:2px solid #e11d48;background:var(--nobg)';
 /* ---------- daily XP cap for games ---------- */
-function gx(n){if(!S.isStudent()||n<=0)return 0;const k='s3gx_'+uid()+'_'+S.dayKey();const used=S.ls.get(k,0),give=Math.max(0,Math.min(n,60-used));if(give){S.ls.set(k,used+give);S.addXP(give,'Game')}return give}
+function gx(n){if(!S.isStudent()||n<=0)return 0;const k='s3gx_'+uid()+'_'+S.dayKey();const used=S.ls.get(k,0),give=Math.max(0,Math.min(n,40-used));if(give){S.ls.set(k,used+give);S.addXP(give,'Game')}return give}
 const best=(k,v)=>{const kk='s3gb_'+uid()+'_'+k,o=S.ls.get(kk,0);if(v!==undefined&&v>o){S.ls.set(kk,v);return v}return o};
 /* ================= GAMES ================= */
 function menu(){clean();const b=best('speed'),l=best('lives'),m=best('match');
@@ -7111,7 +7111,7 @@ function recStart(){clean();const R=recBuild();if(!R.hasData||R.list.length<5){o
  gq();gdraw()}
 window.s3DailyHook=function(p,Rn){const d=S.dayKey();p.dl=p.dl||{};const first=!p.dl[d];p.dl[d]={s:Rn.score,n:Rn.qs.length};if(!first)return;
  let n=0,t=Date.now();while(p.dl[S.dayKey(t)]){n++;t-=864e5}
- const M={3:15,7:40,14:80,30:200},b=Math.min(n,7)*2+(M[n]||0);p.dstreak=n;p.dbest=Math.max(p.dbest||0,n);
+ const M={3:10,7:25,14:50,30:100},b=Math.min(n,7)*1+(M[n]||0);p.dstreak=n;p.dbest=Math.max(p.dbest||0,n);
  if(b){p.xp=(p.xp||0)+b;p.log.push({t:Date.now(),q:'bonus',u:0,c:'Daily streak '+n,ok:1,xp:b,k:'bonus'})}
  try{S.toast('🔥 Daily streak: '+n+(n>1?' days':' day')+' · +'+b+' XP')}catch(e){}};
 window.s3PlBadge=P=>{if(!P)return '<span class="s3sub">-</span>';return '<b>'+(P.cefr||('L'+LV(P.tot)))+'</b> <span class="s3sub">'+P.tot+'%</span>'};
@@ -7527,7 +7527,7 @@ function every(fn,ms){const t=setInterval(fn,ms);timers.push(t);return t}
 function clean(){timers.forEach(clearInterval);timers.forEach(clearTimeout);timers=[];try{speechSynthesis.cancel()}catch(e){}}
 const say=t=>{try{speakText(t)}catch(e){}};
 /* same daily games-XP cap as the original games module (shared key) */
-function gx(n){if(!S.isStudent()||n<=0)return 0;const k='s3gx_'+uid()+'_'+S.dayKey();const used=S.ls.get(k,0),give=Math.max(0,Math.min(n,60-used));if(give){S.ls.set(k,used+give);S.addXP(give,'Game')}return give}
+function gx(n){if(!S.isStudent()||n<=0)return 0;const k='s3gx_'+uid()+'_'+S.dayKey();const used=S.ls.get(k,0),give=Math.max(0,Math.min(n,40-used));if(give){S.ls.set(k,used+give);S.addXP(give,'Game')}return give}
 const best=(k,v)=>{const kk='s3gb_'+uid()+'_g2_'+k,o=S.ls.get(kk,0);if(v!==undefined&&v>o){S.ls.set(kk,v);return v}return o};
 function ov(title,body){let o=$('s3g2-ov');if(!o){o=document.createElement('div');o.id='s3g2-ov';o.style.cssText='position:fixed;inset:0;z-index:99991;background:var(--bg,#f1f5f9);overflow:auto;-webkit-overflow-scrolling:touch';document.body.appendChild(o)}
  o.innerHTML='<style>#s3g2-ov *{box-sizing:border-box}#s3g2-ov .rounded-2xl{background:var(--surf,#fff)}#s3g2-ov .g2big{font-size:20px}</style><div style="max-width:560px;margin:0 auto;padding:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:18px">'+title+'</b><button class="s3btn ghost" onclick="s3G2.close()">✕ Close</button></div>'+body+'</div>';o.scrollTop=0}
@@ -8091,7 +8091,7 @@ C.init=async function(){try{await sdk()}catch(e){if(resumeOffline()){retryLater(
  fb.Au.onAuthStateChanged(fb.auth,u=>{user=u;onUser(u)})};
 async function onUser(u){const CLS=S().CLS();
  if(!u){stopSync();busy=false;if(S().SESS())S().setSESS(null);S().gate();return}
- const cur=S().SESS();if(cur&&C.offline===false&&(cur.id===u.uid||(cur.role==='teacher'&&(u.email||'').toLowerCase()===TEACHER))){if(cur.role==='student')startSync();return}
+ const cur=S().SESS();if(cur&&C.offline===false&&(cur.id===u.uid||(cur.role==='teacher'&&(u.email||'').toLowerCase()===TEACHER))){if(cur.role==='student'){startSync();flushing=true;fb.F.getDoc(fb.F.doc(fb.db,'students',u.uid)).then(sn=>{if(sn.exists()){const d=sn.data();if((d.updated||0)>S().ls.get(tk(u.uid),0))pull(u.uid,d)}}).catch(()=>{}).then(()=>{flushing=false;flush()})}return}
  try{
   if((u.email||'').toLowerCase()===TEACHER){S().ls.set(LAST,{uid:u.uid,teacher:1});CLS.teacher={name:CFG.teacherName||'Teacher'};busy=false;S().setSESS({role:'teacher',name:CLS.teacher.name});S().start();C.loadTeacher().catch(()=>{});return}
   const snap=await fb.F.getDoc(fb.F.doc(fb.db,'students',u.uid));
@@ -8111,7 +8111,7 @@ function pull(uid,d){const ls=S().ls,ts=ls.get(tk(uid),0),has=!!localStorage.get
 const hs=t=>{let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))>>>0;return h.toString(36)+t.length}
 function snapshotOf(uid){const p=Object.assign({},S().getProg(uid));delete p.note;if(p.log&&p.log.length>1500)p.log=p.log.slice(-1500);const b=S().ls.get(bk(uid),{})||{};return{p,b,js:JSON.stringify([p,b])}}
 /* v14.2: XP on the board can only grow together with logged answers (see Firestore rules: daylog + board in one batch) */
-let LG=null;const DCAP=800,ECAP=60;
+let LG=null;const DCAP=2500,ECAP=60;
 async function ledgerLoad(uid){const F=fb.F,d=Math.floor(Date.now()/864e5),[a,b]=await Promise.all([F.getDoc(F.doc(fb.db,'daylog',uid+'_'+d)),F.getDoc(F.doc(fb.db,'board',uid))]);
  const da=a.exists()?a.data():null,bd=b.exists()?b.data():{};
  LG={uid,day:d,a:da?da.a:[],dn:da?da.a.length:0,dx:da?da.xp:0,t:(da&&da.t&&da.t.toMillis)?da.t.toMillis():0,exists:!!da,bx:bd.xp||0,bw:bd.wxp||0,ba:bd.att||0,pending:false}}
@@ -8244,16 +8244,22 @@ const FN=n=>String(n||'').trim().split(/\s+/)[0];
 const day=()=>Math.floor(Date.now()/864e5);
 const jget=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}};
 const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-const TOK={win:5,draw:2,loss:1,streak:2,cap:20,pair:2};
+const TOK={win:3,draw:2,loss:1,streak:2,cap:10,pair:2};
 /* shop: [id, kind, label, price]; kind: b badge, t title, n name colour, g card background */
-const SHOP=[['bk','b','📚 Bookworm badge',20],['gg','b','🎓 Grammar Guru badge',30],['ww','b','🪄 Word Wizard badge',30],['ss','b','⚡ Speed Star badge',40],
- ['t1','t','Title: The Challenger',25],['t2','t','Title: Idiom Master',40],['t3','t','Title: Fast Fingers',50],['nc','n','Name colour: Teal',60],['gn','g','Card background: Night',60],['gs','g','Card background: Sunrise',60]];
+const SHOP=[['bk','b','\u{1F4DA} Bookworm badge',30],['gg','b','\u{1F393} Grammar Guru badge',45],['ww','b','\u{1FA84} Word Wizard badge',45],['ss','b','⚡ Speed Star badge',60],['qm','b','\u{1F3AF} Quiz Machine badge',70],['lb','b','\u{1F3A7} Listener badge',70],['sp','b','\u{1F3A4} Speaker badge',75],['tr','b','\u{1F310} Translator badge',75],
+ ['t1','t','Title: The Challenger',40],['t2','t','Title: Idiom Master',60],['t3','t','Title: Fast Fingers',75],['t4','t','Title: The Night Owl',70],['t5','t','Title: The Early Bird',70],['t6','t','Title: The Word Collector',90],['t7','t','Title: The Marathoner',105],['t8','t','Title: The Perfectionist',120],
+ ['nc','n','Name colour: Teal',90],['np','n','Name colour: Purple',90],['nr','n','Name colour: Crimson',105],['no','n','Name colour: Ocean',105],['ng','n','Name colour: Gold',135],['nrw','n','Name colour: Rainbow (animated)',180],
+ ['gn','g','Card background: Night',90],['gs','g','Card background: Sunrise',90],['go','g','Card background: Ocean',100],['gf','g','Card background: Forest',100],['gr','g','Card background: Royal',115],['gg2','g','Card background: Galaxy',150],
+ ['ct','c','\u{1F451} Custom Title',300]];
+const CTA=['The Grammar','The Word','The Quiz','The Sentence','The Vocab','The Lightning','The Midnight','The Golden','The Silver','The Crystal','The Silent','The Brave','The Clever','The Mighty','The Swift','The Lucky','The Cosmic','The Royal','The Epic','The Flying','The Rising','The Shining','The Fearless','The Homework','The Exam','The Puzzle','The Desert','The Nile'];
+const CTB=['Wizard','Knight','Ninja','Master','Champion','Hunter','Queen','King','Captain','Boss','Legend','Hero','Star','Genius','Machine','Rocket','Dragon','Phoenix','Tiger','Falcon','Guardian','Spark','Storm','Comet','Ghost','Samurai','Professor','Explorer'];
 const DT=[['d5',5,'Bronze Duelist'],['d15',15,'Silver Duelist'],['d30',30,'Gold Duelist'],['d60',60,'Champion']];
-const BG={gn:'linear-gradient(135deg,#1e1b4b,#312e81);color:#fff',gs:'linear-gradient(135deg,#fde68a,#fdba74)'};
+const BG={gn:'linear-gradient(135deg,#1e1b4b,#312e81);color:#fff',gs:'linear-gradient(135deg,#fde68a,#fdba74)',go:'linear-gradient(135deg,#0c4a6e,#0284c7);color:#fff',gf:'linear-gradient(135deg,#14532d,#16a34a);color:#fff',gr:'linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff',gg2:'linear-gradient(135deg,#0f172a,#312e81 55%,#7c3aed);color:#fff'};
+const NC={nc:'#0d9488',np:'#7c3aed',nr:'#dc2626',no:'#0284c7',ng:'#d97706',nrw:''};
 const FR=[[110,'Mythic','#f43f5e'],[85,'Galaxy','#a855f7'],[65,'Inferno','#ef4444'],[50,'Crystal','#38bdf8'],[38,'Titanium','#94a3b8'],[30,'Master','#7c3aed'],[20,'Diamond','#06b6d4'],[15,'Platinum','#64748b'],[10,'Gold','#f59e0b'],[5,'Bronze','#b45309'],[1,'Plain','#cbd5e1']];
 const PRE=['🦁','🐯','🦊','🐼','🐸','🦉','🐙','🦄','🐬','🚀','⚽','🎮','🦖','⭐','🐳','🤖','🦅','🏆','⚡','🐉','👑','🐝','🐺','🦇','🌅','🔥','💎','🧠','🎧','🎤','📖','✍️','🌐','👾','🔁','⚔️'],PC=['#f59e0b','#f97316','#ef4444','#64748b','#22c55e','#8b5cf6','#ec4899','#a855f7','#06b6d4','#3b82f6','#16a34a','#6366f1','#65a30d','#eab308','#0ea5e9','#334155','#0d9488','#b45309','#facc15','#7c2d12','#fbbf24','#ca8a04','#57534e','#1e293b','#fb923c','#b91c1c','#0284c7','#7c3aed','#0f766e','#be185d','#78350f','#166534','#0891b2','#4d7c0f','#9f1239','#dc2626'];
 const avInner=(av,name,sz)=>{if(av&&av.indexOf('data:image/jpeg;base64,')===0)return '<img alt="" src="'+av+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';const m=/^p(\d{1,2})$/.exec(av||'');if(m&&PRE[+m[1]])return '<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;border-radius:50%;background:'+PC[+m[1]]+';font-size:'+Math.round(sz*.5)+'px">'+PRE[+m[1]]+'</span>';return '<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;border-radius:50%;background:#6366f1;color:#fff;font-weight:800;font-size:'+Math.round(sz*.42)+'px">'+esc((FN(name)||'?')[0].toUpperCase())+'</span>'};
-const lvl=xp=>Math.floor((xp||0)/750)+1;
+const lvl=xp=>Math.floor((xp||0)/1000)+1;
 const frame=l=>FR.find(f=>l>=f[0]);
 const nextFrame=l=>{const a=FR.slice().reverse().find(f=>f[0]>l);return a?a[1]+' at level '+a[0]:'Top frame reached'};
 const dtitle=w=>{let t=null;DT.forEach(d=>{if(w>=d[1])t=d});return t};
@@ -8291,12 +8297,12 @@ const mb=(t,f,g,x)=>'<button class="s3btn'+(g?' ghost':'')+'" style="'+(x||'')+'
 const needNet=()=>{if(!fx()){ov('Offline','<div class="mc">This needs the internet. Connect and try again.</div>');return true}return false};
 /* ---- profile ---- */
 async function profile(){const s=SS();if(!s||s.role==='teacher'||needNet())return;const x=fx();ov('My profile','<div class="mc">Loading…</div>');
- try{const [W,b]=await Promise.all([wget(x.uid),x.F.getDoc(x.F.doc(x.db,'board',x.uid))]);const B=b.exists()?b.data():{},xp=B.xp||0,L=lvl(xp),fr=frame(L),dt=dtitle(W.w);
-  const tl=W.eq.t?(SHOP.find(i=>i[0]===W.eq.t)||[])[2].replace('Title: ',''):(dt?dt[2]:'Student');
+ try{const [W,b]=await Promise.all([wget(x.uid),x.F.getDoc(x.F.doc(x.db,'board',x.uid))]);const B=b.exists()?b.data():{},xp=B.xp||0,L=lvl(xp),fr=frame(L),dt=dtitle(W.w),fvb=(W.own||[]).includes('fxb');
+  const tl=W.eq.t?((SHOP.find(i=>i[0]===W.eq.t)||[])[2]||'').replace('Title: ','')||W.eq.t:(dt?dt[2]:'Student');
   const acc=B.att>=10?Math.round(B.acc||0):null,col=acc==null?'#cbd5e1':acc>=75?'#16a34a':acc>=50?'#f59e0b':'#dc2626';
-  const bg=W.eq.g&&BG[W.eq.g]?'background:'+BG[W.eq.g]:'',nc=W.eq.n?'color:#0d9488':'';
+  const bg=W.eq.g&&BG[W.eq.g]?'background:'+BG[W.eq.g]:'',nc=W.eq.n&&NC[W.eq.n]?'color:'+NC[W.eq.n]:'';
   const badge=W.eq.b?'<span class="s3bd" style="display:inline-block;padding:5px 10px;border-radius:12px;background:rgba(127,127,127,.15);margin:3px;font-size:13px">'+esc((SHOP.find(i=>i[0]===W.eq.b)||[])[2].replace(' badge',''))+'</span>':'<span class="s3sub">No badge yet. Pick one in the Shop.</span>';
-  ov('My profile','<div class="mc" style="text-align:center;'+bg+'"><div class="s3av" style="--g:'+fr[2]+'aa;width:96px;height:96px;margin:6px auto;border-radius:50%;border:6px solid '+fr[2]+';overflow:hidden">'+avInner(W.av,s.name,96)+'</div>'+(W.pv?'<div class="s3sub" style="margin:2px 0">New picture waiting for your teacher</div>':'')+'<button class="s3btn ghost" style="margin:2px 0 6px" onclick="s3Me.pic()">Change picture</button><div style="font-size:22px;font-weight:800;'+nc+'">'+esc(FN(s.name))+'</div><div class="s3sub" style="opacity:.85">'+esc(tl)+' · Level '+L+' · '+fr[1]+' frame</div></div>'+
+  ov('My profile','<div class="mc" style="text-align:center;'+bg+'">'+(window.s3Frx?s3Frx.av(fr,avInner(W.av,s.name,78),(W.own||[]).includes('fxb')?'b':'a'):'<div class="s3av" style="--g:'+fr[2]+'aa;width:96px;height:96px;margin:6px auto;border-radius:50%;border:6px solid '+fr[2]+';overflow:hidden">'+avInner(W.av,s.name,96)+'</div>')+(W.pv?'<div class="s3sub" style="margin:2px 0">New picture waiting for your teacher</div>':'')+(L>=110?'<div style="margin:0 0 6px"><div class="s3sub" style="margin-bottom:4px">Top frame · switch anytime</div><button class="s3btn ghost" style="margin:0 3px;'+(fvb?'':'border-color:#4f46e5;font-weight:800')+'" onclick="s3Me.framePick(\'a\').then(()=>s3Me.profile())">🐉 Dragon King'+(fvb?'':' ✓')+'</button><button class="s3btn ghost" style="margin:0 3px;'+(fvb?'border-color:#4f46e5;font-weight:800':'')+'" onclick="s3Me.framePick(\'b\').then(()=>s3Me.profile())">⚡ Volt Emperor'+(fvb?' ✓':'')+'</button></div>':'')+'<button class="s3btn ghost" style="margin:2px 0 6px" onclick="s3Me.pic()">Change picture</button><div class="'+(W.eq.n==='nrw'?'s3nc-rw':'')+'" style="font-size:22px;font-weight:800;'+nc+'">'+esc(FN(s.name))+'</div><div class="s3sub" style="opacity:.85">'+esc(tl)+' · Level '+L+' · '+(window.s3Frx?s3Frx.nm(fr,fvb?'b':'a'):fr[1])+' frame</div></div>'+
    '<div class="mc" style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;border-radius:50%;background:'+col+'"></div><div style="font-size:24px;font-weight:800">'+(acc==null?'–':acc+'%')+'</div><div class="s3sub">'+(acc==null?'Answer 10 questions to see your accuracy':'Your accuracy')+'</div></div>'+
    '<div class="mc"><div style="font-weight:800;margin-bottom:6px">Badge</div>'+badge+'</div>'+
    '<div class="mc"><div class="mr"><span>Duels</span><b>'+W.w+' W · '+W.l+' L'+(W.dr?' · '+W.dr+' D':'')+'</b></div><div class="mr"><span>Next frame</span><b>'+nextFrame(L)+'</b></div></div>'+
@@ -8304,11 +8310,32 @@ async function profile(){const s=SS();if(!s||s.role==='teacher'||needNet())retur
 /* ---- shop ---- */
 async function shop(msg){const s=SS();if(!s||s.role==='teacher'||needNet())return;const x=fx();
  try{const W=await wget(x.uid),own=id=>W.own.includes(id),eqd=i=>W.eq[i[1]]===i[0];
-  let h=(msg?'<div class="mc" style="color:#b91c1c">'+esc(msg)+'</div>':'')+'<div class="mc"><div style="font-size:12px;opacity:.7;margin-bottom:4px">Tokens come from duels: win '+TOK.win+', draw '+TOK.draw+', loss '+TOK.loss+', up to '+TOK.cap+' a day.</div>'+SHOP.map(i=>'<div class="mr"><span>'+esc(i[2])+'</span>'+(own(i[0])?(eqd(i)?mb('Equipped','s3Me.eq(\''+i[0]+'\')',1):mb('Equip','s3Me.eq(\''+i[0]+'\')')):mb('🪙 '+i[3],'s3Me.buy(\''+i[0]+'\')',W.tk<i[3],W.tk<i[3]?'opacity:.5':''))+'</div>').join('')+'</div>'+
-  '<div class="mc"><div style="font-weight:800;margin-bottom:4px">Duel-only titles (not for sale)</div>'+DT.map(d=>'<div class="mr"><span>'+d[2]+'</span><span>'+(W.w>=d[1]?'✓ unlocked':d[1]+' wins')+'</span></div>').join('')+'</div>';
-  ov('🛍️ Shop · 🪙 '+W.tk,h)}catch(e){ov('Shop','<div class="mc">Could not load. '+esc((e&&e.code)||'')+'</div>')}}
+  const btn=i=>own(i[0])?(eqd(i)?mb('Equipped',"s3Me.eq('"+i[0]+"')",1):mb('Equip',"s3Me.eq('"+i[0]+"')")):mb('\u{1FA99} '+i[3],"s3Me.buy('"+i[0]+"')");
+  const sec=(t,k)=>{const L=SHOP.filter(i=>i[1]===k);if(!L.length)return'';
+   return '<div class="mc"><div style="font-weight:800;margin-bottom:4px">'+t+'</div>'+L.map(i=>'<div class="mr"><span>'+(i[1]==='n'?'<span style="display:inline-block;width:13px;height:13px;border-radius:50%;vertical-align:-2px;margin-right:5px;background:'+(NC[i[0]]||'conic-gradient(#f43f5e,#f59e0b,#10b981,#3b82f6,#a855f7,#f43f5e)')+'"></span>':'')+esc(i[2])+'</span>'+btn(i)+'</div>').join('')+'</div>'};
+  const cur=(W.eq.t&&!(SHOP.find(i=>i[0]===W.eq.t)))?W.eq.t:'';
+  const pa=cur?cur.split(' ').slice(0,2).join(' '):CTA[0],pb=cur?cur.split(' ').slice(2).join(' '):CTB[0];
+  const opts=(a,m)=>a.map(v=>'<option'+(v===m?' selected':'')+'>'+v+'</option>').join('');
+  const ct='<div class="mc" style="border:2px solid #f59e0b;background:linear-gradient(135deg,#fffbeb,#fef3c7)"><div style="font-weight:800;margin-bottom:4px">\u{1F451} Custom Title <span style="font-size:11px;background:#f59e0b;color:#fff;border-radius:8px;padding:2px 7px;vertical-align:2px">PREMIUM</span></div>'
+   +'<div style="font-size:12px;opacity:.7;margin-bottom:6px">Build your own title from safe words ('+CTA.length+' x '+CTB.length+' combos). It shows next to your name everywhere.</div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><select id="ct-a" class="s3in" onchange="s3Me.ctPrev()">'+opts(CTA,pa)+'</select><select id="ct-b" class="s3in" onchange="s3Me.ctPrev()">'+opts(CTB,pb)+'</select></div>'
+   +'<div id="ct-prev" style="text-align:center;font-weight:800;padding:9px;margin-top:8px;background:#fff;border:2px dashed #4f46e5;border-radius:12px">'+esc(cur||CTA[0]+' '+CTB[0])+'</div>'
+   +'<div style="text-align:center;margin-top:8px">'+(own('ct')?mb('Save title','s3Me.ctSave()'):mb('\u{1FA99} 300 · Buy & equip','s3Me.ctBuy()'))+'</div></div>';
+  let h=(msg?'<div class="mc" style="color:#b91c1c">'+esc(msg)+'</div>':'')+'<div class="mc"><div style="font-size:12px;opacity:.7;margin-bottom:4px">Tokens come from duels: win '+TOK.win+', draw '+TOK.draw+', loss '+TOK.loss+', up to '+TOK.cap+' a day.</div></div>'
+   +ct+sec('\u{1F3F7}️ Titles','t')+sec('\u{1F3A8} Name colours','n')+sec('\u{1F0CF} Card backgrounds','g')+sec('\u{1F3C5} Badges','b')
+   +'<div class="mc"><div style="font-weight:800;margin-bottom:4px">Duel-only titles (not for sale)</div>'+DT.map(d=>'<div class="mr"><span>'+d[2]+'</span><span>'+(W.w>=d[1]?'✓ unlocked':d[1]+' wins')+'</span></div>').join('')+'</div>';
+  ov('\u{1F6CD}️ Shop · \u{1FA99} '+W.tk,h)}catch(e){ov('Shop','<div class="mc">Could not load. '+esc((e&&e.code)||'')+'</div>')}}
+function ctTitle(){const a=(document.getElementById('ct-a')||{}).value||CTA[0],b=(document.getElementById('ct-b')||{}).value||CTB[0];return a+' '+b}
+function ctPrev(){const e=document.getElementById('ct-prev');if(e)e.textContent=ctTitle()}
+async function ctBuy(){const x=fx();if(!x)return;try{const W=await wget(x.uid);if(W.own.includes('ct'))return ctSave();
+  if(W.tk<300)return shop('Not enough tokens. The Custom Title costs 300.');
+  W.tk-=300;W.own=W.own.concat(['ct']);W.eq.t=ctTitle();await wput(x.uid,W,false);try{if(window.s3Com&&s3Com.pubEq)s3Com.pubEq(W.eq)}catch(e){}shop()}catch(e){shop('Could not buy: '+((e&&e.code)||e))}}
+async function ctSave(){const x=fx();if(!x)return;try{const W=await wget(x.uid);if(!W.own.includes('ct'))return shop();
+  W.eq.t=ctTitle();await wput(x.uid,W,false);try{if(window.s3Com&&s3Com.pubEq)s3Com.pubEq(W.eq)}catch(e){}shop()}catch(e){shop('Could not save: '+((e&&e.code)||e))}}
+
 async function buy(id){const x=fx(),p=price(id);if(!x||!p)return;try{const W=await wget(x.uid);if(W.own.includes(id))return shop();if(W.tk<p)return shop('Not enough tokens.');W.tk-=p;W.own=W.own.concat([id]);await wput(x.uid,W,false);shop()}catch(e){shop('Could not buy: '+((e&&e.code)||e))}}
 async function eq(id){const x=fx(),i=SHOP.find(z=>z[0]===id);if(!x||!i)return;try{const W=await wget(x.uid);if(!W.own.includes(id))return;W.eq[i[1]]=W.eq[i[1]]===id?'':id;await wput(x.uid,W,false);try{if(window.s3Com&&s3Com.pubEq)s3Com.pubEq(W.eq)}catch(e){}shop()}catch(e){shop('Could not save: '+((e&&e.code)||e))}}
+async function framePick(v){const s=SS();if(!s)return;const x=fx();if(!x)return;try{const W=await wget(x.uid);const bb=await x.F.getDoc(x.F.doc(x.db,'board',x.uid));const L=lvl((bb.exists()?bb.data().xp:0)||0);if(L<110)return;const has=(W.own||[]).includes('fxb');if(v==='b'&&!has)W.own=(W.own||[]).concat(['fxb']);else if(v!=='b'&&has)W.own=W.own.filter(i=>i!=='fxb');else return;await wput(x.uid,W,false)}catch(e){}}
 /* ---- challenges ---- */
 async function chal(msg){const s=SS();if(!s||s.role==='teacher')return;if(needNet())return;const x=fx(),F=x.F;ov('🤝 Duel Challenges','<div class="mc">Loading…</div>');
  try{const [bs,ds]=await Promise.all([F.getDocs(F.collection(x.db,'board')),F.getDocs(F.query(F.collection(x.db,'duels'),F.where('tid','==',x.uid)))]);
@@ -8334,7 +8361,7 @@ async function appr(id){const x=fx();try{const s=await x.F.getDoc(x.F.doc(x.db,'
 async function rej(id,all){const x=fx();try{await x.F.updateDoc(x.F.doc(x.db,'wallet',id),all?{av:'',pv:''}:{pv:''})}catch(e){}pics()}
 function duel(){const s=SS();if(s&&s.role==='teacher')s3Duel.teacher();else s3Duel.home()}
 let hn=0;const ht=setInterval(()=>{hn++;const s=SS();if(hn>60)return clearInterval(ht);if(s&&s.role==='student'&&fx()&&!sessionStorage.getItem('s3_home')){sessionStorage.setItem('s3_home','1');clearInterval(ht);profile()}},500);
-window.s3Me={pic,preset,photo,pics,appr,rej,confetti,profile,shop,buy,eq,chal,filt,send,accept,duel,close,duelEnd,classEnd,_lvl:lvl,_frame:frame,_FR:FR,_PRE:PRE,_wget:wget};
+window.s3Me={pic,preset,photo,pics,appr,rej,confetti,profile,shop,buy,eq,framePick,chal,filt,send,accept,duel,close,duelEnd,classEnd,ctPrev,ctBuy,ctSave,_lvl:lvl,_frame:frame,_FR:FR,_PRE:PRE,_wget:wget};
 })();
 </script>
 <script id="s3-duel">
@@ -9236,8 +9263,8 @@ var BDG=[['first','\ud83d\udc63','First Steps',function(x){return x.att>=10}],['
 ['sh','\ud83c\udfaf','Sharpshooter',function(x){return x.att>=20&&x.acc>=90}],['ace','\ud83e\udde0','Accuracy Ace',function(x){return x.att>=100&&x.acc>=85}],
 ['m10','\ud83c\udf1f','Mastery 10',function(x){return x.mastered>=10}],['m25','\ud83c\udfc6','Master',function(x){return x.mastered>=25}],['m50','\ud83c\udf93','Grand Master',function(x){return x.mastered>=50}],
 ['a100','\ud83d\udcda','Bookworm',function(x){return x.att>=100}],['a300','\ud83d\udcd6','Scholar',function(x){return x.att>=300}],['a600','\ud83e\udd89','Wise Owl',function(x){return x.att>=600}],
-['x500','\u2b50','500 XP',function(x){return x.xp>=500}],['x1000','\u2728','1000 XP',function(x){return x.xp>=1000}],['x2500','\ud83c\udf20','2500 XP',function(x){return x.xp>=2500}]];
-var LC=function(x,f){try{var n=0;(x.p.log||[]).forEach(function(e){if(f(e))n++});return n}catch(e){return 0}};var HR=function(x,a,b){return LC(x,function(e){var h=new Date(e.t).getHours();return h>=a&&h<b})};var GAP14=function(x){try{var ks=Object.keys(x.p.days||{}).sort();for(var i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};BDG.push(['x5000','\u2b50','5,000 XP',function(x){return x.xp>=5000}],['x10000','\ud83d\udcab','10,000 XP',function(x){return x.xp>=10000}],['x25000','\ud83c\udf20','25,000 XP',function(x){return x.xp>=25000}],['x50000','\ud83c\udf0c','50,000 XP',function(x){return x.xp>=50000}],['a1000','\ud83d\udc1d','Busy Bee',function(x){return x.att>=1000}],['a2500','\ud83e\uddbe','The Machine',function(x){return x.att>=2500}],['a5000','\ud83c\udfed','Question Factory',function(x){return x.att>=5000}],['s30','\u2604\ufe0f','Streak 30',function(x){return x.best>=30}],['s50','\ud83d\udca5','Streak 50',function(x){return x.best>=50}],['s100','\ud83e\udde8','Streak 100',function(x){return x.best>=100}],['d30','\ud83d\udcc6','Monthly Habit',function(x){return x.ds>=30}],['d60','\ud83d\uddd3\ufe0f','Two Months Strong',function(x){return x.ds>=60}],['d100','\ud83d\udee1\ufe0f','Centurion',function(x){return x.ds>=100}],['m100','\ud83d\udcaa','Mastery 100',function(x){return x.mastered>=100}],['m250','\ud83e\uddd7','Mastery 250',function(x){return x.mastered>=250}],['m500','\ud83c\ufdd4\ufe0f','Mastery 500',function(x){return x.mastered>=500}],['ls50','\ud83c\udfa7','Listening Hero',function(x){return LC(x,function(e){return e.k==='ls'})>=50}],['ls150','\ud83c\udfbc','Listening Legend',function(x){return LC(x,function(e){return e.k==='ls'})>=150}],['sp25','\ud83c\udfa4','Speaking Star',function(x){return LC(x,function(e){return e.c==='Speaking'})>=25}],['sp75','\ud83d\udce2','Speaking Legend',function(x){return LC(x,function(e){return e.c==='Speaking'})>=75}],['rd10','\ud83d\udcd6','Reading Machine',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Reading:')===0})>=10}],['rd30','\ud83d\udcda','Library Lion',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Reading:')===0})>=30}],['wr10','\u270d\ufe0f','Writer',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Writing')===0})>=10}],['wr30','\ud83d\udd8b\ufe0f','Author',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Writing')===0})>=30}],['tr50','\ud83c\udf10','Translator',function(x){return LC(x,function(e){return e.k==='tr'})>=50}],['tr150','\ud83d\uddfa\ufe0f','Translation Legend',function(x){return LC(x,function(e){return e.k==='tr'})>=150}],['rw50','\u270f\ufe0f','Rewriter',function(x){return LC(x,function(e){return e.k==='rw'})>=50}],['rw150','\ud83d\udcdd','Rewrite Legend',function(x){return LC(x,function(e){return e.k==='rw'})>=150}],['g20','\ud83c\udfae','Gamer',function(x){return LC(x,function(e){return e.c==='Game'})>=20}],['g60','\ud83d\udd79\ufe0f','Game Boss',function(x){return LC(x,function(e){return e.c==='Game'})>=60}],['q10','\u26a1','Quick 5 Fan',function(x){return LC(x,function(e){return e.c==='Quick 5'})>=10}],['q30','\ud83c\udf29\ufe0f','Quick 5 Addict',function(x){return LC(x,function(e){return e.c==='Quick 5'})>=30}],['ex5','\ud83e\uddea','Exam Taker',function(x){return (x.p.exams||[]).length>=5}],['ex15','\ud83c\udf93','Exam Veteran',function(x){return (x.p.exams||[]).length>=15}],['night','\ud83e\udd89','Night Owl',function(x){return HR(x,0,5)>=10}],['early','\ud83c\udf05','Early Bird',function(x){return HR(x,5,7)>=10}],['comeback','\ud83d\udd01','Comeback Kid',GAP14],['wxp1000','\ud83d\ude80','Weekly 1,000',function(x){return (x.wxp||0)>=1000}],['wxp2500','\ud83d\udec8','Weekly 2,500',function(x){return (x.wxp||0)>=2500}]);
+['x500','\u2b50','2,500 XP',function(x){return x.xp>=2500}],['x1000','\u2728','5,000 XP',function(x){return x.xp>=5000}],['x2500','\ud83c\udf20','12,500 XP',function(x){return x.xp>=12500}]];
+var LC=function(x,f){try{var n=0;(x.p.log||[]).forEach(function(e){if(f(e))n++});return n}catch(e){return 0}};var HR=function(x,a,b){return LC(x,function(e){var h=new Date(e.t).getHours();return h>=a&&h<b})};var GAP14=function(x){try{var ks=Object.keys(x.p.days||{}).sort();for(var i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};BDG.push(['x5000','\u2b50','25,000 XP',function(x){return x.xp>=25000}],['x10000','\ud83d\udcab','50,000 XP',function(x){return x.xp>=50000}],['x25000','\ud83c\udf20','125,000 XP',function(x){return x.xp>=125000}],['x50000','\ud83c\udf0c','250,000 XP',function(x){return x.xp>=250000}],['a1000','\ud83d\udc1d','Busy Bee',function(x){return x.att>=1000}],['a2500','\ud83e\uddbe','The Machine',function(x){return x.att>=2500}],['a5000','\ud83c\udfed','Question Factory',function(x){return x.att>=15000}],['s30','\u2604\ufe0f','Streak 30',function(x){return x.best>=30}],['s50','\ud83d\udca5','Streak 50',function(x){return x.best>=50}],['s100','\ud83e\udde8','Streak 100',function(x){return x.best>=100}],['d30','\ud83d\udcc6','Monthly Habit',function(x){return x.ds>=30}],['d60','\ud83d\uddd3\ufe0f','Two Months Strong',function(x){return x.ds>=60}],['d100','\ud83d\udee1\ufe0f','Centurion',function(x){return x.ds>=100}],['m100','\ud83d\udcaa','Mastery 100',function(x){return x.mastered>=100}],['m250','\ud83e\uddd7','Mastery 250',function(x){return x.mastered>=250}],['m500','\ud83c\ufdd4\ufe0f','Mastery 1,500',function(x){return x.mastered>=1500}],['ls50','\ud83c\udfa7','Listening Hero',function(x){return LC(x,function(e){return e.k==='ls'})>=50}],['ls150','\ud83c\udfbc','Listening Legend',function(x){return LC(x,function(e){return e.k==='ls'})>=450}],['sp25','\ud83c\udfa4','Speaking Star',function(x){return LC(x,function(e){return e.c==='Speaking'})>=25}],['sp75','\ud83d\udce2','Speaking Legend',function(x){return LC(x,function(e){return e.c==='Speaking'})>=225}],['rd10','\ud83d\udcd6','Reading Machine',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Reading:')===0})>=10}],['rd30','\ud83d\udcda','Library Lion',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Reading:')===0})>=90}],['wr10','\u270d\ufe0f','Writer',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Writing')===0})>=10}],['wr30','\ud83d\udd8b\ufe0f','Author',function(x){return LC(x,function(e){return String(e.c||'').indexOf('Writing')===0})>=90}],['tr50','\ud83c\udf10','Translator',function(x){return LC(x,function(e){return e.k==='tr'})>=50}],['tr150','\ud83d\uddfa\ufe0f','Translation Legend',function(x){return LC(x,function(e){return e.k==='tr'})>=450}],['rw50','\u270f\ufe0f','Rewriter',function(x){return LC(x,function(e){return e.k==='rw'})>=50}],['rw150','\ud83d\udcdd','Rewrite Legend',function(x){return LC(x,function(e){return e.k==='rw'})>=450}],['g20','\ud83c\udfae','Gamer',function(x){return LC(x,function(e){return e.c==='Game'})>=20}],['g60','\ud83d\udd79\ufe0f','Game Boss',function(x){return LC(x,function(e){return e.c==='Game'})>=180}],['q10','\u26a1','Quick 5 Fan',function(x){return LC(x,function(e){return e.c==='Quick 5'})>=10}],['q30','\ud83c\udf29\ufe0f','Quick 5 Addict',function(x){return LC(x,function(e){return e.c==='Quick 5'})>=90}],['ex5','\ud83e\uddea','Exam Taker',function(x){return (x.p.exams||[]).length>=5}],['ex15','\ud83c\udf93','Exam Veteran',function(x){return (x.p.exams||[]).length>=15}],['night','\ud83e\udd89','Night Owl',function(x){return HR(x,0,5)>=10}],['early','\ud83c\udf05','Early Bird',function(x){return HR(x,5,7)>=10}],['comeback','\ud83d\udd01','Comeback Kid',GAP14],['wxp1000','\ud83d\ude80','Weekly 1,000',function(x){return (x.wxp||0)>=1000}],['wxp2500','\ud83d\udec8','Weekly 2,500',function(x){return (x.wxp||0)>=2500}]);
 var rankOf=function(xp){var k=0;RANKS.forEach(function(r,i){if(xp>=r[0])k=i});return RANKS[k]};
 var SKN=[['g','Grammar'],['v','Vocabulary'],['r','Reading'],['l','Listening'],['w','Writing skills'],['s','Speaking']];
 var C={fset:new Set(),mine:null,req:{inc:[],out:[]},blocks:[],fl:[],dis:false,locked:false,loaded:false};window.s3Com=C;
@@ -9595,7 +9622,7 @@ function checkUnlocks(W){
 
 /* ---- weekly XP milestone bonuses (one per tier per week, existing addXP path) ---- */
 const WEEK=()=>Math.floor(Date.now()/(7*864e5));
-const TIERS=[[300,50],[800,150],[2000,400]];
+const TIERS=[[1000,25],[2500,60],[6000,150]];
 function weeklyBonus(){
  if(!stu())return;
  const x=stats();if(!x)return;
@@ -9645,7 +9672,7 @@ async function open(){
  h+=card('<div style="display:flex;align-items:center;gap:14px"><div style="width:64px;height:64px;border-radius:50%;border:5px solid '+fr[2]+';display:flex;align-items:center;justify-content:center;font-size:30px;background:var(--surf2,#f1f5f9)">'+(cur||'🙂')+'</div>'
   +'<div style="flex:1"><div style="font-weight:800;font-size:16px">Level '+lvl+' · '+fr[1]+' frame</div><div style="font-size:13px;opacity:.7">'+(nxt?'Next: '+nxt[1]+' frame at level '+nxt[0]+' ('+(nxt[0]-lvl)+' levels to go)':'Top frame reached. You are the final boss.')+'</div><div style="font-size:13px;opacity:.7;margin-top:2px">🪙 Tokens and the Shop are in 🪪 Profile.</div></div></div>');
  h+=card('<div style="font-weight:800;margin-bottom:8px">🖼️ Frames <span style="font-weight:600;font-size:12px;opacity:.6">(unlock by level, automatic)</span></div>'
-  +FR.map(f=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd,#e2e8f0)"><span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:'+f[2]+';margin-right:8px;vertical-align:-2px"></span>'+f[1]+'</span><b style="font-size:12.5px">'+(lvl>=f[0]?'✓ Yours':'🔒 Level '+f[0])+'</b></div>').join(''));
+  +FR.map(f=>{const tp=f[0]===110&&lvl>=110,fv2=(W&&W.own||[]).includes('fxb');return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd,#e2e8f0)"><span><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:'+f[2]+';margin-right:8px;vertical-align:-2px"></span>'+(tp?'Mythic · '+(fv2?'⚡ Volt Emperor':'🐉 Dragon King'):f[1])+'</span>'+(tp?'<span><button class="s3btn" style="padding:4px 8px;font-size:12px;margin-right:4px;'+(fv2?'':'border:2px solid var(--ac,#4f46e5)')+'" onclick="s3Me.framePick(\'a\').then(()=>s3Loot.open())">🐉'+(fv2?'':' ✓')+'</button><button class="s3btn" style="padding:4px 8px;font-size:12px;'+(fv2?'border:2px solid var(--ac,#4f46e5)':'')+'" onclick="s3Me.framePick(\'b\').then(()=>s3Loot.open())">⚡'+(fv2?' ✓':'')+'</button></span>':'<b style="font-size:12.5px">'+(lvl>=f[0]?'✓ Yours':'🔒 Level '+f[0])+'</b>')+'</div>'}).join(''));
  h+=card('<div style="font-weight:800;margin-bottom:8px">😎 Milestone avatars <span style="font-weight:600;font-size:12px;opacity:.6">(tap to wear)</span></div>'
   +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
   +MAV.map(m=>{const ok=unl(m),sel=cur===m[1];
@@ -9757,7 +9784,7 @@ function awardXP(n){ /* badge XP rides the normal game XP path: 60/day cap stays
  try{
   const s=S();if(!s||!s.isStudent()||n<=0)return 0;
   const k='s3gx_'+myUid()+'_'+s.dayKey();
-  const used=s.ls.get(k,0),give=Math.max(0,Math.min(n,60-used));
+  const used=s.ls.get(k,0),give=Math.max(0,Math.min(n,40-used));
   if(give){s.ls.set(k,used+give);s.addXP(give,'Game')}
   return give
  }catch(e){return 0}}
@@ -10118,7 +10145,7 @@ function cheerPop(ic,big,t,s,big2){
 function nextCheer(){if(!cheerQ.length){cheering=false;return}cheering=true;
  const c=cheerQ.shift();cheerPop(c[0],c[1],c[2],c[3])}
 function lvlOf(xp){try{if(window.s3Me&&s3Me._lvl)return s3Me._lvl(xp)}catch(e){}
- return Math.floor((xp||0)/750)+1}
+ return Math.floor((xp||0)/1000)+1}
 /* frame tiers a teacher can detect from total XP (live FR table when present) */
 const FRT=()=>{try{if(window.s3Me&&s3Me._FR)return s3Me._FR.filter(f=>f[0]>1).map(f=>[f[0],f[1]])}catch(e){}
  return [[5,'Bronze'],[10,'Gold'],[15,'Platinum'],[20,'Diamond'],[30,'Master'],[38,'Titanium'],[50,'Crystal'],[65,'Inferno'],[85,'Galaxy'],[110,'Mythic']]};
@@ -10221,6 +10248,169 @@ add();
 })();
 </script>
 
-<style id="s3-brandfit">@media(max-width:480px){header h1{font-size:13px!important;letter-spacing:-.2px}header .w-10.h-10.rounded-xl.bg-gradient-to-br{width:34px;height:34px;font-size:12px;border-radius:10px}header .flex.items-center.gap-3{gap:8px}header #s3-chip,header .s3chip #s3-chip{padding:2px 4px!important;font-size:11px!important;gap:2px!important}header .s3rk{padding:3px 6px!important;font-size:11px!important}header button.s3ib{width:34px!important;min-width:34px!important}header .flex.items-center.justify-between{min-width:0}}</style><script>window.s3LvTag=function(xp){var l;try{l=window.s3Me&&s3Me._lvl?s3Me._lvl(xp||0):Math.floor((xp||0)/750)+1}catch(e){l=Math.floor((xp||0)/750)+1}return ' <span style="font-size:11px;font-weight:700;color:#5b50e6;white-space:nowrap">Lv '+l+'</span>'};</script>
+<style id="s3-brandfit">@media(max-width:480px){header h1{font-size:13px!important;letter-spacing:-.2px}header .w-10.h-10.rounded-xl.bg-gradient-to-br{width:34px;height:34px;font-size:12px;border-radius:10px}header .flex.items-center.gap-3{gap:8px}header #s3-chip,header .s3chip #s3-chip{padding:2px 4px!important;font-size:11px!important;gap:2px!important}header .s3rk{padding:3px 6px!important;font-size:11px!important}header button.s3ib{width:34px!important;min-width:34px!important}header .flex.items-center.justify-between{min-width:0}}</style><script>window.s3LvTag=function(xp){var l;try{l=window.s3Me&&s3Me._lvl?s3Me._lvl(xp||0):Math.floor((xp||0)/1000)+1}catch(e){l=Math.floor((xp||0)/1000)+1}return ' <span style="font-size:11px;font-weight:700;color:#5b50e6;white-space:nowrap">Lv '+l+'</span>'};</script>
+<style id="s3-shopx">.s3nc-rw{background:linear-gradient(90deg,#f43f5e,#f59e0b,#10b981,#3b82f6,#a855f7,#f43f5e);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;animation:s3rw 4s linear infinite}@keyframes s3rw{to{background-position:300% 0}}@media (prefers-reduced-motion:reduce){.s3nc-rw{animation:none!important}}</style>
+/* frames_epic.js — EPIC tiered avatar frames (approved mock_frames2 design).
+   Top tier (level 110) is a CHOICE: Dragon King (default) or Volt Emperor;
+   the student picks in Profile or Rewards, stored in own[] as 'fxb'.
+   Exposes window.s3Frx:
+     .av(fr, innerHtml, variant)  wraps the profile avatar in a per-tier frame
+     .nm(fr, variant)             display name ("Dragon King"/"Volt Emperor")
+   variant 'b' = Volt Emperor, anything else = Dragon King (only at level 110+).
+   Same 11 tiers/levels as the live FR table. CSS/SVG only,
+   transform/opacity/box-shadow animations, frozen for reduced-motion. */
+<style>
+.frx{position:relative;width:104px;height:104px;margin:6px auto;display:flex;align-items:center;justify-content:center}
+.frx .av{width:78px;height:78px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;position:relative;z-index:3;box-shadow:0 1px 4px rgba(0,0,0,.15);overflow:hidden}
+.frx .av span{filter:drop-shadow(0 2px 2px rgba(0,0,0,.22))}
+.frx-bronze .av{background:radial-gradient(circle at 35% 30%,#fef3c7,#fde68a)}
+.frx-gold .av{background:radial-gradient(circle at 35% 30%,#fffbeb,#fcd34d)}
+.frx-platinum .av{background:radial-gradient(circle at 35% 30%,#ffffff,#e2e8f0)}
+.frx-diamond .av{background:radial-gradient(circle at 35% 30%,#f0f9ff,#bae6fd)}
+.frx-master .av{background:radial-gradient(circle at 35% 30%,#f5f3ff,#ddd6fe)}
+.frx-titanium .av{background:radial-gradient(circle at 35% 30%,#f8fafc,#cbd5e1)}
+.frx-crystal .av{background:radial-gradient(circle at 35% 30%,#ecfeff,#a5f3fc)}
+.frx-inferno .av{background:radial-gradient(circle at 35% 30%,#7f1d1d,#1c0a0a)}
+.frx-galaxy .av{background:radial-gradient(circle at 35% 30%,#312e81,#0f172a)}
+.frx-mythic .av{background:radial-gradient(circle at 35% 30%,#4c1d95,#1e1b4b)}
+.frx-volt .av{background:radial-gradient(circle at 35% 30%,#1e3a8a,#0b1120)}
+.frx .av>span,.frx .av>img{width:100%;height:100%}
+.frx .rg{position:absolute;inset:8px;border-radius:50%}
+.frx .fe{position:absolute;border-radius:50%;pointer-events:none}
+.frx .ob{position:absolute;pointer-events:none;z-index:4}
+.frx .ob>i{display:block;width:8px;height:8px;border-radius:50%;margin:0 auto;font-style:normal}
+.frx .sk{position:absolute;width:7px;height:7px;border-radius:50%;background:#fff;z-index:4;box-shadow:0 0 5px #fff}
+.frx .pt{position:absolute;bottom:18px;width:5px;height:5px;border-radius:50%;z-index:2}
+.frx .rn{position:absolute;top:14px;width:5px;height:5px;border-radius:50%;z-index:2}
+.frx svg.dc{position:absolute;z-index:2;pointer-events:none;overflow:visible}
+.frx-plain .rg{background:#e2e8f0;inset:11px}
+.frx-bronze .rg{background:linear-gradient(135deg,#e6b17e,#8c5a2b 45%,#cd7f32 70%,#f0c896)}
+.frx-bronze .ob{inset:0;animation:frxspin 5s linear infinite}
+.frx-bronze .ob>i{background:#b45309;box-shadow:0 0 4px #92400e}
+.frx-bronze .ob.o2{animation-duration:7s;animation-direction:reverse}
+.frx-bronze .ob.o2>i{width:6px;height:6px;background:#e6b17e}
+.frx-gold .rg{background:linear-gradient(135deg,#fde68a,#b45309 40%,#fbbf24 65%,#fef3c7);box-shadow:0 0 10px rgba(245,158,11,.4)}
+.frx-gold .fe{inset:4px;background:conic-gradient(from 0deg,transparent 0 70%,rgba(255,255,255,.95) 78%,transparent 86%);animation:frxspin 3s linear infinite;z-index:2}
+.frx-gold .ob{inset:-4px;animation:frxspin 6s linear infinite}
+.frx-gold .ob>i{background:radial-gradient(circle at 35% 35%,#fef3c7,#f59e0b);width:9px;height:9px;box-shadow:0 0 5px rgba(245,158,11,.8)}
+.frx-gold .ob.o2{animation-delay:-2s}.frx-gold .ob.o3{animation-delay:-4s}
+.frx-platinum .rg{background:linear-gradient(135deg,#f8fafc,#94a3b8 40%,#e2e8f0 60%,#64748b)}
+.frx-platinum .fe{inset:8px;box-shadow:inset 0 0 16px rgba(148,163,184,.9),0 0 12px rgba(148,163,184,.5);animation:frxpulse 2.4s ease-in-out infinite;z-index:2}
+.frx-platinum .fe.a2{inset:2px;background:conic-gradient(from 0deg,transparent 0 40%,rgba(226,232,240,.9) 47%,transparent 55%,transparent 87%,rgba(226,232,240,.7) 93%,transparent);box-shadow:none;animation:frxspin 6s linear infinite}
+.frx-diamond .rg{background:linear-gradient(135deg,#e0f2fe,#38bdf8 35%,#f0f9ff 55%,#0ea5e9);box-shadow:0 0 16px rgba(56,189,248,.55)}
+.frx-diamond .sk{animation:frxtw 1.7s ease-in-out infinite}
+.frx-diamond .sk:nth-of-type(1){top:4px;left:48%}.frx-diamond .sk:nth-of-type(2){top:46%;right:2px;animation-delay:.5s}.frx-diamond .sk:nth-of-type(3){bottom:6px;left:24%;animation-delay:1s}.frx-diamond .sk:nth-of-type(4){top:24%;left:6%;animation-delay:1.4s;width:5px;height:5px}
+.frx-master .rg{background:linear-gradient(135deg,#c4b5fd,#6d28d9 45%,#a78bfa 70%,#4c1d95)}
+.frx-master .fe{inset:5px;box-shadow:0 0 22px rgba(124,58,237,.8);animation:frxpulse 1.9s ease-in-out infinite;z-index:2}
+.frx-master .ob{inset:-7px;animation:frxspin 8s linear infinite}
+.frx-master .ob>i{width:auto;height:auto;background:none;border-radius:0;color:#7c3aed;font-size:13px;text-shadow:0 0 6px #a78bfa}
+.frx-master .ob.o2{animation-delay:-2.6s}.frx-master .ob.o3{animation-delay:-5.3s}
+.frx-titanium .rg{background:repeating-conic-gradient(#e2e8f0 0 12deg,#94a3b8 12deg 24deg)}
+.frx-titanium .fe{inset:0;border:3px dashed #64748b;animation:frxspin 14s linear infinite;z-index:1}
+.frx-titanium .ob{inset:-3px;animation:frxspin 4.5s linear infinite}
+.frx-titanium .ob>i{background:radial-gradient(circle at 35% 35%,#f1f5f9,#64748b);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.frx-titanium .ob.o2{animation-delay:-2.25s}
+.frx-crystal .rg{background:linear-gradient(135deg,#a5f3fc,#0284c7 50%,#67e8f9);box-shadow:0 0 18px rgba(56,189,248,.75)}
+.frx-crystal .fe{inset:3px;background:conic-gradient(from 0deg,transparent 0 55%,rgba(255,255,255,.9) 64%,transparent 72%);animation:frxspin 4s linear infinite;z-index:2}
+.frx-crystal .fe.b2{inset:9px;background:conic-gradient(from 180deg,transparent 0 60%,rgba(165,243,252,.95) 70%,transparent 80%);animation:frxspin 5.5s linear infinite reverse}
+.frx-crystal .pt{background:#a5f3fc;box-shadow:0 0 5px #67e8f9;animation:frxrise 2.6s linear infinite}
+.frx-crystal .pt:nth-of-type(1){left:30%}.frrx .pt:nth-of-type(2){left:52%}
+.frx-crystal .pt:nth-of-type(2){left:52%;animation-delay:.9s}.frx-crystal .pt:nth-of-type(3){left:70%;animation-delay:1.7s}
+.frx-inferno .rg{background:linear-gradient(160deg,#fbbf24,#ef4444 45%,#7f1d1d 80%,#f97316)}
+.frx-inferno .fe{inset:4px;box-shadow:0 0 26px rgba(239,68,68,.85);animation:frxflick 1s ease-in-out infinite;z-index:2}
+.frx-inferno .pt{background:#fbbf24;box-shadow:0 0 6px #f97316;animation:frxrise 1.8s linear infinite}
+.frx-inferno .pt:nth-of-type(1){left:26%}.frx-inferno .pt:nth-of-type(2){left:44%;animation-delay:.5s}.frx-inferno .pt:nth-of-type(3){left:60%;animation-delay:1s}.frx-inferno .pt:nth-of-type(4){left:74%;animation-delay:1.4s}
+.frx-galaxy .rg{background:conic-gradient(#312e81,#7c3aed 25%,#0f172a 50%,#4338ca 75%,#312e81);animation:frxhue 8s linear infinite}
+.frx-galaxy .fe{inset:4px;box-shadow:0 0 24px rgba(139,92,246,.85);z-index:2}
+.frx-galaxy .ob{inset:-8px;animation:frxspin 7s linear infinite}
+.frx-galaxy .ob>i{width:11px;height:11px;background:radial-gradient(circle at 35% 35%,#fca5a5,#dc2626);box-shadow:0 0 6px rgba(252,165,165,.8)}
+.frx-galaxy .sk{animation:frxtw 2.1s ease-in-out infinite}
+.frx-galaxy .sk:nth-of-type(1){top:2px;left:30%}.frx-galaxy .sk:nth-of-type(2){top:58%;right:0;animation-delay:.7s}.frx-galaxy .sk:nth-of-type(3){bottom:8%;left:10%;animation-delay:1.2s}.frx-galaxy .sk:nth-of-type(4){top:20%;right:16%;animation-delay:1.6s;width:5px;height:5px}.frx-galaxy .sk:nth-of-type(5){bottom:26%;right:8%;animation-delay:.4s;width:4px;height:4px}
+.frx-mythic .rg{inset:6px;background:conic-gradient(#f43f5e,#f59e0b,#10b981,#3b82f6,#a855f7,#f43f5e);animation:frxspin 5s linear infinite}
+.frx-mythic .fe{inset:2px;box-shadow:0 0 30px rgba(168,85,247,.9);animation:frxpulse 2.2s ease-in-out infinite;z-index:2}
+.frx-mythic .wings{inset:-16px -22px;z-index:1;animation:frxflap 2.8s ease-in-out infinite;transform-origin:center}
+.frx-mythic .crown{top:-16px;left:50%;margin-left:-15px;width:30px;z-index:5;animation:frxbob 2.4s ease-in-out infinite}
+.frx-mythic .ob{inset:-10px;animation:frxspin 6s linear infinite}
+.frx-mythic .ob>i{width:9px;height:9px;background:linear-gradient(135deg,#f0abfc,#a855f7);transform:rotate(45deg);border-radius:2px;box-shadow:0 0 6px #d8b4fe}
+.frx-mythic .ob.o2{animation-delay:-2s}.frx-mythic .ob.o3{animation-delay:-4s}
+.frx-mythic .sk{animation:frxtw 1.5s ease-in-out infinite}
+.frx-mythic .sk:nth-of-type(1){top:6%;left:8%}.frx-mythic .sk:nth-of-type(2){bottom:8%;right:10%;animation-delay:.7s}
+.frx-volt .rg{inset:6px;background:conic-gradient(#e0f2fe,#38bdf8 30%,#1d4ed8 55%,#7dd3fc 80%,#e0f2fe);animation:frxspin 3.5s linear infinite}
+.frx-volt .fe{inset:2px;box-shadow:0 0 28px rgba(56,189,248,.9);animation:frxpulse 1.6s ease-in-out infinite;z-index:2}
+.frx-volt .bolts{inset:-14px -18px;z-index:1;animation:frxflap 3s ease-in-out infinite;transform-origin:center}
+.frx-volt .crown{top:-16px;left:50%;margin-left:-15px;width:30px;z-index:5;animation:frxbob 2s ease-in-out infinite}
+.frx-volt .rn{background:#bae6fd;box-shadow:0 0 6px #38bdf8;animation:frxfall 1.8s linear infinite}
+.frx-volt .rn:nth-of-type(1){left:24%}.frx-volt .rn:nth-of-type(2){left:50%;animation-delay:.6s}.frx-volt .rn:nth-of-type(3){left:72%;animation-delay:1.2s}
+@keyframes frxspin{to{transform:rotate(360deg)}}
+@keyframes frxpulse{50%{opacity:.5}}
+@keyframes frxtw{50%{opacity:.1}}
+@keyframes frxflick{50%{box-shadow:0 0 13px rgba(249,115,22,.5)}}
+@keyframes frxrise{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-58px);opacity:0}}
+@keyframes frxfall{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(62px);opacity:0}}
+@keyframes frxflap{50%{transform:scaleX(1.06) scaleY(.97)}}
+@keyframes frxbob{50%{transform:translateY(-4px)}}
+@keyframes frxhue{to{transform:rotate(360deg);filter:hue-rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.frx *{animation:none!important}}
+</style>
+<script>
+(function(){
+/* approved "11A Dragon King" wing + crown SVGs, plus Volt Emperor bolts/crown */
+const WINGS='<svg class="dc wings" viewBox="0 0 148 104"><defs><linearGradient id="frxwg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><g fill="url(#frxwg)" stroke="#b45309" stroke-width="1.2">'
+ +'<path d="M0 0 Q-8 -22 0 -42 Q8 -22 0 0 Z" transform="translate(46 68) rotate(-62) scale(1.25)"/>'
+ +'<path d="M0 0 Q-8 -22 0 -42 Q8 -22 0 0 Z" transform="translate(52 62) rotate(-38) scale(1.15)"/>'
+ +'<path d="M0 0 Q-8 -22 0 -42 Q8 -22 0 0 Z" transform="translate(58 58) rotate(-16)"/>'
+ +'<path d="M0 0 Q-8 -22 0 -42 Q8 -22 0 0 Z" transform="translate(102 68) rotate(62) scale(1.25)"/>'
+ +'<path d="M0 0 Q-8 -22 0 -42 Q8 -22 0 0 Z" transform="translate(96 62) rotate(38) scale(1.15)"/>'
+ +'<path d="M0 0 Q-8 -22 0 -42 Q8 -22 0 0 Z" transform="translate(90 58) rotate(16)"/></g></svg>';
+const CROWN='<svg class="dc crown" viewBox="0 0 30 22"><path d="M2 20 L4 6 L10 12 L15 2 L20 12 L26 6 L28 20 Z" fill="#fbbf24" stroke="#b45309" stroke-width="1.4"/><circle cx="15" cy="16" r="2" fill="#dc2626"/></svg>';
+const CROWN_B='<svg class="dc crown" viewBox="0 0 30 22"><path d="M2 20 L4 6 L10 12 L15 2 L20 12 L26 6 L28 20 Z" fill="#e0f2fe" stroke="#2563eb" stroke-width="1.4"/><circle cx="15" cy="16" r="2" fill="#38bdf8"/></svg>';
+const BOLTS='<svg class="dc bolts" viewBox="0 0 148 104"><path d="M24 30 L13 56 L21 56 L15 82 L36 50 L27 50 L36 30 Z" fill="#7dd3fc" stroke="#0284c7" stroke-width="1.2"/>'
+ +'<path d="M124 30 L113 56 L121 56 L115 82 L136 50 L127 50 L136 30 Z" fill="#bae6fd" stroke="#0284c7" stroke-width="1.2"/></svg>';
+const SHARDS=(c)=>'<svg class="dc" style="inset:0;width:100%;height:100%" viewBox="0 0 104 104">'
+ +'<path d="M52 2 L56 10 L52 18 L48 10 Z" fill="'+c+'"/><path d="M52 86 L56 94 L52 102 L48 94 Z" fill="'+c+'"/>'
+ +'<path d="M2 52 L10 48 L18 52 L10 56 Z" fill="'+c+'"/><path d="M86 52 L94 48 L102 52 L94 56 Z" fill="'+c+'"/></svg>';
+const FLAMES='<svg class="dc" style="left:50%;margin-left:-26px;bottom:2px;width:52px;height:30px" viewBox="0 0 52 30">'
+ +'<path d="M10 30 C4 22 8 14 14 10 C13 16 16 18 18 14 C17 20 22 22 26 16 C24 24 30 22 32 14 C34 18 38 16 37 10 C44 15 48 22 42 30 Z" fill="#f97316" opacity=".9"/>'
+ +'<path d="M18 30 C15 25 18 20 22 17 C22 21 25 22 26 19 C28 23 32 22 31 17 C36 21 38 26 34 30 Z" fill="#fbbf24"/></svg>';
+const OB=(n)=>{let h='';for(let i=1;i<=n;i++)h+='<div class="ob'+(i>1?' o'+i:'')+'"><i></i></div>';return h};
+const RUNES=()=>'<div class="ob"><i>✦</i></div><div class="ob o2"><i>✧</i></div><div class="ob o3"><i>✦</i></div>';
+const SK=(n)=>{let h='';for(let i=0;i<n;i++)h+='<span class="sk"></span>';return h};
+const PT=(n)=>{let h='';for(let i=0;i<n;i++)h+='<span class="pt"></span>';return h};
+const RN=(n)=>{let h='';for(let i=0;i<n;i++)h+='<span class="rn"></span>';return h};
+const DECO={
+ plain:'',
+ bronze:OB(2),
+ gold:'<div class="fe"></div>'+OB(3),
+ platinum:'<div class="fe"></div><div class="fe a2"></div>',
+ diamond:SHARDS('#7dd3fc')+SK(4),
+ master:'<div class="fe"></div>'+RUNES(),
+ titanium:'<div class="fe"></div>'+OB(2),
+ crystal:'<div class="fe"></div><div class="fe b2"></div>'+SHARDS('#a5f3fc')+PT(3),
+ inferno:'<div class="fe"></div>'+FLAMES+PT(4),
+ galaxy:'<div class="fe"></div>'+OB(1)+SK(5),
+ mythic:WINGS+'<div class="fe"></div>'+CROWN+OB(3)+SK(2),
+ volt:BOLTS+'<div class="fe"></div>'+CROWN_B+RN(3)
+};
+function keyOf(fr,variant){
+ const top=fr&&fr[0]>=110;
+ if(top)return variant==='b'?'volt':'mythic';
+ return String((fr&&fr[1])||'plain').toLowerCase();
+}
+function av(fr,innerHtml,variant){
+ try{
+  const key=keyOf(fr,variant);
+  const deco=DECO[key]!==undefined?DECO[key]:'';
+  return '<div class="frx frx-'+key+'"><div class="rg"></div>'+deco
+   +'<div class="av">'+innerHtml+'</div></div>';
+ }catch(e){return innerHtml}
+}
+function nm(fr,variant){
+ if(fr&&fr[0]>=110)return variant==='b'?'Volt Emperor':'Dragon King';
+ return (fr&&fr[1])||'Plain';
+}
+window.s3Frx={av:av,nm:nm};
+})();
+</script>
+
 </body>
 </html>
