@@ -8324,27 +8324,31 @@ async function profile(){const s=SS();if(!s||s.role==='teacher'||needNet())retur
   const bg=W.eq.g&&BG[W.eq.g]?'background:'+BG[W.eq.g]:'',nc=W.eq.n&&NC[W.eq.n]?'color:'+NC[W.eq.n]:'';
   const badge=W.eq.b?'<span class="s3bd" style="display:inline-block;padding:5px 10px;border-radius:12px;background:rgba(127,127,127,.15);margin:3px;font-size:13px">'+esc((SHOP.find(i=>i[0]===W.eq.b)||[])[2].replace(' badge',''))+'</span>':'<span class="s3sub">No badge yet. Pick one in the Shop.</span>';
   ov('My profile','<div class="mc" style="text-align:center;'+bg+'">'+(window.s3Frx?s3Frx.av(fr,avInner(W.av,s.name,78),(W.own||[]).includes('fxb')?'b':'a'):'<div class="s3av" style="--g:'+fr[2]+'aa;width:96px;height:96px;margin:6px auto;border-radius:50%;border:6px solid '+fr[2]+';overflow:hidden">'+avInner(W.av,s.name,96)+'</div>')+(W.pv?'<div class="s3sub" style="margin:2px 0">New picture waiting for your teacher</div>':'')+(L>=110?'<div style="margin:0 0 6px"><div class="s3sub" style="margin-bottom:4px">Top frame · switch anytime</div><button class="s3btn ghost" style="margin:0 3px;'+(fvb?'':'border-color:#4f46e5;font-weight:800')+'" onclick="s3Me.framePick(\'a\').then(()=>s3Me.profile())">🐉 Dragon King'+(fvb?'':' ✓')+'</button><button class="s3btn ghost" style="margin:0 3px;'+(fvb?'border-color:#4f46e5;font-weight:800':'')+'" onclick="s3Me.framePick(\'b\').then(()=>s3Me.profile())">⚡ Volt Emperor'+(fvb?' ✓':'')+'</button></div>':'')+'<button class="s3btn ghost" style="margin:2px 0 6px" onclick="s3Me.pic()">Change picture</button><div class="'+(W.eq.n==='nrw'?'s3nc-rw':'')+'" style="font-size:22px;font-weight:800;'+nc+'">'+esc(FN(s.name))+'</div><div class="s3sub" style="opacity:.85">'+esc(tl)+' · Level '+L+' · '+(window.s3Frx?s3Frx.nm(fr,fvb?'b':'a'):fr[1])+' frame</div></div>'+
+   framesSec({xp:xp})+
    '<div class="mc" style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;border-radius:50%;background:'+col+'"></div><div style="font-size:24px;font-weight:800">'+(acc==null?'–':acc+'%')+'</div><div class="s3sub">'+(acc==null?'Answer 10 questions to see your accuracy':'Your accuracy')+'</div></div>'+
    '<div class="mc"><div style="font-weight:800;margin-bottom:6px">Badge</div>'+badge+'</div>'+
    '<div class="mc"><div class="mr"><span>Duels</span><b>'+W.w+' W · '+W.l+' L'+(W.dr?' · '+W.dr+' D':'')+'</b></div><div class="mr"><span>Next frame</span><b>'+nextFrame(L)+'</b></div></div>'+
    '<div class="mc" style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:18px">🪙 <b>'+W.tk+'</b> tokens</div>'+mb('Shop','s3Me.shop()')+'</div>')}catch(e){ov('My profile','<div class="mc">Could not load. '+esc((e&&e.code)||'')+'</div>')}}
 /* ---- shop ---- */
-function framesSec(){let L=1;try{L=lvl(S3.statsFor(SS()).xp)}catch(e){}
- const cell=(fr,variant,label,wide)=>{const un=variant?false:L>=fr[0],isCur=!variant&&frame(L)&&frame(L)[0]===fr[0];
+function nextBar(xp){const L=lvl(xp),cur=frame(L),nxt=FR.slice().reverse().find(f=>f[0]>L);
+ if(!nxt)return '<div style="font-size:12.5px;font-weight:700;margin-bottom:6px">\u{1F451} Top frame reached \u2014 Legend!</div>';
+ const base=(cur[0]-1)*1000,top=(nxt[0]-1)*1000,pc=Math.min(100,Math.max(0,Math.round(((xp||0)-base)/(top-base)*100))),left=Math.max(0,top-(xp||0));
+ return '<div style="font-size:12.5px;font-weight:700;margin-bottom:3px">Next: '+nxt[1]+' at Level '+nxt[0]+' \u00b7 '+left.toLocaleString()+' XP to go</div><div style="height:8px;border-radius:99px;background:rgba(127,127,127,.18);overflow:hidden;margin-bottom:8px"><div style="height:100%;width:'+pc+'%;background:'+nxt[2]+';border-radius:99px"></div></div>'}
+function framesSec(prog){let L=1;try{L=lvl(S3.statsFor(SS()).xp)}catch(e){}
+ const cell=(fr,variant,label,wide)=>{const un=variant?false:L>=fr[0],lockd=variant?L<110:!un,isCur=!variant&&frame(L)&&frame(L)[0]===fr[0];
   const fx=(window.s3Frx&&s3Frx.av)?s3Frx.av(fr,'<span style="font-size:34px;line-height:78px;display:block;text-align:center">\u{1F981}</span>',variant):'';
-  return '<div style="width:'+(wide?'auto':'25%')+';min-width:78px;text-align:center;padding:4px '+(wide?'16px':'0')+' 8px">'
-   +'<div style="height:66px;display:flex;justify-content:center;align-items:flex-start;overflow:visible"><div style="transform:scale(.6);transform-origin:top center">'+fx+'</div></div>'
+  return '<div style="width:'+(wide?'auto':'25%')+';min-width:78px;text-align:center;padding:4px '+(wide?'16px':'0')+' 8px;'+(isCur?'background:rgba(22,163,74,.12);border-radius:14px':'')+'">'
+   +'<div style="height:66px;display:flex;justify-content:center;align-items:flex-start;overflow:visible"><div style="transform:scale(.6);transform-origin:top center;'+(lockd?'filter:grayscale(1);opacity:.45':'')+'">'+fx+'</div></div>'
    +'<div style="font-size:11.5px;font-weight:700">'+label+'</div>'
-   +'<div style="font-size:11px;font-weight:700;'+(isCur?'color:#16a34a':'opacity:.55')+'">'+(variant?'Level 110 pick':isCur?'\u2713 Your frame':un?'Unlocked':'\u{1F512} Level '+fr[0])+'</div></div>'};
+   +'<div style="font-size:11px;font-weight:700;'+(isCur?'color:#16a34a':'opacity:.55')+'">'+(variant?(L>=110?'Level 110 pick \u00b7 free':'\u{1F512} Level 110'):isCur?'\u2713 Your frame':un?'Unlocked':'\u{1F512} Level '+fr[0])+'</div></div>'};
  const grid=FR.slice().reverse().filter(f=>f[0]<110).map(f=>cell(f,null,f[1]+' frame')).join('');
  const myth=FR.find(f=>f[0]>=110);
  const tree='<div style="font-size:12px;font-weight:800;opacity:.7;margin:10px 0 2px;text-align:center">Level 110 epic pick — free, choose on your Profile</div>'
   +'<div style="display:flex;justify-content:center">'+cell(myth,null,myth[1]+' frame',true)+'</div>'
   +'<svg width="180" height="30" viewBox="0 0 180 30" style="display:block;margin:0 auto"><path d="M90 2 V10 M90 10 L34 28 M90 10 L146 28" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>'
   +'<div style="display:flex;justify-content:center;gap:6px">'+cell(myth,'a','\u{1F409} Dragon King',true)+cell(myth,'b','\u26A1 Volt Emperor',true)+'</div>';
- return '<div class="mc"><div style="font-weight:800;margin-bottom:4px">\u{1F5BC}️ Avatar frames <span style="font-size:11px;background:#64748b;color:#fff;border-radius:8px;padding:2px 7px;vertical-align:2px">NOT FOR SALE</span></div>'
-  +'<div style="font-size:12px;opacity:.7;margin-bottom:6px">Frames unlock automatically as you level up — you are level '+L+' now.</div>'
-  +'<div style="display:flex;flex-wrap:wrap">'+grid+'</div>'+tree+'</div>'}
+ const head=prog?'<div style="font-weight:800;margin-bottom:4px">\u{1F5BC}️ Frames \u2014 level up to unlock</div>'+nextBar(prog.xp):'<div style="font-weight:800;margin-bottom:4px">\u{1F5BC}️ Avatar frames <span style="font-size:11px;background:#64748b;color:#fff;border-radius:8px;padding:2px 7px;vertical-align:2px">NOT FOR SALE</span></div><div style="font-size:12px;opacity:.7;margin-bottom:6px">Frames unlock automatically as you level up \u2014 you are level '+L+' now.</div>';
+ return '<div class="mc">'+head+'<div style="display:flex;flex-wrap:wrap">'+grid+'</div>'+tree+'</div>'}
 async function shop(msg){const s=SS();if(!s||s.role==='teacher'||needNet())return;const x=fx();
  try{const W=await wget(x.uid),own=id=>W.own.includes(id),eqd=i=>W.eq[i[1]]===i[0];
   const btn=i=>own(i[0])?(eqd(i)?mb('Equipped',"s3Me.eq('"+i[0]+"')",1):mb('Equip',"s3Me.eq('"+i[0]+"')")):mb('\u{1FA99} '+i[3],"s3Me.buy('"+i[0]+"')");
