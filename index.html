@@ -10657,5 +10657,672 @@ window.s3Frx={av:av,nm:nm};
 </script>
 
 
+<script id="s3-teamgames">
+/* S3 Class Games Pack 3: Team Challenge (split-screen prep, teams solve in turns)
+   + Act It Out (dialogue on screen, picked students perform it in class).
+   Teacher-only (reached from Class games). Content comes from the existing
+   question bank and listening dialogues only; no question data is modified. */
+(function(){
+const S=window.S3||{};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a};
+const isT=()=>{try{return !!((window.s3IsTeacher&&s3IsTeacher())||(S.isTeacher&&S.isTeacher()))}catch(e){return false}};
+const curCls=()=>{try{return (window.s3Att&&s3Att.curCls&&s3Att.curCls())||'all'}catch(e){return 'all'}};
+const allQ=()=>{let p=[];try{p=(typeof state!=='undefined'&&state.allQuestions)||[]}catch(e){p=[]}if(!p.length){try{p=getFilteredQuestions()}catch(e){p=[]}}return (p||[]).filter(q=>q&&q.options&&q.options.length>1&&q.answer!=null)};
+const les=()=>{try{return (window.s3G2&&s3G2.lesson&&s3G2.lesson())||{u:0,l:0}}catch(e){return {u:0,l:0}}};
+const lesQ=()=>{const LP=les();return allQ().filter(q=>!LP.u||(+q.unit===+LP.u&&(!LP.l||+q.lesson===+LP.l)))};
+const lesLabel=()=>{const LP=les();return LP.u?('Unit '+LP.u+(LP.l?' · Lesson '+LP.l:' · all lessons')):'All units'};
+const units=()=>{const s={};allQ().forEach(q=>{if(q.unit)s[+q.unit]=1});return Object.keys(s).map(Number).sort((a,b)=>a-b)};
+const lessonsOf=u=>{const s={};allQ().forEach(q=>{if(+q.unit===+u&&q.lesson)s[+q.lesson]=1});return Object.keys(s).map(Number).sort((a,b)=>a-b)};
+const present=()=>{try{const ab=new Set();(window.s3Att&&s3Att.absentNames?s3Att.absentNames():[]).forEach(n=>ab.add(n));
+ return (((window.S3&&S3.CLS&&S3.CLS().students)||[]).filter(s=>s&&s.name)).filter(s=>String(s.cls)===String(curCls())&&!ab.has(s.name)).sort((a,b)=>a.name.localeCompare(b.name))}catch(e){return []}};
+/* shared daily class-game XP cap (same key/shape as the games2 module, so caps stay shared) */
+const CAPK=()=>'g2cap_'+curCls()+'_'+S.dayKey();
+async function award2(name,n,tag){
+ if(!n)return 0;
+ if(!(window.S3CLOUD&&S3CLOUD.on&&S3CLOUD.award&&window.s3Att&&s3Att.idOf&&s3Att.idOf(name)))return -1;
+ const k='cg|'+name,st=S.ls.get(CAPK(),{})||{},used=st[k]|0,n2=Math.min(n,15-used);
+ if(n2<=0)return 0;
+ st[k]=used+n2;S.ls.set(CAPK(),st);
+ try{await S3CLOUD.award({id:'tg'+tag+Date.now().toString(36)+Math.random().toString(36).slice(2,6),uid:s3Att.idOf(name),name,n:n2,t:Date.now()});
+  try{window.s3Cheer&&s3Cheer.award(name,n2,tag)}catch(e){}
+  return n2}
+ catch(e){const s2=S.ls.get(CAPK(),{})||{};s2[k]=Math.max(0,(s2[k]|0)-n2);S.ls.set(CAPK(),s2);return -2}}
+const xpTxt=r=>r===-1?'offline: no XP saved':r===-2?'could not save XP':r===0?'daily class-game XP limit reached':'+'+r+' XP saved';
+/* anti-repeat draw so questions change every play */
+function drawN(pool,key,n){const rk='s3tgrec_'+curCls()+'_'+key;let rec=S.ls.get(rk,[]);
+ const cap=Math.max(n,Math.min(60,Math.floor(pool.length/2)));
+ let fresh=pool.filter(x=>rec.indexOf(x.id)<0);
+ if(fresh.length<n){rec=[];fresh=pool.slice()}
+ const pick=shuf(fresh).slice(0,n);S.ls.set(rk,rec.concat(pick.map(q=>q.id)).slice(-cap));return pick}
+const TC=[['🔴','#dc2626'],['🔵','#2563eb'],['🟢','#16a34a'],['🟡','#ca8a04']];
+const RC=['#2563eb','#16a34a','#ca8a04','#7c3aed'];
+const fmtT=s=>{s=Math.max(0,s|0);return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2)};
+const card=h=>'<div class="bg-white rounded-2xl border p-5" style="margin-bottom:12px">'+h+'</div>';
+const btn=(t,f,g)=>'<button class="s3btn'+(g?' ghost':'')+'" style="margin:3px" onclick="'+f+'">'+t+'</button>';
+const OKB='border:2px solid #16a34a;background:#dcfce7;color:#14532d',NOB='border:2px solid #e11d48;background:#ffe4e6;color:#881337';
+const dRank=q=>({easy:1,medium:2,hard:3})[String(q.difficulty||'medium').toLowerCase()]||2;
+let tgTi=null,VIEW=null;
+function stopClock(){if(tgTi){clearInterval(tgTi);tgTi=null}}
+function ov(title,body){let o=$('s3tg-ov');if(!o){o=document.createElement('div');o.id='s3tg-ov';o.style.cssText='position:fixed;inset:0;z-index:99992;background:var(--bg,#f1f5f9);overflow:auto;-webkit-overflow-scrolling:touch';document.body.appendChild(o)}
+ o.innerHTML='<div style="max-width:640px;margin:0 auto;padding:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:18px">'+title+'</b><button class="s3btn ghost" onclick="s3TG.close()">✕ Close</button></div>'+body+'</div>';o.scrollTop=0}
+function close(){stopClock();try{window.s3Listen&&s3Listen.stopAudio&&s3Listen.stopAudio()}catch(e){}const o=$('s3tg-ov');if(o)o.remove();VIEW=null}
+function setU(v){try{window.s3G2&&s3G2.setU(v)}catch(e){}rerender()}
+function setL(v){try{window.s3G2&&s3G2.setL(v)}catch(e){}rerender()}
+function rerender(){if(VIEW==='tc'&&TG&&TG.phase==='setup')tcSetupDraw();else if(VIEW==='ao'&&AO)aoDraw()}
+function lesSelects(){const LP=les(),us=units(),ls=LP.u?lessonsOf(LP.u):[];
+ return '<div style="margin-bottom:8px"><select class="s3in" style="padding:6px;max-width:130px" onchange="s3TG.setU(this.value)"><option value="0">All units</option>'+us.map(u=>'<option value="'+u+'"'+(u===LP.u?' selected':'')+'>Unit '+u+'</option>').join('')+'</select> <select class="s3in" style="padding:6px;max-width:140px" onchange="s3TG.setL(this.value)"><option value="0">All lessons</option>'+ls.map(l=>'<option value="'+l+'"'+(l===LP.l?' selected':'')+'>Lesson '+l+'</option>').join('')+'</select></div>'}
+/* ================= TEAM CHALLENGE ================= */
+let TG=null;
+const tcKey=()=>'s3tg_game_'+curCls();
+function tcSave(){try{S.ls.set(tcKey(),TG)}catch(e){}}
+function tcOpen(){if(!isT())return;VIEW='tc';
+ const saved=S.ls.get(tcKey(),null);
+ if(saved&&saved.teams&&saved.phase&&saved.phase!=='setup'&&saved.phase!=='done'){TG=saved;
+  ov('🏆 Team Challenge',card('<div class="s3sub" style="text-align:center">A game is in progress: '+TG.teams.length+' teams, scores '+TG.teams.map((t,i)=>TC[i][0]+' '+t.score).join(' · ')+'.</div><div style="text-align:center;margin-top:12px">'+btn('▶️ Resume','s3TG.tcResume()')+btn('🆕 New game','s3TG.tcSetup(1)',1)+'</div>'));return}
+ tcSetup()}
+function tcResume(){const T=TG;if(!T)return;
+ if(T.phase==='prep')tcPrep();else if(T.phase==='done')tcEnd();else tcInter(T.cur||0)}
+function tcSetup(fresh){stopClock();if(fresh||!TG)TG={phase:'setup',n:2,per:5,qsec:20,prep:120,teams:null,cur:0,qi:0};VIEW='tc';tcSetupDraw()}
+function tcSet(k,v){const T=TG;if(!T)return;T[k]=v;tcSetupDraw()}
+function tcSetupDraw(){const T=TG;
+ const seg=(label,cur,opts,k)=>'<div style="margin:10px 0"><div class="s3sub" style="margin-bottom:4px;font-weight:700">'+label+'</div>'+opts.map(o=>'<button class="s3btn'+(o[0]===cur?'':' ghost')+'" style="margin:3px;min-width:46px" onclick="s3TG.tcSet(\''+k+'\','+o[0]+')">'+o[1]+'</button>').join('')+'</div>';
+ ov('🏆 Team Challenge',card(lesSelects()
+  +'<div class="s3sub" style="margin-bottom:6px">📖 Questions from <b>'+esc(lesLabel())+'</b> · '+lesQ().length+' available</div>'
+  +seg('How many teams?',T.n,[[2,'2 teams'],[3,'3 teams'],[4,'4 teams']],'n')
+  +seg('Questions for each team',T.per,[[3,'3'],[5,'5'],[7,'7']],'per')
+  +seg('Seconds per question',T.qsec,[[15,'15s'],[20,'20s'],[30,'30s']],'qsec')
+  +seg('Prep time',T.prep,[[60,'1 min'],[120,'2 min'],[180,'3 min']],'prep')
+  +'<div class="s3sub" style="margin-top:8px">The screen splits one panel per team. Each team gets its OWN questions with the same difficulty mix, prepares answers during prep time, then teams come up and solve in turns. Easy 1 pt · Medium 2 pts · Hard 3 pts · +1 fast bonus.</div>'
+  +'<div style="text-align:center;margin-top:12px">'+btn('🎬 Build the game','s3TG.tcBuild()')+'</div>'))}
+function tcBuild(){const T=TG,pool=lesQ(),need=T.n*T.per;
+ if(pool.length<need){ov('🏆 Team Challenge',card(lesSelects()+'<div class="s3sub" style="text-align:center">Not enough questions in '+esc(lesLabel())+': need '+need+' ('+T.n+' teams × '+T.per+'), have '+pool.length+'.<br>Pick fewer teams/questions, or choose "All units".</div><div style="text-align:center;margin-top:10px">'+btn('← Back','s3TG.tcSetup()')+'</div>'));return}
+ const samp=drawN(pool,'tc',need);
+ const sorted=samp.slice().sort((a,b)=>dRank(b)-dRank(a));
+ const teams=[];for(let i=0;i<T.n;i++)teams.push({qs:[],score:0});
+ const idxs=teams.map((_,i)=>i),seq=[];let fwd=true;
+ while(seq.length<need){const pass=fwd?idxs:idxs.slice().reverse();for(let k=0;k<pass.length&&seq.length<need;k++)seq.push(pass[k]);fwd=!fwd}
+ sorted.forEach((q,k)=>teams[seq[k]].qs.push(q));
+ teams.forEach(t=>{t.qs=shuf(t.qs)});
+ T.teams=teams;T.cur=0;T.qi=0;tcSave();tcPrep()}
+function tcPrep(){const T=TG;T.phase='prep';T.left=T.prep;tcSave();tcPrepDraw();
+ stopClock();tgTi=setInterval(()=>{const T2=TG;if(!T2||T2.phase!=='prep'){stopClock();return}
+  T2.left--;const e=$('tg-pt');if(e)e.textContent=fmtT(T2.left);
+  if(T2.left<=0){stopClock();tcInter(0)}},1000)}
+function tcPrepDraw(){const T=TG;
+ const grid='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:8px">'+T.teams.map((tm,i)=>'<div style="border:2px solid '+TC[i][1]+';border-radius:14px;overflow:hidden;background:var(--surf,#fff)">'
+  +'<div style="background:'+TC[i][1]+';color:#fff;font-weight:800;padding:6px 10px;font-size:14px">'+TC[i][0]+' Team '+'ABCD'[i]+' · '+tm.qs.length+' questions</div>'
+  +'<div style="padding:8px;max-height:52vh;overflow:auto">'+tm.qs.map((q,k)=>'<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;line-height:1.45">'+(k+1)+'. '+esc(q.question)+'</div><div style="font-size:12px;opacity:.85;line-height:1.55;margin-top:2px">'+q.options.map((o,j)=>'<div>'+'ABCD'[j]+'. '+esc(o)+'</div>').join('')+'</div></div>').join('')+'</div></div>').join('')+'</div>';
+ ov('🏆 Team Challenge · Prep',card('<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800"><span>📝 Prep time — prepare YOUR team\'s questions on paper</span><span style="font-size:18px">⏱️ <span id="tg-pt">'+fmtT(T.left)+'</span></span></div>'
+  +'<div class="s3sub" style="margin:6px 0 10px">Answers are hidden. When prep ends, each team comes up and solves its own set in turns.</div>'
+  +grid
+  +'<div style="text-align:center;margin-top:12px">'+btn('▶️ Start solving now','s3TG.tcInter(0)')+'</div>'))}
+function scoreStrip(){const T=TG;return '<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">'+T.teams.map((tm,i)=>'<span style="border-radius:999px;padding:4px 12px;font-weight:800;font-size:13px;border:2px solid '+TC[i][1]+';'+(i===T.cur&&T.phase!=='done'?'background:'+TC[i][1]+';color:#fff':'color:'+TC[i][1])+'">'+TC[i][0]+' '+'ABCD'[i]+': '+tm.score+'</span>').join('')+'</div>'}
+function tcInter(i){stopClock();const T=TG;T.phase='inter';T.cur=i;T.qi=0;tcSave();
+ const tm=T.teams[i];
+ ov('🏆 Team Challenge',card(scoreStrip()
+  +'<div style="text-align:center;padding:26px 0"><div style="font-size:54px">'+TC[i][0]+'</div><div style="font-size:26px;font-weight:800;color:'+TC[i][1]+';margin:8px 0">Team '+'ABCD'[i]+', you\'re up!</div><div class="s3sub">Come up to the screen. '+tm.qs.length+' questions · '+T.qsec+' seconds each.</div><div style="margin-top:16px">'+btn('▶️ Start Team '+'ABCD'[i],'s3TG.tcTurn()')+'</div></div>'))}
+function tcTurn(){const T=TG,i=T.cur,tm=T.teams[i];T.phase='turn';
+ if(T.qi>=tm.qs.length){if(i+1<T.teams.length)tcInter(i+1);else tcEnd();return}
+ T.pick=null;T.judged=false;T.left=T.qsec;T.t0=Date.now();tcSave();tcTurnDraw();
+ stopClock();tgTi=setInterval(()=>{const T2=TG;if(!T2||T2.phase!=='turn'||T2.judged){stopClock();return}
+  T2.left--;const e=$('tg-qt');if(e)e.textContent=Math.max(0,T2.left)+'s';
+  if(T2.left<=0){stopClock();tcPick(-1)}},1000)}
+function tcTurnDraw(){const T=TG,i=T.cur,tm=T.teams[i],q=tm.qs[T.qi],done=T.judged;
+ const opts=q.options.map((o,j)=>{let st='display:block;width:100%;text-align:left;padding:12px;border-radius:12px;margin-bottom:8px;font-size:16px;color:var(--tx);cursor:pointer;border:1px solid var(--bd);background:var(--surf2)';
+  if(done&&j===q.answer)st+=';'+OKB;else if(done&&j===T.pick)st+=';'+NOB;else if(done)st+=';opacity:.55';
+  return '<button '+(done?'disabled ':'')+'onclick="s3TG.tcPick('+j+')" style="'+st+'"><b>'+'ABCD'[j]+'.</b> '+esc(o)+(done&&j===q.answer?' ✅':done&&j===T.pick?' ❌':'')+'</button>'}).join('');
+ ov('🏆 Team Challenge · '+TC[i][0]+' Team '+'ABCD'[i],card(scoreStrip()
+  +'<div style="display:flex;justify-content:space-between;font-weight:800"><span>Question '+(T.qi+1)+' of '+tm.qs.length+'</span><span style="font-size:17px">⏱️ <span id="tg-qt">'+T.left+'s</span></span></div>'
+  +'<div style="font-size:19px;font-weight:700;line-height:1.6;margin:10px 0">'+esc(q.question)+'</div>'+opts
+  +(done?'<div class="s3sub" style="text-align:center;margin-top:8px">'+T.msg+'</div><div style="text-align:center;margin-top:10px">'+btn('Next ▶','s3TG.tcNext()')+'</div>':'<div class="s3sub" style="text-align:center;margin-top:6px">The team calls out its answer — tap what they picked.</div>')))}
+function tcPick(j){const T=TG;if(!T||T.phase!=='turn'||T.judged)return;T.judged=true;T.pick=j;stopClock();
+ const i=T.cur,tm=T.teams[i],q=tm.qs[T.qi],ok=j===q.answer,base=dRank(q);
+ const fast=ok&&(Date.now()-T.t0)<=10000?1:0;
+ if(ok)tm.score+=base+fast;
+ T.msg=(ok?'✅ Correct! +'+base+(fast?' +1 fast bonus':'')+' for Team '+'ABCD'[i]:(j<0?'⏰ Time is up. ':'❌ Not correct. ')+'The answer was <b>'+esc(q.options[q.answer])+'</b>')+(q.explanation?'<br>💡 '+esc(q.explanation):'');
+ tcSave();tcTurnDraw()}
+function tcNext(){const T=TG;if(!T||T.phase!=='turn')return;T.qi++;tcTurn()}
+function tcEnd(){stopClock();const T=TG;T.phase='done';tcSave();
+ const sc=T.teams.map((t,i)=>[i,t.score]).sort((a,b)=>b[1]-a[1]),top=sc[0][1],wins=sc.filter(x=>x[1]===top).map(x=>x[0]);
+ ov('🏆 Team Challenge · Results',card('<div style="text-align:center"><div style="font-size:50px">'+(wins.length>1?'🤝':'🏆')+'</div><div style="font-size:22px;font-weight:800;margin:8px 0">'+(wins.length>1?'A noble tie: '+wins.map(i=>'Team '+'ABCD'[i]).join(' & ')+'!':'Team '+'ABCD'[wins[0]]+' wins!')+'</div></div>'
+  +sc.map((x,rk)=>'<div style="display:flex;justify-content:space-between;align-items:center;border:2px solid '+TC[x[0]][1]+';border-radius:12px;padding:10px 14px;margin-bottom:8px;font-weight:800"><span>'+(rk===0&&wins.length===1?'🏆 ':'')+TC[x[0]][0]+' Team '+'ABCD'[x[0]]+'</span><span style="font-size:19px;color:'+TC[x[0]][1]+'">'+x[1]+' pts</span></div>').join('')
+  +'<div style="text-align:center;margin-top:12px">'+btn('🔁 New game','s3TG.tcSetup(1)')+btn('Close','s3TG.close()',1)+'</div>'))}
+/* ================= ACT IT OUT ================= */
+const dlg=()=>(window.S3_LISTEN_LESSONS||[]).map((L,ix)=>({L,ix,roles:[...new Set(L.turns.map(t=>String(t[0]||'').trim()).filter(s=>s))]})).filter(d=>d.roles.length>=2&&d.L.turns.length>=4);
+const plain=t=>String(t||'').replace(/\{([^|}]+)\|\d+\}/g,'$1');
+let AO=null;
+function aoOpen(){if(!isT())return;VIEW='ao';const D=dlg();
+ if(!D.length){ov('🎭 Act It Out',card('<div class="s3sub">No dialogues in the bank yet.</div>'));return}
+ let ix=0;const LP=les();
+ if(LP.u){const f=D.findIndex(d=>+d.L.unit===+LP.u);if(f>=0)ix=f}
+ AO={di:ix,actors:{},mode:'script',li:0,msg:''};aoDraw()}
+function aoDraw(){const A=AO;if(!A)return;const D=dlg(),d=D[A.di],L=d.L,roles=d.roles,names=present().map(s=>s.name);
+ const pick='<div style="margin-bottom:8px"><select class="s3in" style="padding:6px;max-width:100%" onchange="s3TG.aoDlg(this.value)">'+D.map((x,k)=>'<option value="'+k+'"'+(k===A.di?' selected':'')+'>Unit '+x.L.unit+' · '+esc(x.L.title)+'</option>').join('')+'</select></div>';
+ const roleRows=roles.slice(0,2).map((r,k)=>'<div style="display:flex;align-items:center;gap:8px;margin:6px 0;flex-wrap:wrap"><span style="font-weight:800;color:'+RC[k]+'">'+esc(r)+' →</span>'
+  +(names.length?'<select class="s3in" style="padding:6px;flex:1;min-width:150px" onchange="s3TG.aoActor('+k+',this.value)"><option value="">— pick a student —</option>'+names.map(n=>'<option'+(n===A.actors[k]?' selected':'')+' value="'+esc(n)+'">'+esc(n)+'</option>').join('')+'</select>'
+   :'<input class="s3in" style="padding:6px;flex:1;min-width:150px" placeholder="Student name" value="'+esc(A.actors[k]||'')+'" onchange="s3TG.aoActor('+k+',this.value)">')+'</div>').join('');
+ const bothPicked=roles.slice(0,2).every((r,k)=>A.actors[k]);
+ const awardRow=(names.length?'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+roles.slice(0,2).map((r,k)=>A.actors[k]?'<button class="s3btn ghost" style="margin:2px" onclick="s3TG.aoAward('+k+')">🎁 +2 XP to '+esc(A.actors[k])+'</button>':'').join('')+'</div>':'')
+  +(A.msg?'<div class="s3sub" style="text-align:center;margin-top:6px">'+A.msg+'</div>':'');
+ const rolesCard=card('<div style="font-weight:800;margin-bottom:4px">👥 Who is performing?</div>'+roleRows
+  +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+(names.length?btn('🎲 Pick for me','s3TG.aoPick()',1):'')+btn('🔀 Swap','s3TG.aoSwap()',1)+'</div>'+awardRow);
+ if(A.mode==='prompt'){const t=L.turns[A.li],ri=roles.indexOf(String(t[0]||'').trim()),actor=A.actors[ri];
+  ov('🎭 Act It Out · '+esc(L.title),pick+card('<div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:6px"><span style="color:'+RC[ri<0?0:ri]+'">'+esc(t[0]||'Speaker')+(actor?' · 👤 '+esc(actor):'')+'</span><span>Line '+(A.li+1)+' of '+L.turns.length+'</span></div>'
+   +'<div style="font-size:24px;font-weight:800;line-height:1.55;min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px">'+esc(plain(t[1]))+'</div>'
+   +'<div style="display:flex;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap">'+btn('◀ Back','s3TG.aoNav(-1)',1)+btn('🔊 Hear it','s3TG.aoSay('+A.li+')',1)+(A.li+1<L.turns.length?btn('Next line ▶','s3TG.aoNav(1)'):btn('🎬 Finish','s3TG.aoNav(1)'))+'</div>'
+   +(A.li+1>=L.turns.length?'<div class="s3sub" style="text-align:center;margin-top:8px">Last line — finish for the applause and XP buttons. 👏</div>':''))
+  +card('<div style="text-align:center">'+btn('📜 Full script','s3TG.aoMode(\'script\')',1)+'</div>'));
+  return}
+ const bubbles=L.turns.map((t,i)=>{const ri=roles.indexOf(String(t[0]||'').trim()),actor=A.actors[ri];
+  return '<div style="border-left:4px solid '+RC[ri<0?0:ri]+';background:var(--surf2);border-radius:12px;padding:10px 12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px"><span style="font-size:11px;font-weight:800;color:'+RC[ri<0?0:ri]+';text-transform:uppercase">'+(i+1)+' · '+esc(t[0]||'Speaker')+(actor?' · 👤 '+esc(actor):'')+'</span><button class="s3btn ghost" style="padding:2px 8px;font-size:13px;margin:0" onclick="s3TG.aoSay('+i+')">🔊</button></div><div style="font-size:16px;line-height:1.6;margin-top:2px">'+esc(plain(t[1]))+'</div></div>'}).join('');
+ ov('🎭 Act It Out',card('<div class="s3sub" style="margin-bottom:4px">Pick a dialogue and two students. They come up and perform it from the screen — phones stay away. 📵</div>'+pick)
+  +rolesCard
+  +card('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>📜 The script</b>'+btn('📺 Teleprompter','s3TG.aoMode(\'prompt\')',1)+'</div>'+bubbles))}
+function aoDlg(k){const A=AO;if(!A)return;A.di=+k||0;A.li=0;A.msg='';aoDraw()}
+function aoActor(k,v){const A=AO;if(!A)return;A.actors[k]=String(v||'').trim();A.msg='';aoDraw()}
+function aoSwap(){const A=AO;if(!A)return;const t=A.actors[0];A.actors[0]=A.actors[1];A.actors[1]=t;aoDraw()}
+function aoPick(){const A=AO;if(!A)return;const names=present().map(s=>s.name);if(!names.length)return;
+ let rec=S.ls.get('s3tg_actrec_'+curCls(),[]);
+ for(let k=0;k<2;k++){if(A.actors[k])continue;
+  let pool=names.filter(n=>rec.indexOf(n)<0&&A.actors[0]!==n&&A.actors[1]!==n);
+  if(!pool.length){rec=[];pool=names.filter(n=>A.actors[0]!==n&&A.actors[1]!==n)}
+  if(!pool.length)break;
+  const n=pool[Math.floor(Math.random()*pool.length)];A.actors[k]=n;rec.push(n)}
+ S.ls.set('s3tg_actrec_'+curCls(),rec.slice(-12));aoDraw()}
+function aoMode(m){const A=AO;if(!A)return;A.mode=m;if(m==='prompt')A.li=0;aoDraw()}
+function aoNav(d){const A=AO;if(!A)return;const n=dlg()[A.di].L.turns.length;
+ if(A.li+d>=n){A.mode='script';A.msg='👏 Bravo! Performance done.';aoDraw();return}
+ A.li=Math.max(0,Math.min(n-1,A.li+d));aoDraw()}
+function aoSay(i){const A=AO;if(!A)return;const d=dlg()[A.di];
+ try{if(window.s3Listen&&s3Listen.play){s3Listen.play(d.L,i);return}}catch(e){}
+ try{speakText(plain(d.L.turns[i][1]))}catch(e){}}
+async function aoAward(k){const A=AO;if(!A)return;const name=A.actors[k];if(!name)return;
+ const r=await award2(name,2,'act');if(AO===A){A.msg='🎁 '+esc(name)+': '+xpTxt(r);aoDraw()}}
+/* ---- entry buttons inside the Class games menu ---- */
+function injectMenu(){if(!window.s3G2||!s3G2.classMenu||s3G2.__tgPatched)return;s3G2.__tgPatched=true;
+ const orig=s3G2.classMenu;
+ s3G2.classMenu=function(){orig.apply(this,arguments);
+  try{const o=document.getElementById('s3g2-ov');if(!o)return;
+   const mk=(t,f,s)=>{const b=document.createElement('button');b.className='s3btn';b.style.cssText='display:block;width:100%;margin-bottom:10px;padding:14px;text-align:left';b.setAttribute('onclick','s3TG.'+f+'()');b.innerHTML=t+'<br><span style="font-weight:400;font-size:12px">'+s+'</span>';return b};
+   const btns=[...o.querySelectorAll('button')];
+   const after=(txt,el)=>{const b=btns.find(x=>x.textContent.indexOf(txt)>=0);if(b&&b.parentNode)b.parentNode.insertBefore(el,b.nextSibling)};
+   after('Activity Cards',mk('🎭 Act It Out','aoOpen','A dialogue on the screen. Pick two students to come up and perform it.'));
+   after('Team Battle',mk('🏆 Team Challenge','tcOpen','Split the screen for 2–4 teams. Each team prepares its own questions, then teams solve in turns.'));
+  }catch(e){}}}
+injectMenu();
+window.s3TG={close,setU,setL,_state:()=>TG,_ao:()=>AO,
+ tcOpen,tcResume,tcSetup,tcSet,tcBuild,tcPrep,tcInter,tcTurn,tcPick,tcNext,tcEnd,
+ aoOpen,aoDlg,aoActor,aoSwap,aoPick,aoMode,aoNav,aoSay,aoAward};
+})();
+</script>
+
+
+<!-- QB LOOK v3 (test build) -->
+<style id="qb3-css">
+/* =====================================================================
+   QUESTION BANK — LOOK v3 (clean cards, calm toolbar)  · test build only
+   Pure CSS + tiny decorator. No new data, no new labels.
+   ===================================================================== */
+@keyframes qb3In{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ---------- toolbar ---------- */
+#filter-section{border-radius:22px!important;border:1px solid var(--bd)!important;background:var(--surf)!important;box-shadow:0 1px 2px rgba(15,23,42,.04)!important;padding:16px 18px!important}
+#filter-section label{font-size:10px!important;letter-spacing:.1em;color:var(--mu)!important;font-weight:700!important}
+
+.qb3-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.qb3-seg{display:inline-flex;gap:3px;padding:4px;border-radius:999px;background:var(--surf2);border:1px solid var(--bd)}
+.qb3-seg button{appearance:none;border:0;background:transparent;color:var(--mu);font:600 12.5px/1 'Inter',system-ui,sans-serif;padding:8px 15px;border-radius:999px;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s}
+.qb3-seg button:hover{color:var(--tx)}
+.qb3-seg button.on{background:var(--surf);color:var(--acink);box-shadow:0 1px 2px rgba(15,23,42,.12)}
+html[data-theme=dark] .qb3-seg button.on{color:#fff}
+#filter-summary{font-weight:600!important;color:var(--mu)!important;font-size:12px!important;white-space:nowrap}
+
+#filter-section input[type=text],#filter-section select,#unit-ms-btn,#les-ms-btn{
+  border-radius:12px!important;border:1px solid var(--bd)!important;background:var(--surf2)!important;color:var(--tx)!important;
+  height:42px;font-size:13.5px!important;font-weight:600!important;box-shadow:none!important;
+  transition:border-color .15s,box-shadow .15s,background .15s}
+#filter-section input[type=text]:focus,#filter-section select:focus,#unit-ms-btn:focus-visible,#les-ms-btn:focus-visible{
+  border-color:var(--ac)!important;box-shadow:0 0 0 3px var(--glow)!important;background:var(--surf)!important;outline:none}
+
+#filter-section > div:last-child{border-top:1px solid var(--bd)!important;padding-top:12px!important;margin-top:14px!important}
+#filter-section > div:last-child button{white-space:nowrap;border:1px solid var(--bd);background:var(--surf);color:var(--tx);border-radius:999px;
+  padding:7px 13px;font-size:12px!important;font-weight:600!important;text-decoration:none!important;
+  transition:background .15s,border-color .15s,color .15s}
+#filter-section > div:last-child button:hover{background:var(--acs);border-color:var(--acb);color:var(--acink)}
+
+/* ---------- cards ---------- */
+#questions-container{display:flex;flex-direction:column;gap:14px}
+#questions-container > article{position:relative;border-radius:22px!important;border:1px solid var(--bd)!important;
+  background:var(--surf)!important;padding:18px 20px 20px!important;box-shadow:0 1px 2px rgba(15,23,42,.04)!important;
+  transition:box-shadow .18s ease,border-color .18s ease}
+#questions-container > article:hover{box-shadow:0 16px 32px -22px rgba(15,23,42,.45)!important;border-color:var(--acb)!important}
+
+/* thin category spine */
+#questions-container > article::before{content:"";position:absolute;left:0;top:20px;bottom:20px;width:3px;border-radius:0 3px 3px 0;
+  background:var(--qb3-acc,transparent);opacity:.85}
+#questions-container > article[data-cat="Grammar"]{--qb3-acc:#8b5cf6}
+#questions-container > article[data-cat="Main Vocabulary"]{--qb3-acc:#3b82f6}
+#questions-container > article[data-cat="Side Vocabulary"]{--qb3-acc:#14b8a6}
+#questions-container > article[data-cat="Expressions & Idioms"]{--qb3-acc:#f59e0b}
+
+/* meta chips */
+#questions-container > article > div:first-child > div:first-child > span{border-radius:999px!important;font-size:11.5px!important;padding:4px 10px!important;letter-spacing:.01em}
+#questions-container > article > div:first-child > div:first-child > span:first-child{
+  border-radius:10px!important;background:var(--surf2)!important;color:var(--mu)!important;
+  font-variant-numeric:tabular-nums;font-weight:800!important;min-width:40px;text-align:center;padding:4px 8px!important}
+
+/* header actions */
+#questions-container > article > div:first-child > div:last-child > button{
+  border-radius:999px!important;padding:6px 11px!important;font-size:11.5px!important;font-weight:600!important;
+  background:transparent!important;border:1px solid transparent!important;color:var(--mu)!important;
+  transition:background .15s,color .15s,border-color .15s}
+#questions-container > article > div:first-child > div:last-child > button:hover{background:var(--acs)!important;color:var(--acink)!important;border-color:var(--acb)!important}
+#questions-container > article > div:first-child > div:last-child > button.bg-amber-100{background:var(--wnbg)!important;color:var(--wnink)!important;border-color:transparent!important}
+
+/* question text */
+#questions-container > article > h3{font-size:1.06rem!important;line-height:1.75!important;font-weight:600!important;
+  color:var(--tx)!important;margin:2px 0 16px!important;letter-spacing:-.003em}
+@media (min-width:640px){#questions-container > article > h3{font-size:1.16rem!important}}
+
+/* options */
+#questions-container > article > div.grid{gap:10px!important}
+#questions-container > article > div.grid > div{gap:8px!important}
+#questions-container > article > div.grid > div > button:first-child{border-radius:14px!important;padding:12px 14px!important;transition:background .15s,border-color .15s,transform .15s,box-shadow .15s}
+#questions-container > article > div.grid > div > button:first-child:not(.border-emerald-500):not(.border-rose-500){
+  background:var(--surf)!important;border:1px solid var(--bd)!important}
+#questions-container > article > div.grid > div > button:first-child:not(.border-emerald-500):not(.border-rose-500):hover{
+  background:var(--acs)!important;border-color:var(--acb)!important;transform:translateY(-1px);box-shadow:0 6px 14px -10px rgba(15,23,42,.5)}
+#questions-container > article > div.grid > div > button:first-child > span:first-child{width:30px!important;height:30px!important;border-radius:999px!important;font-size:11.5px!important;font-weight:800!important}
+#questions-container > article > div.grid > div > button:first-child:not(.border-emerald-500):not(.border-rose-500) > span:first-child{
+  background:var(--surf2)!important;border-color:var(--bd)!important;color:var(--mu)!important}
+
+/* per-option listen button */
+#questions-container > article > div.grid > div > button[title]{border-radius:14px!important;min-width:42px;background:var(--surf)!important;
+  border:1px solid var(--bd)!important;color:var(--mu)!important;transition:background .15s,color .15s,border-color .15s}
+#questions-container > article > div.grid > div > button[title]:hover{background:var(--acs)!important;color:var(--acink)!important;border-color:var(--acb)!important}
+
+/* explanation */
+#questions-container > article > div.mt-4{border-radius:16px!important;padding:16px!important}
+
+/* reveal: first 10 cards only, once */
+#questions-container.qb3-enter > article:nth-child(-n+10){animation:qb3In .3s cubic-bezier(.22,.61,.36,1) both}
+#questions-container.qb3-enter > article:nth-child(2){animation-delay:.03s}
+#questions-container.qb3-enter > article:nth-child(3){animation-delay:.06s}
+#questions-container.qb3-enter > article:nth-child(4){animation-delay:.09s}
+#questions-container.qb3-enter > article:nth-child(5){animation-delay:.12s}
+#questions-container.qb3-enter > article:nth-child(6){animation-delay:.15s}
+#questions-container.qb3-enter > article:nth-child(7){animation-delay:.18s}
+#questions-container.qb3-enter > article:nth-child(8){animation-delay:.21s}
+#questions-container.qb3-enter > article:nth-child(9){animation-delay:.24s}
+#questions-container.qb3-enter > article:nth-child(10){animation-delay:.27s}
+
+@media (max-width:639px){
+  #filter-section{padding:13px!important}
+  #filter-section > div:last-child{gap:6px!important;margin-top:12px!important;padding-top:10px!important}
+  #filter-section > div:last-child button{padding:6px 9px;font-size:11px!important}
+  #filter-section input[type=text],#filter-section select,#unit-ms-btn,#les-ms-btn{height:40px;font-size:13px!important}
+  .qb3-seg{width:100%}
+  .qb3-seg button{flex:1;padding:9px 0;font-size:12px}
+  #filter-summary{font-size:11.5px!important}
+  #questions-container > article{padding:16px 15px 18px!important;border-radius:20px!important}
+  #questions-container > article > h3{font-size:1.02rem!important;line-height:1.7!important}
+  #questions-container > article > div.grid > div > button:first-child{padding:11px 12px!important}
+}
+@media (prefers-reduced-motion:reduce){
+  #questions-container > article{animation:none!important;transition:none!important}
+  #questions-container > article > div.grid > div > button:first-child{transition:none!important}
+}
+
+/* ---------- class point + student position bar ---------- */
+#qb3-prog{display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:var(--surf);border:1px solid var(--bd);
+  border-radius:16px;padding:9px 14px;font-size:12.5px;color:var(--mu);margin-bottom:2px}
+#qb3-prog .qb3-pl{font-weight:700;color:var(--acink);background:var(--acs);border:1px solid var(--acb);border-radius:999px;padding:4px 10px;white-space:nowrap}
+#qb3-prog .qb3-pn{color:var(--mu);white-space:nowrap}
+#qb3-prog .qb3-pn b{color:var(--tx)}
+#qb3-prog button{border:1px solid var(--acb);background:var(--acs);color:var(--acink);border-radius:999px;padding:6px 12px;
+  font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s}
+#qb3-prog button:hover{background:var(--ac);color:#fff}
+#qb3-prog select,#qb3-prog input{border:1px solid var(--bd);background:var(--surf2);color:var(--tx);border-radius:10px;
+  padding:5px 8px;font-size:12.5px;font-weight:700;height:32px}
+#qb3-prog input{width:78px}
+#qb3-prog .qb3-pg{flex:1;min-width:70px;height:6px;border-radius:999px;background:var(--surf2);overflow:hidden}
+#qb3-prog .qb3-pg i{display:block;height:100%;background:linear-gradient(90deg,var(--ac),#22c55e);border-radius:999px}
+@media (max-width:639px){
+  #qb3-prog{padding:8px 11px;font-size:12px;gap:7px}
+  #qb3-prog .qb3-pg{order:9;flex-basis:100%}
+}
+
+/* ---------- Browse by unit ---------- */
+.qb3-ubtn{border:1px solid var(--bd);background:var(--surf);color:var(--tx);border-radius:999px;padding:7px 13px;font:600 12.5px/1 'Inter',system-ui,sans-serif;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.qb3-ubtn:hover{background:var(--acs);border-color:var(--acb);color:var(--acink)}
+.qb3-sheet{position:fixed;inset:0;z-index:99995;background:rgba(15,23,42,.42);display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:640px){.qb3-sheet{align-items:center;padding:24px}}
+.qb3-sheet-in{background:var(--surf);color:var(--tx);width:100%;max-width:600px;max-height:92vh;display:flex;flex-direction:column;border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(15,23,42,.3);overflow:hidden}
+@media(min-width:640px){.qb3-sheet-in{border-radius:22px}}
+.qb3-sheet-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:16px 18px 10px}
+.qb3-sh{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.qb3-ss{font-size:12px;color:var(--mu);margin-top:3px;line-height:1.5;max-width:330px}
+.qb3-done{border:1px solid var(--acb);background:var(--acs);color:var(--acink);border-radius:999px;padding:7px 13px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
+.qb3-ugrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 16px 14px;overflow:auto;-webkit-overflow-scrolling:touch}
+.qb3-ucard{position:relative;text-align:left;border:1px solid var(--bd);background:var(--surf);border-radius:16px;padding:11px 12px 10px;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:104px;transition:border-color .15s,background .15s,transform .15s}
+.qb3-ucard:hover{border-color:var(--acb);transform:translateY(-1px)}
+.qb3-ucard.on{border-color:var(--ac);background:var(--acs);box-shadow:0 0 0 1px var(--ac) inset}
+.qb3-upill{align-self:flex-start;font-size:9.5px;font-weight:800;letter-spacing:.08em;color:var(--acink);background:var(--surf);border:1px solid var(--acb);border-radius:999px;padding:2px 7px}
+.qb3-ut{font-size:13px;font-weight:700;line-height:1.3;color:var(--tx)}
+.qb3-ubar{height:5px;border-radius:999px;background:var(--surf2);overflow:hidden;margin-top:auto}
+.qb3-ubar i{display:block;height:100%;background:var(--ac);border-radius:999px}
+.qb3-uc{font-size:11px;color:var(--mu);font-weight:600;font-variant-numeric:tabular-nums}
+.qb3-uck{position:absolute;top:9px;right:9px;width:20px;height:20px;border-radius:999px;border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;background:transparent}
+.qb3-ucard.on .qb3-uck{background:var(--ac);border-color:var(--ac)}
+.qb3-sheet-foot{border-top:1px solid var(--bd);padding:12px 16px 14px;background:var(--surf)}
+.qb3-sf-top{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--mu);margin-bottom:9px}
+.qb3-sf-btns{display:flex;gap:8px}
+.qb3-sf-btns button{border:1px solid var(--acb);background:var(--acs);color:var(--acink);border-radius:14px;padding:11px 14px;font-weight:800;font-size:13.5px;cursor:pointer}
+.qb3-sf-btns #qb3-uopen{flex:1;background:var(--ac);border-color:var(--ac);color:#fff}
+.qb3-sf-btns #qb3-u20,.qb3-sf-btns #qb3-upaper{min-width:56px;background:var(--surf);color:var(--tx)}
+.qb3-sf-bot{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px}
+.qb3-sf-bot button{border:0;background:none;color:var(--mu);font-size:12px;font-weight:600;text-decoration:underline;cursor:pointer;padding:4px}
+.qb3-less{padding:0 16px 10px;border-top:1px solid var(--bd);margin-top:2px;padding-top:10px}
+.qb3-lh{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin-bottom:7px}
+.qb3-lsub{font-weight:600;letter-spacing:0;text-transform:none;color:var(--mu);opacity:.8}
+.qb3-lchips{display:flex;gap:6px;flex-wrap:wrap}
+.qb3-lc{border:1px solid var(--bd);background:var(--surf);color:var(--tx);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.qb3-lc.on{background:var(--acs);border-color:var(--ac);color:var(--acink)}
+
+</style>
+<script id="qb3-js">
+/* QB Look v3 — decorator + class/student progress bar (no data changes, no new labels) */
+(function(){
+  'use strict';
+  function $(id){return document.getElementById(id);}
+  var CATS={'Grammar':1,'Main Vocabulary':1,'Side Vocabulary':1,'Expressions & Idioms':1};
+  var K_CP='s3_classprog_v1';
+
+  function syncChips(){
+    var sel=$('filter-level'), v=sel?sel.value:'all';
+    var btns=document.querySelectorAll('#qb3-lv button');
+    for(var i=0;i<btns.length;i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-lv')===v);
+  }
+
+  function buildTop(){
+    var fs=$('filter-section'); if(!fs||$('qb3-top')) return;
+    var top=document.createElement('div'); top.className='qb3-top'; top.id='qb3-top';
+    var seg=document.createElement('div'); seg.className='qb3-seg'; seg.id='qb3-lv';
+    seg.setAttribute('role','group'); seg.setAttribute('aria-label','Question level');
+    [['all','All'],['e','Easy'],['m','Medium'],['h','Hard']].forEach(function(p){
+      var b=document.createElement('button'); b.type='button';
+      b.setAttribute('data-lv',p[0]); b.textContent=p[1];
+      if(p[0]==='all') b.className='on';
+      b.addEventListener('click',function(){
+        var sel=$('filter-level'); if(sel) sel.value=p[0];
+        syncChips(); if(typeof applyFilters==='function') applyFilters();
+      });
+      seg.appendChild(b);
+    });
+    top.appendChild(seg);
+    var ub=document.createElement('button'); ub.type='button'; ub.id='qb3-units-btn'; ub.className='qb3-ubtn'; ub.textContent='Browse by unit';
+    ub.addEventListener('click',function(){ openUnits(); });
+    top.appendChild(ub);
+    var sum=$('filter-summary'); if(sum) top.appendChild(sum);
+    fs.insertBefore(top, fs.firstElementChild);
+    var sel=$('filter-level');
+    if(sel){
+      sel.addEventListener('change',syncChips);
+      var w=sel.parentNode; if(w&&w.tagName==='DIV') w.style.display='none';
+    }
+  }
+
+  function decorate(){
+    var c=$('questions-container'); if(!c) return;
+    var cards=c.children;
+    for(var i=0;i<cards.length;i++){
+      var a=cards[i];
+      if(a.tagName!=='ARTICLE'||a.getAttribute('data-cat')) continue;
+      var spans=a.querySelectorAll(':scope > div:first-child > div:first-child > span');
+      for(var j=0;j<spans.length;j++){
+        var t=(spans[j].textContent||'').trim();
+        if(CATS[t]){ a.setAttribute('data-cat',t); break; }
+      }
+    }
+  }
+
+  /* ---------- class point + student position ---------- */
+  function cloudSet(cls,n,done){
+    try{
+      if(!window.S3CLOUD||!S3CLOUD.on||!S3CLOUD.fbx) return done(false);
+      var x=S3CLOUD.fbx();
+      x.F.setDoc(x.F.doc(x.db,'classprog',String(cls)),{n:n,t:Date.now()},{merge:true})
+        .then(function(){done(true)}).catch(function(){done(false)});
+    }catch(e){ done(false); }
+  }
+  function cloudGet(cls,done){
+    try{
+      if(!window.S3CLOUD||!S3CLOUD.on||!S3CLOUD.fbx) return done(null);
+      var x=S3CLOUD.fbx();
+      x.F.getDoc(x.F.doc(x.db,'classprog',String(cls)))
+        .then(function(sn){ done(sn&&sn.exists()?sn.data():null); }).catch(function(){ done(null); });
+    }catch(e){ done(null); }
+  }
+  function cpRead(){ try{ return JSON.parse(localStorage.getItem(K_CP)||'{}')||{}; }catch(e){ return {}; } }
+  function cpWrite(o){ try{ localStorage.setItem(K_CP,JSON.stringify(o)); }catch(e){} }
+  function classesOf(){
+    var out=[];
+    try{ var c=window.S3&&S3.CLS?S3.CLS():null; if(c&&c.students) c.students.forEach(function(s){ if(s.cls&&out.indexOf(s.cls)<0) out.push(s.cls); }); }catch(e){}
+    return out.sort();
+  }
+  function nextUnanswered(floor){
+    try{
+      var list=state.displayOrder||state.allQuestions||[];
+      var f=(floor&&floor>1)?floor-1:0;
+      for(var i=f;i<list.length;i++){ if(state.userAnswers[list[i].id]===undefined) return {i:i,q:list[i]}; }
+    }catch(e){}
+    return null;
+  }
+  function bar(){
+    var v=$('view-bank'); if(!v) return;
+    var b=$('qb3-prog');
+    if(!b){ b=document.createElement('div'); b.id='qb3-prog'; v.insertBefore(b,v.firstElementChild); }
+    var total=(state&&state.allQuestions)?state.allQuestions.length:0;
+    var answered=state&&state.userAnswers?Object.keys(state.userAnswers).length:0;
+    var isT=false; try{ isT=!!(window.S3&&S3.isTeacher&&S3.isTeacher()); }catch(e){}
+    var nx=nextUnanswered();
+    var h='';
+    if(isT){
+      var cps=cpRead(), cls=classesOf(), cur=cls[0]||'';
+      h+='<span class="qb3-pl">📍 Class point</span>';
+      if(cls.length){
+        h+='<select id="qb3-cp-cls" aria-label="Class">'+cls.map(function(c){return '<option value="'+c+'"'+(c===cur?' selected':'')+'>'+c+'</option>';}).join('')+'</select>';
+      }else{
+        h+='<span class="qb3-pn">Add students with a class first</span>';
+      }
+      h+='<span class="qb3-pn">reached</span><input id="qb3-cp-num" type="number" min="1" max="'+total+'" value="'+(cps[cur]||'')+'" inputmode="numeric" aria-label="Question number">';
+      h+='<button type="button" id="qb3-cp-save">Save</button>';
+      h+='<span class="qb3-pn" id="qb3-cp-note"></span>';
+    }else{
+      var cls2=''; try{ var ss=S3.SESS&&S3.SESS(); cls2=(ss&&ss.cls)||''; }catch(e){}
+      var cp=cpRead()[cls2]||0;
+      if(!cp&&cls2&&!window.__qb3cpTried){ window.__qb3cpTried=1;
+        cloudGet(cls2,function(d){
+          if(d&&d.n){ try{ var o=cpRead(); o[cls2]=d.n; cpWrite(o); }catch(e){} try{ bar(); }catch(e){} }
+        });
+      }
+      if(cp) h+='<span class="qb3-pl">📍 '+cls2+' reached #'+cp+'</span>';
+      h+='<span class="qb3-pn">You answered <b>'+answered+'</b> of <b>'+total.toLocaleString('en-US')+'</b></span>';
+      h+='<span class="qb3-pg"><i style="width:'+(total?Math.max(1,Math.round(answered/total*100)):0)+'%"></i></span>';
+      var nx2=nextUnanswered(cp)||nx;
+      if(nx2) h+='<button type="button" id="qb3-cont">Continue → #'+(nx2.i+1)+'</button>';
+      else h+='<span class="qb3-pn">All questions answered 🎉</span>';
+    }
+    b.innerHTML=h;
+    var sv=$('qb3-cp-save');
+    if(sv) sv.addEventListener('click',function(){
+      var c=$('qb3-cp-cls'), n=$('qb3-cp-num');
+      var cc=c?c.value:(classesOf()[0]||''); var num=parseInt(n&&n.value,10);
+      if(!cc||!num||num<1){ var nt=$('qb3-cp-note'); if(nt) nt.textContent='Pick a class and a number'; return; }
+      var o=cpRead(); o[cc]=num; cpWrite(o);
+      var nt2=$('qb3-cp-note'); if(nt2) nt2.textContent='Saved on this device';
+      cloudSet(cc,num,function(ok){
+        var n2=$('qb3-cp-note');
+        if(n2) n2.textContent=ok?('Saved for '+cc):('Saved on this device only');
+        try{ if(window.S3&&S3.toast) S3.toast(ok?('Class '+cc+' set to #'+num):('Saved on this device only')); }catch(e){}
+      });
+    });
+    var co=$('qb3-cont');
+    if(co) co.addEventListener('click',function(){
+      var cc2=''; try{ var ss2=S3.SESS&&S3.SESS(); cc2=(ss2&&ss2.cls)||''; }catch(e){}
+      var n=nextUnanswered(cpRead()[cc2]||0); if(!n) return;
+      var el=document.getElementById('q-card-'+n.q.id);
+      if(el){ var y=el.getBoundingClientRect().top+window.scrollY-92; window.scrollTo({top:y,behavior:'smooth'}); }
+      if(typeof applyFilters==='function'){ /* keep list as is */ }
+    });
+  }
+
+
+  /* ---------- Browse by unit sheet ---------- */
+  var UNIT_T={1:"Inside the World of Care",2:"The Power of Machines",3:"Protect Nature, Protect Future",4:"Marine Life",5:"From Muscles to Mindset",6:"Let's Hang Out!",7:"At the Airport",8:"A Journey Through Time",9:"The Universe's Mysteries",10:"People's Hospitality & Kindness",11:"Literature",12:"University Life & Career Choices"};
+  function unitSel(){
+    try{ var v=document.getElementById('filter-unit').value; if(!v||v==='all') return []; return v.split(',').filter(Boolean); }catch(e){ return []; }
+  }
+  function lesSel(){
+    try{ var v=document.getElementById('filter-lesson').value; if(!v||v==='all') return []; return v.split(',').filter(Boolean); }catch(e){ return []; }
+  }
+  function lesOf(q){ return /^[1-5]$/.test(String(q.lesson))?String(q.lesson):'x'; }
+  function unitStats(){
+    var m={};
+    try{
+      (state.allQuestions||[]).forEach(function(q){ var u=String(q.unit); var o=m[u]||(m[u]={t:0,a:0}); o.t++; if(state.userAnswers[q.id]!==undefined) o.a++; });
+    }catch(e){}
+    return m;
+  }
+  function openUnits(){
+    var old=$('qb3-units'); if(old) old.remove();
+    var sel=unitSel(), st=unitStats();
+    var host=document.createElement('div'); host.id='qb3-units'; host.className='qb3-sheet';
+    var h='<div class="qb3-sheet-in" role="dialog" aria-label="Browse by unit">';
+    h+='<div class="qb3-sheet-top"><div><div class="qb3-sh">Browse by unit</div><div class="qb3-ss">Select mode: tap the units you want, then open or practise them together.</div></div><button type="button" class="qb3-done" id="qb3-units-done">✓ Done</button></div>';
+    h+='<div class="qb3-ugrid" id="qb3-ugrid">';
+    for(var n=1;n<=12;n++){
+      var s=st[String(n)]||{t:0,a:0}, on=sel.indexOf(String(n))>-1;
+      h+='<button type="button" class="qb3-ucard'+(on?' on':'')+'" data-u="'+n+'">'
+        +'<span class="qb3-upill">UNIT '+n+'</span>'
+        +'<span class="qb3-ut">'+UNIT_T[n].replace(/&/g,'&amp;')+'</span>'
+        +'<span class="qb3-ubar"><i style="width:'+(s.t?Math.max(2,Math.round(s.a/s.t*100)):0)+'%"></i></span>'
+        +'<span class="qb3-uc">'+s.a+' / '+s.t+'</span>'
+        +'<span class="qb3-uck">'+(on?'✓':'')+'</span></button>';
+    }
+    h+='</div>';
+    h+='<div class="qb3-less"><div class="qb3-lh">Lessons <span class="qb3-lsub">(inside the units you picked)</span></div><div class="qb3-lchips" id="qb3-lchips">';
+    [['','All'],['1','1'],['2','2'],['3','3'],['4','4'],['5','5'],['x','Extra']].forEach(function(p){
+      h+='<button type="button" class="qb3-lc" data-l="'+p[0]+'">'+p[1]+'</button>';
+    });
+    h+='</div></div>';
+    h+='<div class="qb3-sheet-foot"><div class="qb3-sf-top"><span id="qb3-usel"></span><span id="qb3-uq"></span></div>'
+      +'<div class="qb3-sf-btns"><button type="button" id="qb3-uopen"></button>'
+      +'<button type="button" id="qb3-u20" title="Practise 20 questions">20</button>'
+      +'<button type="button" id="qb3-upaper" title="Open a printed paper">🖨️</button></div>'
+      +'<div class="qb3-sf-bot"><button type="button" id="qb3-uall">All units</button><span class="qb3-dot">·</span><button type="button" id="qb3uclear">Clear</button></div></div>';
+    h+='</div>';
+    host.innerHTML=h;
+    document.body.appendChild(host);
+    function chosen(){ return unitSel(); }
+    function count(){
+      var cs=chosen(), ls=lesSel(), c=0;
+      try{
+        (state.allQuestions||[]).forEach(function(q){
+          if(cs.length && cs.indexOf(String(q.unit))<0) return;
+          if(ls.length && ls.indexOf(lesOf(q))<0) return;
+          c++;
+        });
+      }catch(e){}
+      return c;
+    }
+    function cs2(){ return lesSel(); }
+    function refresh(){
+      var cs=chosen(), q=count();
+      var a=$('qb3-usel'), b=$('qb3-uq'), o=$('qb3-uopen');
+      if(a) a.textContent=(cs.length?cs.length+' unit'+(cs.length>1?'s':'')+' selected':'All units selected');
+      if(b) b.textContent=q.toLocaleString('en-US')+' questions';
+      if(o) o.textContent='Open '+q.toLocaleString('en-US')+' questions';
+      var lc=document.querySelectorAll('#qb3-lchips .qb3-lc');
+      for(var k=0;k<lc.length;k++){
+        var lv=lc[k].getAttribute('data-l'), on2=(lv===''?(!cs2().length):cs2().indexOf(lv)>-1);
+        lc[k].classList.toggle('on',on2);
+      }
+      var cards=document.querySelectorAll('#qb3-ugrid .qb3-ucard');
+      for(var i=0;i<cards.length;i++){ var u=cards[i].getAttribute('data-u'); var on=cs.indexOf(u)>-1; cards[i].classList.toggle('on',on); var ck=cards[i].querySelector('.qb3-uck'); if(ck) ck.textContent=on?'✓':''; }
+    }
+    function setSel(list){
+      var inp=$('filter-unit');
+      if(!list.length||list.length===12) inp.value='all'; else inp.value=list.slice().sort(function(a,b){return a-b}).join(',');
+      if(typeof unitMsSync==='function') unitMsSync();
+      refresh();
+    }
+    host.addEventListener('click',function(e){
+      var card=e.target.closest?e.target.closest('.qb3-ucard'):null;
+      if(card){
+        var u=card.getAttribute('data-u'), cs=chosen();
+        var idx=cs.indexOf(u); if(idx>-1) cs.splice(idx,1); else cs.push(u);
+        setSel(cs); return;
+      }
+      var lc=e.target.closest?e.target.closest('.qb3-lc'):null;
+      if(lc){
+        var lv=lc.getAttribute('data-l'), ls=lesSel();
+        if(lv===''){ ls=[]; }
+        else { var i2=ls.indexOf(lv); if(i2>-1) ls.splice(i2,1); else ls.push(lv); }
+        var inp=$('filter-lesson');
+        inp.value=(!ls.length||ls.length===6)?'all':ls.slice().sort().join(',');
+        if(typeof lesMsSync==='function') lesMsSync();
+        refresh(); return;
+      }
+      if(e.target===host){ host.remove(); }
+    });
+    $('qb3-units-done').addEventListener('click',function(){ applyFilters(); host.remove(); });
+    $('qb3-uall').addEventListener('click',function(){ setSel([]); });
+    $('qb3uclear').addEventListener('click',function(){ setSel([]); });
+    $('qb3-uopen').addEventListener('click',function(){ applyFilters(); host.remove(); try{ window.scrollTo({top:0,behavior:'smooth'}); }catch(x){} });
+    $('qb3-u20').addEventListener('click',function(){
+      applyFilters(); host.remove();
+      try{ var ql=$('quiz-length'); if(ql) ql.value='20'; switchTab('quiz'); if(typeof startFocusQuiz==='function') startFocusQuiz(); }catch(x){}
+    });
+    $('qb3-upaper').addEventListener('click',function(){ applyFilters(); host.remove(); try{ switchTab('worksheet'); }catch(x){} });
+    refresh();
+  }
+
+  function start(){
+    buildTop(); syncChips(); decorate(); bar();
+    var c=$('questions-container');
+    if(c && !c.__qb3enter){
+      c.__qb3enter=1; c.classList.add('qb3-enter');
+      setTimeout(function(){ c.classList.remove('qb3-enter'); },1400);
+    }
+    if(c && window.MutationObserver && !c.__qb3obs){
+      var raf=0;
+      var obs=new MutationObserver(function(){
+        if(raf) return;
+        raf=requestAnimationFrame(function(){ raf=0; decorate(); });
+      });
+      obs.observe(c,{childList:true}); c.__qb3obs=obs;
+    }
+  }
+
+  function boot(){
+    if(!$('filter-section')){ setTimeout(boot,120); return; }
+    start();
+    var n=0, iv=setInterval(function(){ decorate(); bar(); if(++n>20) clearInterval(iv); },250);
+    try{
+      var us=window.updateStats;
+      if(us && !us.__qb3){ var w=function(){ var r=us.apply(this,arguments); try{ bar(); }catch(e){} return r; }; w.__qb3=1; window.updateStats=w; }
+      var af=window.applyFilters;
+      if(af && !af.__qb3){ var w2=function(){ var r=af.apply(this,arguments); try{ bar(); }catch(e){} return r; }; w2.__qb3=1; window.applyFilters=w2; }
+    }catch(e){}
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ setTimeout(boot,0); });
+  else setTimeout(boot,0);
+})();
+
+</script>
 </body>
 </html>
