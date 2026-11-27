@@ -7306,12 +7306,13 @@ function openD(){const cur=(document.querySelector('.s3nav button.active,.s3nav 
  const stu=window.S3&&S3.isStudent();
  const cl=f=>"s3Shell.closeD();"+f;
  const bt=(f,t)=>'<button class="it" onclick="'+cl(f)+'">'+t+'</button>';
+ const tv=(k,t)=>bt("s3TV('"+k+"')",'👁 '+t);
  const tab=id=>{const b=$('tab-'+id);if(!b)return '';if(b.hasAttribute('data-s3hide')||b.style.display==='none'||b.classList.contains('hidden'))return '';return '<button class="it" onclick="s3Shell.go(\''+id+'\')">'+b.innerHTML.replace(/id="[^"]*"/g,'')+'</button>'};
  const sec=(t,x)=>x?'<h4>'+t+'</h4>'+x:'';
- h+=sec('Home',(stu?bt('s3Me.profile()','🪪 Profile')+bt('s3Game.place()','🧭 My level (placement test)'):'')+bt('s3Game.open()','🎮 Games')+(stu?bt('s3Me.chal()','🤝 Duel Challenges'):'')+tab('play')+tab('board')+bt('s3Com.friends()',stu?'👥 Friends':'👥 Friendships'));
- h+=sec('Skills',tab('bank')+tab('read')+(stu?bt('s3Game.spk()','🗣️ Speaking'):'')+tab('write')+tab('listen')+tab('exam')+tab('srs')+tab('notebook')+tab('reference'));
+ h+=sec('Home',(stu?bt('s3Me.profile()','🪪 Profile')+bt('s3Game.place()','🧭 My level (placement test)'):tv('profile','🪪 Profile')+tv('place','🧭 My level (placement test)'))+bt('s3Game.open()','🎮 Games')+(stu?bt('s3Me.chal()','🤝 Duel Challenges'):tv('chal','🤝 Duel Challenges'))+tab('play')+tab('board')+bt('s3Com.friends()',stu?'👥 Friends':'👥 Friendships'));
+ h+=sec('Skills',tab('bank')+tab('read')+(stu?bt('s3Game.spk()','🗣️ Speaking'):tv('spk','🗣️ Speaking'))+tab('write')+tab('listen')+tab('exam')+tab('srs')+tab('notebook')+tab('reference'));
  h+=sec('Teacher',tab('track')+tab('worksheet')+tab('add')+tab('attend')+(window.s3Preview&&s3Preview.canShow()?bt('s3Preview.enter()','👁 Student view'):''));
- h+=sec('More',tab('quiz')+(stu?bt('s3Game.rec()','🎯 Recommended for me')+bt('s3Ach()','🏅 My rank and badges')+bt('s3Me.shop()','🛍️ Shop'):'')+tab('report')+tab('students')+(!stu?bt('s3Me.pics()','🖼️ Student pictures')+bt('s3Rpt.tOpen()','🚩 Problem reports'):'')+bt('s3Shell.openS()','⚙️ Settings')+bt('s3Logout()','🚪 Log out'));
+ h+=sec('More',tab('quiz')+(stu?bt('s3Game.rec()','🎯 Recommended for me')+bt('s3Ach()','🏅 My rank and badges')+bt('s3Me.shop()','🛍️ Shop'):tv('rec','🎯 Recommended for me')+tv('ach','🏅 My rank and badges')+tv('shop','🛍️ Shop'))+tab('report')+tab('students')+(!stu?bt('s3Me.pics()','🖼️ Student pictures')+bt('s3Rpt.tOpen()','🚩 Problem reports'):'')+bt('s3Shell.openS()','⚙️ Settings')+bt('s3Logout()','🚪 Log out'));
  dr.innerHTML=h;dbg.style.display='block';dr.classList.add('open')}
 function closeD(){dr.classList.remove('open');dbg.style.display='none'}
 function go(id){closeD();if(typeof switchTab==='function')switchTab(id)}
@@ -7326,6 +7327,9 @@ function openS(){let h='<div style="display:flex;justify-content:space-between;a
  const who=window.S3&&S3.SESS&&S3.SESS();const r3=document.createElement('div');r3.className='row';r3.innerHTML='<span>'+(who?(who.role==='teacher'?'👩‍🏫 Teacher':'🎓 '+(who.name||'')):'')+'</span><button class="s3btn" onclick="s3Shell.closeS();s3Logout()">Log out</button>';body.appendChild(r3);
  sbg.style.display='block';sh.style.display='block'}
 function closeS(){sbg.style.display='none';sh.style.display='none';const body=$('s3-set-body');if(body){/* park moved controls back in the header so they keep working */const park=$('s3-park')||(()=>{const d=document.createElement('div');d.id='s3-park';d.style.display='none';document.body.appendChild(d);return d})();body.querySelectorAll('select,#s3-bkbtn').forEach(n=>park.appendChild(n))}}
+window.s3TV=function(k){const M={profile:'s3Me.profile()',place:'s3Game.place()',chal:'s3Me.chal()',spk:'s3Game.spk()',rec:'s3Game.rec()',ach:'s3Ach()',shop:'s3Me.shop()',loot:'s3Loot.open()'};
+ try{if(!(window.s3Preview&&s3Preview.canShow())){S3.toast('Student view is not available right now');return}}catch(e){return}
+ s3Preview.enter();setTimeout(()=>{try{(new Function(M[k]))()}catch(e){}},1300)};
 window.s3Shell={closeD,closeS,go,openS};}
 boot();
 })();
@@ -8924,7 +8928,7 @@ try{if(window.s3Me&&s3Me.duelEnd){const _de=s3Me.duelEnd;s3Me.duelEnd=function()
 let ov=null;
 function close(){if(ov){ov.remove();ov=null}}
 async function open(){
- if(!stu())return;
+ if(!stu()){try{if(window.S3&&S3.isTeacher&&S3.isTeacher()&&window.s3TV)s3TV('loot')}catch(e){}return}
  close();
  ov=document.createElement('div');ov.id='s3-loot-ov';
  ov.style.cssText='position:fixed;inset:0;z-index:99994;background:var(--bg,#f1f5f9);color:var(--tx,#0f172a);overflow:auto;-webkit-overflow-scrolling:touch;padding:14px';
