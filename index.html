@@ -5647,7 +5647,7 @@ function statsFor(s){if(s.sum){const m=s.sum;return{s,p:{log:[],days:{},xp:m.xp|
  const _tp=(window.S3CLOUD&&S3CLOUD.tp)?S3CLOUD.tp(s.id):{t:0,w:0};return{s,p,b,xp:(p.xp||0)+_tp.t,wxp:p.log.filter(e=>e.t>wk).reduce((a,e)=>a+e.xp,0)+_tp.w,att:real.length,ok,acc:real.length?Math.round(ok/real.length*100):0,cur:p.cur||0,best:p.best||0,ds:dayStreak(p.days||{}),mastered,last:p.last||0}}
 const RANKS=[[0,'🌱','Beginner'],[500,'📘','Learner'],[1500,'🧭','Explorer'],[3500,'🏅','Achiever'],[7500,'💎','Expert'],[15000,'👑','Master'],[25000,'⭐','Star'],[40000,'💠','Elite'],[60000,'🔥','Pro'],[90000,'🏆','Champion'],[125000,'⚔️','Warlord'],[175000,'🐉','Legend'],[250000,'🌌','Mythic']];
 const rankOf=xp=>{let k=0;RANKS.forEach((r,i)=>{if(xp>=r[0])k=i});const r=RANKS[k],n=RANKS[k+1];return{i:k,ic:r[1],n:r[2],next:n?n[2]:null,need:n?n[0]-xp:0,pct:n?Math.round((xp-r[0])/(n[0]-r[0])*100):100}};
-const LC=(x,f)=>{try{let n=0;(x.p.log||[]).forEach(e=>{if(f(e))n++});return n}catch(e){return 0}};const HR=(x,a,b)=>LC(x,e=>{const h=new Date(e.t).getHours();return h>=a&&h<b});const GAP14=x=>{try{const ks=Object.keys(x.p.days||{}).sort();for(let i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};const BDG=[['first','👣','First Steps','Answer 10 questions',x=>x.att>=10],['s5','🔥','Streak 5','5 correct answers in a row',x=>x.best>=5],['s10','⚡','Streak 10','10 correct in a row',x=>x.best>=10],['s20','🚀','Streak 20','20 correct in a row',x=>x.best>=20],
+const LC=(x,f)=>{try{let n=0;(x.p.log||[]).forEach(e=>{if(f(e))n++});return n}catch(e){return 0}};const HR=(x,a,b)=>LC(x,e=>{const h=new Date(e.t).getHours();return h>=a&&h<b});const GAP14=x=>{try{const ks=Object.keys(x.p.days||{}).sort();for(let i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};const BDG=[['first','👣','First Steps','Answer 10 questions',x=>x.att>=10],['scout','🗺️','Site Scout','Finish all 7 starter missions',x=>((x.p&&x.p.log)||[]).some(e=>e.c==='Quest complete')],['s5','🔥','Streak 5','5 correct answers in a row',x=>x.best>=5],['s10','⚡','Streak 10','10 correct in a row',x=>x.best>=10],['s20','🚀','Streak 20','20 correct in a row',x=>x.best>=20],
 ['d3','📅','3-Day Habit','Practise 3 days in a row',x=>x.ds>=3],['d7','🗓️','Week Warrior','Practise 7 days in a row',x=>x.ds>=7],['d14','🏕️','Two Weeks Strong','Practise 14 days in a row',x=>x.ds>=14],
 ['sh','🎯','Sharpshooter','90% accuracy after 20 answers',x=>x.att>=20&&x.acc>=90],['ace','🧠','Accuracy Ace','85% accuracy after 100 answers',x=>x.att>=100&&x.acc>=85],
 ['m10','🌟','Mastery 10','Master 10 questions',x=>x.mastered>=10],['m25','🏆','Master','Master 25 questions',x=>x.mastered>=25],['m50','🎓','Grand Master','Master 50 questions',x=>x.mastered>=50],
@@ -9404,7 +9404,7 @@ const award=(xp,label)=>{const s=S();if(seen(label))return false;s.addXP(xp,labe
 /* ---------- missions ---------- */
 const LBL={m1:'Quest: First Blood',m2:'Quest: Ear Check',m3:'Quest: Daily Dose',m4:'Quest: Say What?',m5:'Quest: Fame Check',m6:'Quest: Treasure Hunter',m7:'Quest: Know Thyself'};
 const MISSIONS=[
- {id:'m1',ic:'🩸',t:'First Blood',d:'Answer 1 question in the Question Bank.',go:()=>goTab('bank')},
+ {id:'m1',ic:'🩸',t:'First Blood',d:'Answer 1 question in the Question Bank, or beat the 🎖 Training Ground duel.',go:()=>{try{if(window.s3TG&&!seen('Training Ground')&&!S().ls.get('s3tg_'+S().SESS().id,0)){s3TG.open();return}}catch(e){}goTab('bank')}},
  {id:'m2',ic:'👂',t:'Ear Check',d:'Answer 1 question in Listening. Yes, really listen.',go:()=>goTab('listen')},
  {id:'m3',ic:'⚡',t:'Daily Dose',d:"Finish today's Quick 5 in Challenges.",go:()=>goTab('play')},
  {id:'m4',ic:'🗣️',t:'Say What?',d:'Say 1 sentence in Speaking. Out loud!',go:()=>{if(window.s3Game&&s3Game.spk)s3Game.spk();else goTab('play')}},
@@ -9419,10 +9419,12 @@ function complete(id){
  if(!stu()||seen(LBL[id]))return;
  const m=MISSIONS.find(x=>x.id===id);
  if(award(5,LBL[id]))toast('✅ Mission done: '+m.t+' · +5 XP');
- if(questDone()){if(award(15,'Quest complete'))setTimeout(()=>toast('🏁 Quest complete! +15 XP and a new badge'),900);hidePill()}
+ try{story(id)}catch(e){}
+ if(questDone()){if(award(15,'Quest complete'))setTimeout(()=>toast('🏁 Quest complete! +15 XP and a new badge'),900);hidePill();try{setTimeout(()=>story('finale'),1200)}catch(e){}}
  else showPill();
  renderSheet();
 }
+window.s3QuestComplete=complete;
 /* hooks: wrap the existing XP/navigation functions (they are looked up on window at call time) */
 try{const _so=window.selectOption;if(_so)window.selectOption=function(){const r=_so.apply(this,arguments);setTimeout(()=>complete('m1'),60);return r}}catch(e){}
 try{const _le=S().logEv;S().logEv=function(){const r=_le.apply(this,arguments);try{if(arguments[3]==='ls')complete('m2')}catch(e){}return r}}catch(e){}
@@ -9461,6 +9463,28 @@ function openSheet(){if(!stu())return;closeSheet();
  const x=bg.querySelector('[data-qclose]');if(x)x.onclick=closeSheet}
 function closeSheet(){if(sheet){sheet.remove();sheet=null}}
 function renderSheet(){if(sheet){openSheet()}}
+
+/* ---------- story cards (quest narrative) ---------- */
+const STORY={
+ m1:{ic:'🦊',who:'Fax the Scout',txt:"First question answered. You learn fast, Recruit — six trials stand between you and your badge ceremony."},
+ m2:{ic:'🦉',who:'Olivia the Listener',txt:"You actually listened. Sharp ears are rarer than sharp eyes, Recruit. Five trials to go."},
+ m3:{ic:'⚡',who:'Bolt the Sprinter',txt:"Quick 5 cleared! Speed and brains in one student? The Squad is officially impressed."},
+ m4:{ic:'🎤',who:'Vivi the Voice',txt:"You said it OUT LOUD. That is the moment English stops being a subject and starts being yours."},
+ m5:{ic:'🏆',who:'Keeper of the Board',txt:"You found your name on the Leaderboard. Remember where it sits today — your only job is to move it up."},
+ m6:{ic:'🎁',who:'Gabi the Quartermaster',txt:"Treasure found! Frames, avatars and badges wait for students who show up every day."},
+ m7:{ic:'🧭',who:'Nader the Guide',txt:"Now the Squad knows your real level. Your personal training starts exactly where you are."},
+ finale:{ic:'🎖️',who:'Badge Ceremony',txt:"All seven trials complete! The E-Squad proudly names you a ROOKIE and pins the 🗺️ Site Scout badge on your profile. Welcome to the Squad, Rookie!"}
+};
+function story(id){const c=STORY[id];if(!c)return;const old=document.getElementById('s3-story-bg');if(old)old.remove();
+ const bg=document.createElement('div');bg.id='s3-story-bg';bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px';
+ bg.innerHTML='<div style="background:var(--surf,#fff);border-radius:18px;max-width:420px;width:100%;padding:22px 20px;text-align:center;box-shadow:0 12px 44px rgba(0,0,0,.4)">'
+  +'<div style="font-size:46px">'+c.ic+'</div>'
+  +'<b style="font-size:16px;display:block;margin:6px 0">'+c.who+'</b>'
+  +'<div style="font-size:14.5px;opacity:.85;line-height:1.65">'+c.txt+'</div>'
+  +'<button id="s3-story-ok" style="margin-top:14px;padding:11px 26px;border:0;border-radius:12px;background:var(--ac,#4f46e5);color:#fff;font-weight:800;font-size:15px;cursor:pointer">'+(id==='finale'?'🎖️ Join the Squad':'Onward! ➜')+'</button></div>';
+ document.body.appendChild(bg);
+ document.getElementById('s3-story-ok').onclick=()=>bg.remove();
+}
 
 /* ---------- spotlight tour ---------- */
 const STEPS=[
@@ -9553,6 +9577,78 @@ window.s3Tour={start:startTour,quest:openSheet};
  document.body.appendChild(d);
  document.getElementById('s3-plb-go').onclick=()=>{s.ls.set('s3plb_'+id,1);d.remove();try{s3Game.place()}catch(e){}};
  document.getElementById('s3-plb-no').onclick=()=>{s.ls.set('s3plb_'+id,1);d.remove()}}catch(e){}if(n>1200)clearInterval(iv)},1500)})();
+</script>
+<script id="s3-training">
+/* S3 UPGRADE: Training Ground — one-time 10-question guided duel (quest mission 1).
+   Pool: existing bank, curriculum units 3-7 (medium-to-hard), MCQ categories only.
+   No hints, no explanations (mirrors the live question-bank answer flow).
+   +2 XP per correct answer, cap +20, once per student. No question content is changed. */
+(function(){
+const S=()=>window.S3;
+const stu=()=>{try{return S()&&S().isStudent()}catch(e){return false}};
+const lsGet=(k,d)=>{try{return S().ls.get(k,d)}catch(e){return d}};
+const lsSet=(k,v)=>{try{S().ls.set(k,v)}catch(e){}};
+const seen=k=>{try{const s=S();if(!s.isStudent())return false;const p=s.getProg(s.SESS().id);return (p.log||[]).some(e=>e.c===k)}catch(e){return false}};
+const done=()=>{try{return seen('Training Ground')||!!lsGet('s3tg_'+S().SESS().id,0)}catch(e){return false}};
+const toast=m=>{try{S().toast(m)}catch(e){}};
+const esc=t=>{try{return S().esc(t)}catch(e){return String(t)}};
+let TG=null;
+function pool(){try{return BASE_QUESTIONS.filter(q=>q.unit>=3&&q.unit<=7&&q.options&&q.options.length>=3&&typeof q.answer==='number'&&q.answer<q.options.length&&/Vocabulary|Grammar|Idioms|Functions/.test(q.category||''))}catch(e){return[]}}
+function sample(a,n){const c=a.slice();for(let i=c.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[c[i],c[j]]=[c[j],c[i]]}return c.slice(0,n)}
+function open(){
+ if(!stu())return;
+ if(done()){toast('🎖 Training Ground already cleared — the Question Bank has plenty more for you.');return}
+ const qs=sample(pool(),10);
+ if(qs.length<10){toast('Training Ground is warming up — try the Question Bank for now.');return}
+ TG={qs,i:0,right:0,picked:-1};
+ draw();
+}
+function draw(){
+ closeOnly();
+ const bg=document.createElement('div');bg.id='s3-tg-bg';
+ bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99996;display:flex;align-items:center;justify-content:center;padding:14px';
+ const q=TG.qs[TG.i],ans=TG.picked>=0;
+ const bar=TG.qs.map((x,k)=>'<div style="flex:1;height:8px;border-radius:4px;background:'+(k<TG.i?(x._ok?'#16a34a':'#dc2626'):k===TG.i?'#f59e0b':'var(--bd,#e2e8f0)')+'"></div>').join('');
+ const opts=q.options.map((o,k)=>{
+  let bgc='var(--surf2,#f1f5f9)',bd='1px solid var(--bd,#e2e8f0)';
+  if(ans){if(k===q.answer){bgc='#dcfce7';bd='2px solid #16a34a'}else if(k===TG.picked){bgc='#fee2e2';bd='2px solid #dc2626'}}
+  return '<button data-tg="'+k+'" '+(ans?'disabled':'')+' style="display:block;width:100%;text-align:left;margin:7px 0;padding:12px 14px;border-radius:12px;border:'+bd+';background:'+bgc+';color:inherit;font-size:15px;line-height:1.45;cursor:'+(ans?'default':'pointer')+'">'+esc(o)+'</button>';
+ }).join('');
+ bg.innerHTML='<div style="background:var(--surf,#fff);border-radius:18px;max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.35)">'
+  +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="font-size:17px">🎖 Training Ground</b><span style="font-size:13px;font-weight:700;opacity:.7">'+(TG.i+1)+' / 10</span></div>'
+  +'<div style="display:flex;gap:4px;margin-bottom:12px">'+bar+'</div>'
+  +'<div style="font-size:11px;font-weight:700;letter-spacing:.5px;opacity:.55;text-transform:uppercase">'+esc(q.category||'')+' · Unit '+q.unit+'</div>'
+  +'<div style="font-size:16px;font-weight:700;margin:6px 0 12px;line-height:1.55">'+esc(q.question)+'</div>'
+  +opts
+  +(ans?'<button id="s3-tg-next" style="width:100%;margin-top:10px;padding:12px;border:0;border-radius:12px;background:var(--ac,#4f46e5);color:#fff;font-weight:800;font-size:15px;cursor:pointer">'+(TG.i<9?'Next question ➜':'See result 🏁')+'</button>'
+       :'<div style="font-size:12px;opacity:.6;text-align:center;margin-top:8px">No hints here, Recruit. Trust yourself.</div>')
+  +'</div>';
+ document.body.appendChild(bg);
+ bg.querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>pick(+b.getAttribute('data-tg')));
+ const nx=document.getElementById('s3-tg-next');if(nx)nx.onclick=next;
+}
+function pick(k){if(!TG||TG.picked>=0)return;TG.picked=k;const q=TG.qs[TG.i];q._ok=(k===q.answer);if(q._ok)TG.right++;draw()}
+function next(){if(!TG)return;if(TG.i<9){TG.i++;TG.picked=-1;draw()}else finish()}
+function finish(){
+ const r=TG.right;TG=null;
+ closeOnly();
+ const xp=r*2;
+ try{if(xp>0)S().addXP(xp,'Training Ground')}catch(e){}
+ try{lsSet('s3tg_'+S().SESS().id,1)}catch(e){}
+ try{if(window.s3QuestComplete)s3QuestComplete('m1')}catch(e){}
+ const bg=document.createElement('div');bg.id='s3-tg-bg';
+ bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99996;display:flex;align-items:center;justify-content:center;padding:14px';
+ bg.innerHTML='<div style="background:var(--surf,#fff);border-radius:18px;max-width:460px;width:100%;padding:22px 18px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35)">'
+  +'<div style="font-size:44px">'+(r>=8?'🏆':r>=5?'💪':'🥉')+'</div>'
+  +'<b style="font-size:19px;display:block;margin:8px 0 4px">Training Ground cleared!</b>'
+  +'<div style="font-size:14.5px;opacity:.8;line-height:1.6">You got <b>'+r+' / 10</b> right and earned <b>+'+xp+' XP</b>.<br>Mission 1: First Blood — done. The Question Bank is open for the real grind.</div>'
+  +'<button id="s3-tg-done" style="width:100%;margin-top:14px;padding:12px;border:0;border-radius:12px;background:var(--ac,#4f46e5);color:#fff;font-weight:800;font-size:15px;cursor:pointer">Back to the quest 🗺️</button></div>';
+ document.body.appendChild(bg);
+ document.getElementById('s3-tg-done').onclick=()=>{bg.remove()};
+}
+function closeOnly(){const o=document.getElementById('s3-tg-bg');if(o)o.remove()}
+window.s3TG={open,done};
+})();
 </script>
 <script id="s3-loot">
 /* S3 UPGRADE: progression loot — weekly XP milestones, unlockable milestone
