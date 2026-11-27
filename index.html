@@ -5625,7 +5625,13 @@ window.saveState=function(){if(!SESS)return;const o={userAnswers:(window.s3Shuf?
 function refreshAll(){try{updateStats();applyFilters();renderExamDrills();renderSRSDashboard();renderCustomQuestionsList();WS.render();}catch(e){console.warn(e)}refreshChip()}
 
 /* ---------- XP LOGGING ---------- */
+function s3Led(p,ex){if(p.led&&p.led.q&&p.led.rw&&p.led.tr&&p.led.g)return p.led;const L={q:[],rw:[],tr:[],g:[]},add=(k,v)=>{v=String(v);if(L[k].indexOf(v)<0)L[k].push(v)};
+ (p.log||[]).forEach(e=>{if(e.k==='q')add('q',e.q);else if(e.k==='rw')add('rw',e.q);else if(e.k==='tr')add('tr',e.q);else if(e.k==='srs'&&e.xp>=20)add('g',e.q)});
+ try{const addS=(k,v)=>{if(String(v)!==ex)add(k,v)};Object.keys(state.userAnswers||{}).forEach(k=>addS('q',k));Object.keys(state.rewriteChecked||{}).forEach(k=>{if(state.rewriteChecked[k])addS('rw','rw'+k)});Object.keys(state.translationChecked||{}).forEach(k=>{if(state.translationChecked[k])addS('tr','tr'+k)})}catch(e){}
+ p.led=L;return L}
 function logEv(q,ok,xp,kind){if(!isStudent())return;const p=getProg(SESS.id);
+ /* ledger: XP for a question is paid once ever; Reset clears answers but not this list (it lives in prog, so it syncs to the cloud) */
+ if(kind==='q'||kind==='rw'||kind==='tr'||(kind==='srs'&&xp>=20)){const L=s3Led(p,String(q.id)),key=kind==='srs'?'g':kind,id=String(q.id);if(L[key].indexOf(id)>=0){xp=kind==='srs'?5:0}else L[key].push(id)}
  p.log.push({t:Date.now(),q:q.id,u:q.unit,c:q.category,ok:ok?1:0,xp,k:kind});if(p.log.length>3000)p.log=p.log.slice(-3000);
  p.xp=(p.xp||0)+xp;p.cur=state.streak;p.best=Math.max(p.best||0,state.streak);const d=dayKey();p.days[d]=(p.days[d]||0)+1;p.last=Date.now();saveProg(p);refreshChip()}
 const _sel=window.selectOption;window.selectOption=function(id,i,quiz){const was=state.userAnswers[id]===undefined;_sel(id,i,quiz);if(was){const q=state.allQuestions.find(x=>x.id===id);if(q){const ok=state.userAnswers[id]===q.answer;logEv(q,ok,ok?5+(state.streak>=5?3:0):1,'q')}}};
@@ -5712,7 +5718,7 @@ function greet(){try{let n='';if(SESS.role==='teacher')n=(localStorage.getItem('
 /* ---------- TEACHER: STUDENTS ---------- */
 function randPin(){return String(Math.floor(1000+Math.random()*9000))}
 function renderStudents(){const v=$('view-students');if(!isTeacher()){v.innerHTML='';return}if(window.S3CLOUD&&S3CLOUD.on)return S3CLOUD.renderStudents(v);
- const rows=CLS.students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name)).map(s=>{const x=statsFor(s);return'<tr><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.pinPlain)+'</code></td><td>'+x.xp+' XP</td><td>'+x.acc+'%</td><td>'+ago(x.last)+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="s3Pin(\''+s.id+'\')">New PIN</button> <button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="s3ResetStu(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="s3DelStu(\''+s.id+'\')">✕</button></td></tr>'}).join('');
+ const rows=CLS.students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name)).map(s=>{const x=statsFor(s);return'<tr><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.pinPlain)+'</code></td><td>'+x.xp+' XP'+s3LvTag(x.xp)+'</td><td>'+x.acc+'%</td><td>'+ago(x.last)+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="s3Pin(\''+s.id+'\')">New PIN</button> <button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="s3ResetStu(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="s3DelStu(\''+s.id+'\')">✕</button></td></tr>'}).join('');
  v.innerHTML='<div id="stu-controls" class="s3noprint" style="display:grid;gap:16px"><div class="bg-white rounded-2xl border p-5"><div class="s3h">👥 My Students</div><div class="s3sub">Only students you add here can sign in. Each has their own PIN, saved progress and report.</div>'+
  '<label class="s3lbl" style="margin-top:12px">Paste your list — one student per line as <b>Class, Name</b> (e.g. 3A, Ahmed Hassan). A name alone also works. PINs are generated automatically.</label><textarea id="stu-new" class="s3in" rows="3" placeholder="3A, Ahmed Hassan&#10;3A, Mona Ali&#10;3B, Omar Said"></textarea><button class="s3btn" style="margin-top:10px" onclick="s3AddStu()">+ Add students</button> <label class="s3btn ghost" style="cursor:pointer;display:inline-block;margin-top:10px">📄 Load .csv / .txt<input type="file" accept=".csv,.txt" hidden onchange="s3StuFile(event)"></label></div>'+
  '<div class="bg-white rounded-2xl border p-5" style="overflow-x:auto"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div class="s3h" style="font-size:15px">Class list ('+CLS.students.length+')</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s3btn ghost" onclick="s3Cards()">🖨️ Print login cards</button><button class="s3btn ghost" onclick="s3ExportClass()">⬇ Export class data</button><label class="s3btn ghost" style="cursor:pointer">⬆ Import<input type="file" accept=".json" hidden onchange="s3ImportClass(event)"></label></div></div>'+
@@ -5739,10 +5745,10 @@ let boardMode='all',boardCls='all';window.s3BoardCls=c=>{boardCls=c;window.__s3b
 window.s3Board=m=>{boardMode=m;renderBoard()};
 function renderBoard(){const v=$('view-board');if(window.S3CLOUD&&S3CLOUD.on&&!S3CLOUD.offline&&!S3CLOUD.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';S3CLOUD.load().then(()=>renderBoard());return}const clsSel=()=>(clsList().length>1||isStudent())?'<select class="s3in" style="width:auto" onchange="s3BoardCls(this.value)"><option value="all">All classes</option>'+(isStudent()?'<option value="@f" '+(boardCls==='@f'?'selected':'')+'>👥 Friends only</option>':'')+clsList().map(c=>'<option value="'+esc(c)+'" '+(c===boardCls?'selected':'')+'>'+esc(c||'—')+'</option>').join('')+'</select>':'';const rows=CLS.students.filter(s=>boardCls==='all'||(boardCls==='@f'?!!(window.s3Com&&(s3Com.isFriend(s.id)||(SESS&&s.id===SESS.id))):(s.cls||'')===boardCls)).map(statsFor).sort((a,b)=>(boardMode==='week'?b.wxp-a.wxp:b.xp-a.xp)||b.acc-a.acc);
  const val=x=>boardMode==='week'?x.wxp:x.xp,me=isStudent()?SESS.id:null;
- const pod=[1,0,2].filter(i=>rows[i]).map(i=>'<div class="pod p'+(i+1)+'"><div style="font-size:26px">'+['🥇','🥈','🥉'][i]+'</div><b style="cursor:pointer" onclick="s3Com&&s3Com.open(\''+esc(rows[i].s.id)+'\')">'+esc(rows[i].s.name)+'</b><span>'+val(rows[i])+' XP</span><div style="font-size:11px">🔥 '+rows[i].best+' best</div></div>').join('');
- v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="s3h">🏆 Class Leaderboard</div><div class="s3sub">+10 XP per correct answer · +5 streak bonus · +20 when you master a question · +15 rewrite · +10 translation</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+clsSel()+(window.s3Com?'<button class="s3btn ghost" onclick="s3Com.friends()">'+(isTeacher()?'👥 Friendships':'👥 Friends')+'</button>':'')+'<button class="s3btn '+(boardMode==='all'?'':'ghost')+'" onclick="s3Board(\'all\')">All time</button><button class="s3btn '+(boardMode==='week'?'':'ghost')+'" onclick="s3Board(\'week\')">This week</button></div></div>'+
+ const pod=[1,0,2].filter(i=>rows[i]).map(i=>'<div class="pod p'+(i+1)+'"><div style="font-size:26px">'+['🥇','🥈','🥉'][i]+'</div><b style="cursor:pointer" onclick="s3Com&&s3Com.open(\''+esc(rows[i].s.id)+'\')">'+esc(rows[i].s.name)+'</b><span>'+val(rows[i])+' XP'+s3LvTag(rows[i].xp)+'</span><div style="font-size:11px">🔥 '+rows[i].best+' best</div></div>').join('');
+ v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><div><div class="s3h">🏆 Class Leaderboard</div><div class="s3sub">+5 XP per correct answer (8 when you get 5 right in a row) · +20 when you master a question · +15 rewrite · +15 translation (80%+ match)</div></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+clsSel()+(window.s3Com?'<button class="s3btn ghost" onclick="s3Com.friends()">'+(isTeacher()?'👥 Friendships':'👥 Friends')+'</button>':'')+'<button class="s3btn '+(boardMode==='all'?'':'ghost')+'" onclick="s3Board(\'all\')">All time</button><button class="s3btn '+(boardMode==='week'?'':'ghost')+'" onclick="s3Board(\'week\')">This week</button></div></div>'+
  (rows.length?'<div class="podium" style="margin:18px 0">'+pod+'</div><div style="overflow-x:auto"><table class="s3tbl"><tr><th>#</th><th>Student</th><th>XP</th><th>🔥 Streak</th><th>Best</th><th>📅 Days</th><th>Accuracy</th><th>Mastered</th><th>Badges</th></tr>'+
- rows.map((x,i)=>'<tr style="'+(x.s.id===me?'background:var(--acs)':'')+'"><td>'+(i+1)+'</td><td>'+(window.s3Me?'<span title="'+s3Me._frame(s3Me._lvl(x.xp))[1]+' frame" style="position:relative">'+rankOf(x.xp).ic+'<span style="position:absolute;top:-4px;right:-5px;width:9px;height:9px;border-radius:50%;background:'+s3Me._frame(s3Me._lvl(x.xp))[2]+'"></span></span> ':rankOf(x.xp).ic+' ')+'<b style="cursor:pointer;text-decoration:underline dotted" onclick="s3Com&&s3Com.open(\''+esc(x.s.id)+'\')">'+esc(x.s.name)+'</b>'+(x.s.cls?' <span class="s3sub">'+esc(x.s.cls)+'</span>':'')+(x.s.id===me?' (you)':'')+'</td><td><b>'+val(x)+'</b></td><td>'+x.cur+'</td><td>'+x.best+'</td><td>'+x.ds+'</td><td>'+x.acc+'%</td><td>'+x.mastered+'</td><td style="font-size:13px;white-space:nowrap" title="'+esc(badges(x).join(', '))+'">'+(badges(x).slice(0,6).map(b=>b.split(' ')[0]).join(' ')+(badges(x).length>6?' <span class="s3sub">+'+(badges(x).length-6)+'</span>':'')||'—')+'</td></tr>').join('')+'</table></div>':'<p class="s3sub" style="margin-top:14px">No students yet — the teacher can add them in the Students tab.</p>')+'</div>'}
+ rows.map((x,i)=>'<tr style="'+(x.s.id===me?'background:var(--acs)':'')+'"><td>'+(i+1)+'</td><td>'+(window.s3Me?'<span title="'+s3Me._frame(s3Me._lvl(x.xp))[1]+' frame" style="position:relative">'+rankOf(x.xp).ic+'<span style="position:absolute;top:-4px;right:-5px;width:9px;height:9px;border-radius:50%;background:'+s3Me._frame(s3Me._lvl(x.xp))[2]+'"></span></span> ':rankOf(x.xp).ic+' ')+'<b style="cursor:pointer;text-decoration:underline dotted" onclick="s3Com&&s3Com.open(\''+esc(x.s.id)+'\')">'+esc(x.s.name)+'</b>'+(x.s.cls?' <span class="s3sub">'+esc(x.s.cls)+'</span>':'')+(x.s.id===me?' (you)':'')+'</td><td><b>'+val(x)+'</b>'+s3LvTag(x.xp)+'</td><td>'+x.cur+'</td><td>'+x.best+'</td><td>'+x.ds+'</td><td>'+x.acc+'%</td><td>'+x.mastered+'</td><td style="font-size:13px;white-space:nowrap" title="'+esc(badges(x).join(', '))+'">'+(badges(x).slice(0,6).map(b=>b.split(' ')[0]).join(' ')+(badges(x).length>6?' <span class="s3sub">+'+(badges(x).length-6)+'</span>':'')||'—')+'</td></tr>').join('')+'</table></div>':'<p class="s3sub" style="margin-top:14px">No students yet — the teacher can add them in the Students tab.</p>')+'</div>'}
 
 /* ---------- REPORTS ---------- */
 let repId=null;window.s3ViewRep=id=>{repId=id;switchTab('report')};
@@ -5773,7 +5779,7 @@ function renderReport(){const v=$('view-report');if(window.S3CLOUD&&S3CLOUD.on&&
 window.s3Note=(id,t)=>{const p=getProg(id);p.note=t;if(window.S3CLOUD&&S3CLOUD.on){S3CLOUD.saveNote(id,t)}else ls.set(progKey(id),p);toast('Comment saved')};
 window.s3PrintRep=()=>{document.body.classList.add('print-report');setTimeout(()=>{print();document.body.classList.remove('print-report')},120)};
 window.s3ClassCsv=()=>{const h=['Class','Name','XP','Weekly XP','Accuracy %','Answered','Mastered','Best streak','Day streak','Last active'];const r=CLS.students.map(statsFor).map(x=>[x.s.cls||'',x.s.name,x.xp,x.wxp,x.acc,x.att,x.mastered,x.best,x.ds,x.last?new Date(x.last).toLocaleString():''].map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(','));download('class_report.csv',[h.join(',')].concat(r).join('\n'),'text/csv')};
-window.s3Overview=()=>{const v=$('view-report');const rows=CLS.students.map(statsFor).sort((a,b)=>b.xp-a.xp);v.innerHTML='<div id="report-controls" style="margin-bottom:12px"><button class="s3btn ghost" onclick="renderReportBack()">← Back</button> <button class="s3btn" onclick="s3PrintRep()">🖨️ Print</button></div><div id="report-sheet" class="bg-white rounded-2xl border p-6" style="overflow-x:auto"><div class="s3h">Class overview — '+new Date().toLocaleDateString()+'</div>'+(window.s3SpSummary?s3SpSummary(rows):'')+'<table class="s3tbl" style="margin-top:10px"><tr><th>Class</th><th>Student</th><th>XP</th><th>Accuracy</th><th>Answered</th><th>Mastered</th><th>Best streak</th><th>Level</th><th>Speaking</th><th>Last active</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.s.cls||'—')+'</td><td><b>'+esc(x.s.name)+'</b></td><td>'+x.xp+'</td><td>'+x.acc+'%</td><td>'+x.att+'</td><td>'+x.mastered+'</td><td>'+x.best+'</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td>'+(window.s3SpBadge?s3SpBadge(x.p&&x.p.spk):'')+'</td><td>'+ago(x.last)+'</td></tr>').join('')+'</table></div>'};
+window.s3Overview=()=>{const v=$('view-report');const rows=CLS.students.map(statsFor).sort((a,b)=>b.xp-a.xp);v.innerHTML='<div id="report-controls" style="margin-bottom:12px"><button class="s3btn ghost" onclick="renderReportBack()">← Back</button> <button class="s3btn" onclick="s3PrintRep()">🖨️ Print</button></div><div id="report-sheet" class="bg-white rounded-2xl border p-6" style="overflow-x:auto"><div class="s3h">Class overview — '+new Date().toLocaleDateString()+'</div>'+(window.s3SpSummary?s3SpSummary(rows):'')+'<table class="s3tbl" style="margin-top:10px"><tr><th>Class</th><th>Student</th><th>XP</th><th>Accuracy</th><th>Answered</th><th>Mastered</th><th>Best streak</th><th>Level</th><th>Speaking</th><th>Last active</th></tr>'+rows.map(x=>'<tr><td>'+esc(x.s.cls||'—')+'</td><td><b>'+esc(x.s.name)+'</b></td><td>'+x.xp+s3LvTag(x.xp)+'</td><td>'+x.acc+'%</td><td>'+x.att+'</td><td>'+x.mastered+'</td><td>'+x.best+'</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td>'+(window.s3SpBadge?s3SpBadge(x.p&&x.p.spk):'')+'</td><td>'+ago(x.last)+'</td></tr>').join('')+'</table></div>'};
 window.renderReportBack=renderReport;
 window.s3Wa=()=>{const s=CLS.students.find(x=>x.id===repId);if(!s)return;const x=statsFor(s);const t='📘 Secondary 3 English — progress for '+s.name+'\n⭐ XP: '+x.xp+'\n🎯 Accuracy: '+x.acc+'% ('+x.att+' answered)\n🏆 Mastered: '+x.mastered+'\n🔥 Best streak: '+x.best+' · '+x.ds+'-day habit\n'+(x.p.note?'📝 Teacher: '+x.p.note:'');window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')};
 function addXP(n,label){if(!isStudent())return;const p=getProg(SESS.id);p.xp=(p.xp||0)+n;p.log.push({t:Date.now(),q:'bonus',u:0,c:label||'Bonus',ok:1,xp:n,k:'bonus'});p.last=Date.now();const d=dayKey();p.days[d]=(p.days[d]||0)+1;saveProg(p);refreshChip()}
@@ -8182,7 +8188,7 @@ C.cards=function(){const a=$('cards-area');a.style.display='block';const L=S().C
 C.renderStudents=function(v){if(!S().isTeacher()){v.innerHTML='';return}
  if(!C.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';C.loadTeacher().then(()=>{loadedAt=Date.now();C.renderStudents(v)});return}
  const L=S().CLS().students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name));
- const rows=L.map(s=>{const x=S().statsFor(s);return'<tr class="stu-r" data-n="'+esc(((s.name||'')+' '+(s.cls||'')+' '+(s.un||'')).toLowerCase())+'"><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.un)+'</code></td><td><code>'+esc(s.pw)+'</code></td><td>'+x.xp+' XP</td><td>'+x.acc+'%</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',0)">📋 Copy</button> <button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',1)">💬 WhatsApp</button> <button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="S3CLOUD.replace(\''+s.id+'\')">New login</button> <button class="s3btn ghost" onclick="S3CLOUD.reset(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="S3CLOUD.remove(\''+s.id+'\')">✕</button></td></tr>'}).join('');
+ const rows=L.map(s=>{const x=S().statsFor(s);return'<tr class="stu-r" data-n="'+esc(((s.name||'')+' '+(s.cls||'')+' '+(s.un||'')).toLowerCase())+'"><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.un)+'</code></td><td><code>'+esc(s.pw)+'</code></td><td>'+x.xp+' XP'+s3LvTag(x.xp)+'</td><td>'+x.acc+'%</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',0)">📋 Copy</button> <button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',1)">💬 WhatsApp</button> <button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="S3CLOUD.replace(\''+s.id+'\')">New login</button> <button class="s3btn ghost" onclick="S3CLOUD.reset(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="S3CLOUD.remove(\''+s.id+'\')">✕</button></td></tr>'}).join('');
  v.innerHTML='<div class="s3noprint" style="display:grid;gap:16px"><div class="bg-white rounded-2xl border p-5"><div class="s3h">👥 My Students</div><div class="s3sub">Paste one student per line as <b>Class, Name</b>. Each gets a username and a password. Students never register.</div>'+
  '<textarea id="stu-new" class="s3in" rows="4" style="margin-top:10px" placeholder="3A, Mohamed Eid&#10;3A, Mariam Ali"></textarea><button class="s3btn" style="margin-top:10px" onclick="S3CLOUD.create()">+ Create accounts</button> <label class="s3btn ghost" style="cursor:pointer;display:inline-block;margin-top:10px">📄 Load .txt / .csv<input type="file" accept=".csv,.txt" hidden onchange="S3CLOUD.file(event)"></label><div id="stu-prog" class="s3sub" style="margin-top:8px"></div></div>'+
  '<div class="bg-white rounded-2xl border p-5" style="overflow-x:auto"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div class="s3h" style="font-size:15px">Class list ('+L.length+')</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s3btn ghost" onclick="S3CLOUD.cards()">🖨️ Print login cards</button><button class="s3btn ghost" onclick="S3CLOUD.csv()">⬇ Logins (CSV)</button><button class="s3btn ghost" onclick="S3CLOUD.refresh()">🔄 Refresh</button></div></div>'+
@@ -9144,7 +9150,7 @@ function classHtml(forPrint){
  str.sort(function(m,n){return n.r-m.r});weak.sort(function(m,n){return m.r-n.r});
  var qi=qIdx(),hard=Object.keys(q).filter(function(id){return q[id].n>=5&&q[id].who>=2&&qi[id]}).sort(function(m,n){return q[n].bad/q[n].n-q[m].bad/q[m].n}).slice(0,5).map(function(id){var z=qi[id],o=q[id];return '<li style="margin-bottom:6px">'+esc(z.question)+' <span class="s3sub">Answer: <b style="color:var(--ok)">'+esc(z.options[z.answer])+'</b> · '+o.who+' students wrong · '+pct(o.n-o.bad,o.n)+'% correct</span></li>'}).join('');
  var thin=tot.n<60?'<div style="margin:10px 0;padding:10px;border-radius:12px;background:var(--surf2,#eef2ff);font-size:13px">⚠️ Only '+tot.n+' answers recorded for this group. Strengths and weaknesses show only where there are 30+ answers per skill and 15+ per unit.</div>':'';
- var rows=A.slice().sort(function(m,n){return (n.x.xp||0)-(m.x.xp||0)}).map(function(a){var f=flag(a);return '<tr'+(forPrint?'':' style="cursor:pointer" onclick="s3Track.open(\''+esc(a.s.id)+'\')"')+'><td>'+esc(a.s.cls||'-')+'</td><td><b>'+esc(a.s.name)+'</b></td><td>'+a.x.xp+'</td><td>'+(a.acc==null?'-':a.acc+'%')+'</td><td>'+a.n+'</td><td>'+(a.speak&&a.speak.lv?a.speak.lv[1]+' '+a.speak.score+'%':'-')+'</td><td>'+(a.p.place?'L'+(a.p.place.tot>=80?3:a.p.place.tot>=50?2:1):'-')+'</td><td>'+esc(ago(a.x.last))+'</td><td><span class="s3pill" style="border-color:'+f.c+';color:'+f.c+'">'+f.t+'</span></td></tr>'}).join('');
+ var rows=A.slice().sort(function(m,n){return (n.x.xp||0)-(m.x.xp||0)}).map(function(a){var f=flag(a);return '<tr'+(forPrint?'':' style="cursor:pointer" onclick="s3Track.open(\''+esc(a.s.id)+'\')"')+'><td>'+esc(a.s.cls||'-')+'</td><td><b>'+esc(a.s.name)+'</b></td><td>'+a.x.xp+s3LvTag(a.x.xp)+'</td><td>'+(a.acc==null?'-':a.acc+'%')+'</td><td>'+a.n+'</td><td>'+(a.speak&&a.speak.lv?a.speak.lv[1]+' '+a.speak.score+'%':'-')+'</td><td>'+(a.p.place?'L'+(a.p.place.tot>=80?3:a.p.place.tot>=50?2:1):'-')+'</td><td>'+esc(ago(a.x.last))+'</td><td><span class="s3pill" style="border-color:'+f.c+';color:'+f.c+'">'+f.t+'</span></td></tr>'}).join('');
  var attH=att.length?'<ul style="margin:6px 0 0 16px;font-size:13px">'+att.map(function(z){return '<li><b>'+esc(z.a.s.name)+'</b> <span class="s3sub">'+esc(z.f.t)+(z.a.s.cls?' · '+esc(z.a.s.cls):'')+'</span></li>'}).join('')+'</ul>':'<p class="s3sub">Nobody flagged. Flags: no activity for 7+ days, or accuracy below 50% over 20+ answers.</p>';
  return '<div id="trk-sheet" class="bg-white rounded-2xl border p-5"><div style="border-bottom:2px solid var(--bd);padding-bottom:10px"><div class="s3h">Class report · '+title+'</div><div class="s3sub">'+list.length+' students · Report date '+new Date().toLocaleDateString()+'</div></div>'+thin+
  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin:14px 0">'+kp(list.length,'Students')+kp(act7+' / '+list.length,'Active (7 days)')+kp(avgAcc==null?'-':avgAcc+'%','Avg accuracy')+kp(tot.n,'Answers')+kp(list.length?Math.round(xpSum/list.length):0,'Avg XP')+kp(spAvg==null?'-':spAvg+'%','Speaking avg')+'</div>'+
@@ -9674,6 +9680,7 @@ window.s3Loot={open,close,check:()=>{weeklyBonus();checkUnlocks(null)}};
 })();
 </script>
 
+<script>
 /* game_badges.js — game achievements for the student site.
    Adds window.s3Loot.gameEvent(gameId, result): the games report how a run
    ended, this module owns tier badges (Bronze/Silver/Gold/Diamond per game),
@@ -9685,7 +9692,6 @@ window.s3Loot={open,close,check:()=>{weeklyBonus();checkUnlocks(null)}};
      order: window.s3Loot is created if missing and the panel section is
      injected by wrapping s3Loot.open whenever it appears.
    Storage key: s3gb2_<studentId> (localStorage only). */
-<script>
 (function(){
 const $=id=>document.getElementById(id);
 const S=()=>window.S3;
@@ -9910,6 +9916,7 @@ s3Loot.gbInject=inject;
 })();
 </script>
 
+<script>
 /* rewards_fix.js — makes the 🎁 Rewards entries appear INSTANTLY.
    The loot module injects its drawer button / settings row on a 1.2s poll,
    but openD()/openS() rebuild those panels on every open, so the entry is
@@ -9919,7 +9926,6 @@ s3Loot.gbInject=inject;
    before the paint after each rebuild - no visible gap, no flicker.
    It only ADDS entries when missing; the loot module's own injector stays
    as a fallback and sees the entries already present. */
-<script>
 (function(){
 const $=id=>document.getElementById(id);
 function addDrawer(){
@@ -9951,6 +9957,7 @@ check();
 })();
 </script>
 
+<script>
 /* class_pack.js — classroom-games support pack (teacher + student sides).
    1. window.s3Rota: fair rotation helper for the teacher-run games
       (persistent per class+game queue; nobody is asked twice before
@@ -9967,7 +9974,6 @@ check();
       chime (off by default).
    Load-order independent: window.s3Loot is created if missing and the
    Rewards panel section is injected by wrapping s3Loot.open when it appears. */
-<script>
 (function(){
 const $=id=>document.getElementById(id);
 const S=()=>window.S3;
@@ -10178,6 +10184,7 @@ window.s3Loot=window.s3Loot||{};
 })();
 </script>
 
+<script>
 /* quotes_module.js — Mr. Makaryous's quote card on the login (gate) screen.
    The splash card is inserted by patch_quotes.py directly into the splash
    markup (it must render before any JS app code runs). This module handles
@@ -10185,7 +10192,6 @@ window.s3Loot=window.s3Loot||{};
    render, so a MutationObserver appends the card whenever the box re-renders
    without one. Random quote per page load (window.S3QUOTES is defined by the
    splash snippet; the fallback below covers any load order). */
-<script>
 (function(){
 const QUOTES=window.S3QUOTES||[
  "English is not a subject. It's a cheat code for life. Let's level up.",
@@ -10215,5 +10221,6 @@ add();
 })();
 </script>
 
-<style id="s3-brandfit">@media(max-width:480px){header h1{font-size:13px!important;letter-spacing:-.2px}header .w-10.h-10.rounded-xl.bg-gradient-to-br{width:34px;height:34px;font-size:12px;border-radius:10px}header .flex.items-center.gap-3{gap:8px}header #s3-chip,header .s3chip #s3-chip{padding:2px 4px!important;font-size:11px!important;gap:2px!important}header .s3rk{padding:3px 6px!important;font-size:11px!important}header button.s3ib{width:34px!important;min-width:34px!important}header .flex.items-center.justify-between{min-width:0}}</style></body>
+<style id="s3-brandfit">@media(max-width:480px){header h1{font-size:13px!important;letter-spacing:-.2px}header .w-10.h-10.rounded-xl.bg-gradient-to-br{width:34px;height:34px;font-size:12px;border-radius:10px}header .flex.items-center.gap-3{gap:8px}header #s3-chip,header .s3chip #s3-chip{padding:2px 4px!important;font-size:11px!important;gap:2px!important}header .s3rk{padding:3px 6px!important;font-size:11px!important}header button.s3ib{width:34px!important;min-width:34px!important}header .flex.items-center.justify-between{min-width:0}}</style><script>window.s3LvTag=function(xp){var l;try{l=window.s3Me&&s3Me._lvl?s3Me._lvl(xp||0):Math.floor((xp||0)/750)+1}catch(e){l=Math.floor((xp||0)/750)+1}return ' <span style="font-size:11px;font-weight:700;color:#5b50e6;white-space:nowrap">Lv '+l+'</span>'};</script>
+</body>
 </html>
