@@ -7144,7 +7144,9 @@ window.S3GEM=GEM;
 (function(){const LS=window.localStorage;const g=k=>{try{return LS.getItem(k)}catch(e){return null}},st=(k,v)=>{try{LS.setItem(k,v)}catch(e){}};
  let el=null,seq=0,cache={},off=0,note=0;
  const DG={voice:()=>g('s3dgVoice')||'thalia',on:()=>g('s3dgOff')!=='1'&&!off,
-  stop(){seq++;if(el){const a=el;el=null;a.onended=a.onerror=null;try{a.pause()}catch(e){}}},
+  stop(){seq++;DG.pend=null;DG.playing=0;if(el){const a=el;el=null;a.onended=a.onerror=null;try{a.pause()}catch(e){}}},
+  pend:null,armed:0,cur:()=>el,
+  arm(){if(DG.armed)return;DG.armed=1;['touchend','pointerdown','click'].forEach(ev=>document.addEventListener(ev,function h(){const p=DG.pend;if(!p)return;DG.pend=null;const a=DG.pe();el=a;DG.playing=1;a.onended=()=>{DG.playing=0;if(el===a)el=null};a.onerror=()=>{DG.playing=0;if(el===a)el=null};a.src='data:audio/mpeg;base64,'+p;try{const r=a.play();if(r&&r.catch)r.catch(()=>{DG.playing=0})}catch(e){DG.playing=0}},true))},
   pe(){if(!DG._pe)DG._pe=new Audio();return DG._pe},
   unlock(){try{const a=DG.pe();if(a.src)return;a.muted=true;a.src='data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQxAADwAAB9AAAAAgAAA0gAAABAAAB9AAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';const pr=a.play();if(pr&&pr.then)pr.then(()=>{a.pause();a.muted=false;a.removeAttribute('src')}).catch(()=>{a.muted=false;a.removeAttribute('src')})}catch(e){}},
   async say(text,fallback){text=String(text||'').trim();if(!text)return;DG.stop();const my=seq;
@@ -7156,13 +7158,20 @@ window.S3GEM=GEM;
      if(!r.ok){if(r.error==='tts_credit'||r.error==='tts_off')off=1;if(r.error==='tts_student_limit'&&!note){note=1;try{toast('Natural voice limit for today reached. Using phone voice.')}catch(e){}}fallback();return}
      b64=r.audio;cache[key]=b64}
     if(my!==seq)return;
-    const a=DG.pe();el=a;a.onended=()=>{if(el===a)el=null};
-    a.onerror=()=>{if(el===a){el=null;if(my===seq)fallback()}};
-    a.src='data:audio/mpeg;base64,'+b64;await a.play()}catch(e){if(my===seq)fallback()}}};
+    const a=DG.pe();el=a;DG.playing=1;a.onended=()=>{DG.playing=0;if(el===a)el=null};
+    a.onerror=()=>{DG.playing=0;if(el===a){el=null;if(my===seq)fallback()}};
+    a.src='data:audio/mpeg;base64,'+b64;await a.play();DG.playing=0}catch(e){DG.playing=0;if(my===seq){if(b64){DG.pend=b64;DG.arm()}fallback()}}}};
  window.S3DG=DG;['touchend','pointerdown','click'].forEach(ev=>document.addEventListener(ev,function f(){DG.unlock();document.removeEventListener(ev,f,true)},true));
  try{const os=window.S3A&&S3A.stop;if(os)S3A.stop=function(){DG.stop();return os.apply(this,arguments)}}catch(e){}
 })();
 function coachSay(t){const fb=()=>{try{say(t)}catch(e){}};try{S3DG.say(t,fb)}catch(e){fb()}}
+function coachVoiceWait(cb,m){let busy=0;try{const a=S3DG&&S3DG.cur&&S3DG.cur();if(a&&(S3DG.playing||(!a.paused&&!a.ended)))busy=1}catch(e){}
+ try{const p=window.S3A&&S3A.probe&&S3A.probe();if(p&&!p.e&&!p.p)busy=1}catch(e){}
+ if(!busy)return cb();if(m)try{m.textContent='🔊 Listen…'}catch(e){}
+ let done=0;const t0=Date.now();const go=()=>{if(!done){done=1;cb()}};
+ (function poll(){if(done)return;let b=0;try{const a=S3DG&&S3DG.cur&&S3DG.cur();if(a&&(S3DG.playing||(!a.paused&&!a.ended)))b=1}catch(e){}
+  try{const p=window.S3A&&S3A.probe&&S3A.probe();if(p&&!p.e&&!p.p)b=1}catch(e){}
+  if(!b||Date.now()-t0>20000)return go();setTimeout(poll,250)})()}
 window.s3dgPick=function(v){try{if(v==='phone'){localStorage.setItem('s3dgOff','1')}else{localStorage.removeItem('s3dgOff');localStorage.setItem('s3dgVoice',v)}}catch(e){}
  try{S3DG.stop();coachSay('Hi! I am your English coach. Let us practice together.')}catch(e){}};
 
@@ -7259,7 +7268,7 @@ function dlHint(){const D=DL;if(!D)return;const t=D.L.turns[D.i],k=[...String(t[
  m.innerHTML=k.length?'💡 Try to use: <b>'+k.slice(0,4).map(esc).join(', ')+'</b>':'💡 Your answer is about '+dlPlain(t[1]).split(/\s+/).length+' words long.'}
 function dlSkip(){const D=DL;if(!D)return;D.skip[D.i]=1;dlStep()}
 function dlSay(){const D=DL;if(!D)return;const a=$('dl-a'),m=$('dl-m'),again=()=>{a.innerHTML=btn('🎤 Speak','s3Game.dlSay()')+btn('💡 Hint','s3Game.dlHint()',1)+btn('⏭ Skip','s3Game.dlSkip()',1)};
- a.innerHTML='';aiMic(m,said=>dlEval(said),again)}
+ a.innerHTML='';coachVoiceWait(()=>aiMic(m,said=>dlEval(said),again),m)}
 async function dlEval(said){const D=DL;if(!D)return;const a=$('dl-a'),m=$('dl-m'),t=D.L.turns[D.i],exp=dlPlain(t[1]);D.tries++;D.lastM=[];D.lastT='';dlLog('🧑 You:',said);m.textContent='🤖 The coach is checking…';a.innerHTML='';
  const kw=[...new Set(dlWords(exp))],sl=said.toLowerCase(),hit=kw.filter(w=>sl.indexOf(w)>-1).length;
  const r=await GEM.ask({mode:'dialogue',topic:D.L.title,role:D.role,prev:D.prev,expected:exp,transcript:said});
@@ -7299,7 +7308,7 @@ async function ocTurn(said){const O=OC;if(!O)return;O.last=said;const m=$('oc-m'
  O.n++;if(O.n>=9){ocEnd();return}ocBtns()}
 function ocRetry(){if(OC)ocTurn(OC.last||'')}
 function ocHear(){try{const l=OC.hist[OC.hist.length-1];coachSay(l.c||'')}catch(e){}}
-function ocRec(){const O=OC;if(!O)return;const a=$('oc-a');a.innerHTML='';aiMic($('oc-m'),t=>{ocLog('🧑 You:',t);ocTurn(t)},ocBtns)}
+function ocRec(){const O=OC;if(!O)return;const a=$('oc-a'),m=$('oc-m');a.innerHTML='';coachVoiceWait(()=>aiMic(m,t=>{ocLog('🧑 You:',t);ocTurn(t)},ocBtns),m)}
 function ocEnd(){const O=OC;if(!O)return;aiStop();try{if(rec)rec.abort()}catch(e){}
  if(!O.c){ov('🗨️ Conversation ended',card('<div class="s3sub" style="text-align:center;margin-bottom:10px">You did not say anything yet, so there is no score. Try again, it is fun!</div><div style="text-align:center">'+btn('New conversation','s3Game.ocMenu()')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));OC=null;return}
  const c=O.c,g=O.g/c,v=O.v/c,sc=O.sn?O.s/O.sn:Math.min(10,g+v);
@@ -7309,10 +7318,10 @@ function ocEnd(){const O=OC;if(!O)return;aiStop();try{if(rec)rec.abort()}catch(e
 function rpRetry(){if(RP)rpTurn(RP.last||'')}
 function rpHear(){try{const l=RP.hist[RP.hist.length-1];coachSay(l.c||'')}catch(e){}}
 function rpRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition,m=$('rp-m'),a=$('rp-a');if(!R)return m.textContent='This browser cannot listen to you. Use Chrome on Android.';
- try{speechSynthesis.cancel()}catch(e){}try{rec=new R();rec.lang='en-US';rec.interimResults=false;let got=false;m.textContent='🎙️ Speak now…';
+ coachVoiceWait(()=>{try{speechSynthesis.cancel()}catch(e){}try{rec=new R();rec.lang='en-US';rec.interimResults=false;let got=false;m.textContent='🎙️ Speak now…';
   rec.onresult=e=>{got=true;const t=e.results[0][0].transcript;rpLog('🧑 You:',t);rpTurn(t)};
   rec.onerror=ev=>{got=true;const c=ev&&ev.error;m.textContent=c==='not-allowed'?'The microphone is blocked. Allow it for this site.':c==='no-speech'?'I did not hear anything. Try again, a little louder.':'I could not hear you. Try again.';a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')};
-  rec.onend=()=>{if(!got){m.textContent='I did not hear anything. Try again.';a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')}};rec.start()}catch(e){m.textContent='The microphone is not available.'}}
+  rec.onend=()=>{if(!got){m.textContent='I did not hear anything. Try again.';a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')}};rec.start()}catch(e){m.textContent='The microphone is not available.'}},m)}
 function rpEnd(){if(!RP)return;aiStop();try{if(rec)rec.abort()}catch(e){}
  if(!RP.c){ov('💬 Conversation ended',card('<div class="s3sub" style="text-align:center;margin-bottom:10px">You did not say anything yet, so there is no score. Try again, it is fun!</div><div style="text-align:center">'+btn('Another unit','s3Game.rpMenu')+btn('Speaking menu','s3Game.spk()',1)+'</div>'));RP=null;return}
  const c=RP.c,g=RP.g/c,v=RP.v/c,r=RP.r/c,sc=RP.sn?RP.s/RP.sn:Math.min(10,(g+v+r)/15*10);
