@@ -6307,7 +6307,7 @@ let G=null;
 function gq(){const pool=G.pool();const q=s3Fresh.pick(pool,'g_'+G.key,1,x=>x.id)[0];G.q=q;G.done=false;return q}
 function gdraw(){const q=G.q;ov(G.title,card('<div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:8px"><span>'+G.hud()+'</span><span id="g-t">'+(G.timed?G.left+'s':'')+'</span></div><div style="font-size:16px;font-weight:700;margin-bottom:10px;line-height:1.5">'+esc(q.question)+'</div>'+q.options.map((o,j)=>optB(o,j,'s3Game.ans',G.done?(j===q.answer?OKS:(j===G.pick?NOS:'border:1px solid var(--bd);background:var(--surf2);opacity:.6')):'')).join('')+(G.done&&G.msg?'<div class="s3sub">'+G.msg+'</div>':'')))}
 function gans(j){if(!G||G.done)return;const q=G.q;G.pick=j;G.done=true;const ok=j===q.answer;G.onAns(ok);gdraw();if(G.over()){setTimeout(gend,700)}else setTimeout(()=>{if(G&&G.q===q){gq();gdraw()}},ok?450:1100)}
-function gend(){const g=G;clean();const xp=gx(g.xp());const nb=best(g.key,g.score());ov(g.title,card('<div style="text-align:center"><div style="font-size:44px">'+(g.score()>=nb&&g.score()>0?'🏆':'👏')+'</div><div style="font-size:30px;font-weight:800;color:var(--ac)">'+g.res()+'</div><div class="s3sub">Best: '+best(g.key)+(xp?' · +'+xp+' XP':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3Game.'+g.key+'()')+btn('Games menu','s3Game.menu()',1)+'</div></div>'))}
+function gend(){const g=G;clean();try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent(g.key,{outcome:'complete',score:g.score()})}catch(e){}const xp=gx(g.xp());const nb=best(g.key,g.score());ov(g.title,card('<div style="text-align:center"><div style="font-size:44px">'+(g.score()>=nb&&g.score()>0?'🏆':'👏')+'</div><div style="font-size:30px;font-weight:800;color:var(--ac)">'+g.res()+'</div><div class="s3sub">Best: '+best(g.key)+(xp?' · +'+xp+' XP':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3Game.'+g.key+'()')+btn('Games menu','s3Game.menu()',1)+'</div></div>'))}
 function speed(){clean();const P=Q().filter(q=>ISVOC(q)||q.category==='Grammar'||q.category.indexOf('Idiom')>=0);let sc=0,lives=3,combo=0,cor=0;
  G={title:'⚡ Speed Round',key:'speed',timed:true,left:60,pool:()=>P,q:null,hud:()=>'⭐ '+sc+' · ❤️ '+lives+' · 🔥 x'+(1+Math.min(4,Math.floor(combo/3))),
   onAns:ok=>{if(ok){combo++;cor++;sc+=10*(1+Math.min(4,Math.floor(combo/3)));G.msg=''}else{lives--;combo=0;G.msg=(G.q.explanation?esc(G.q.explanation):'')}},over:()=>lives<=0||G.left<=0,score:()=>sc,res:()=>sc+' points ('+cor+' correct)',xp:()=>Math.floor(sc/60)};
@@ -6889,8 +6889,8 @@ function rescDraw(){const R=RS,masked=R.p.w.split('').map(c=>R.gu[c]?c:'_').join
  +'<div style="display:flex;flex-wrap:wrap;justify-content:center" dir="ltr">'
  +'abcdefghijklmnopqrstuvwxyz'.split('').map(c=>{const u=R.gu[c]!==undefined;return '<button '+(u?'disabled ':'')+'onclick="s3G2.rescLet(\''+c+'\')" style="width:11%;margin:2px;padding:8px 0;border-radius:8px;border:1px solid var(--bd);background:'+(u?(R.gu[c]?'var(--okbg)':'var(--nobg)'):'var(--surf2)')+';color:var(--tx);font-weight:700;cursor:pointer">'+c+'</button>'}).join('')+'</div>'))}
 function rescLet(c){const R=RS;if(!R||R.gu[c]!==undefined)return;const ok=R.p.w.indexOf(c)>=0;R.gu[c]=ok?1:0;if(!ok)R.wr++;
- if(R.wr>=6){rStreak=0;ov('🆘 Word Rescue',card('<div style="text-align:center"><div style="font-size:40px">💨</div><div style="font-size:20px;font-weight:800;margin:8px 0">The word escaped!</div><div class="s3sub">It was <b dir="ltr">'+esc(R.p.w)+'</b> = <span dir="rtl">'+esc(R.p.a)+'</span>. It says hi from freedom.</div><div style="margin-top:12px">'+btn('Catch the next one','s3G2.rescue()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}
- if(R.p.w.split('').every(c=>R.gu[c])){rStreak++;const xp=gx(5);
+ if(R.wr>=6){rStreak=0;try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('rescue',{outcome:'lose'})}catch(e){}ov('🆘 Word Rescue',card('<div style="text-align:center"><div style="font-size:40px">💨</div><div style="font-size:20px;font-weight:800;margin:8px 0">The word escaped!</div><div class="s3sub">It was <b dir="ltr">'+esc(R.p.w)+'</b> = <span dir="rtl">'+esc(R.p.a)+'</span>. It says hi from freedom.</div><div style="margin-top:12px">'+btn('Catch the next one','s3G2.rescue()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}
+ if(R.p.w.split('').every(c=>R.gu[c])){rStreak++;try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('rescue',{outcome:'win',streak:rStreak})}catch(e){}const xp=gx(5);
   ov('🆘 Word Rescue',card('<div style="text-align:center"><div style="font-size:40px">🎉</div><div style="font-size:20px;font-weight:800;margin:8px 0" dir="ltr">'+esc(R.p.w)+'</div><div class="s3sub">Rescued! '+(xp?'+'+xp+' XP · ':'')+'Streak: '+rStreak+'</div><div style="margin-top:12px">'+btn('Next word','s3G2.rescue()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}
  rescDraw()}
 /* ---------- 2. Memory Flip ---------- */
@@ -6907,7 +6907,7 @@ function memFlip(k){const M=MM;if(!M||memLock||M.open.indexOf(k)>=0)return;const
  M.open.push(k);if(M.open.length<2){memDraw();return}
  M.mv++;const a=M.cards[M.open[0]],b=M.cards[M.open[1]];
  if(a.i===b.i&&a.t!==b.t){M.done[a.i]=2;M.open=[];memDraw();
-  if(Object.keys(M.done).length===6){const s=Math.round((Date.now()-M.t0)/1000),stars=M.mv<=8&&s<90?3:M.mv<=12?2:1,old=best('memt');if(!old||s<old)best('memt',s);const xp=gx(stars*2);
+  if(Object.keys(M.done).length===6){const s=Math.round((Date.now()-M.t0)/1000),stars=M.mv<=8&&s<90?3:M.mv<=12?2:1,old=best('memt');if(!old||s<old)best('memt',s);try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('memory',{outcome:'win',score:s,perfect:!M.bad})}catch(e){}const xp=gx(stars*2);
    later(()=>ov('🃏 Memory Flip',card('<div style="text-align:center"><div style="font-size:44px">'+'⭐'.repeat(stars)+'</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+s+' seconds</div><div class="s3sub">Moves: '+M.mv+(xp?' · +'+xp+' XP':'')+' · Best: '+best('memt')+'s</div><div style="margin-top:12px">'+btn('Play again','s3G2.memory()')+btn('Games menu','s3G2.menu()',1)+'</div></div>')),600)}
   return}
  M.bad=(M.bad||0)+1;memLock=true;memDraw();later(()=>{if(MM!==M)return;M.open=[];if(M.bad>=5){MM=null;memLock=false;ov('🃏 Memory Flip',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div class="s3sub">Five wrong pairs. Try again!</div><div style="margin-top:12px">'+btn('Play again','s3G2.memory()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}memLock=false;memDraw()},900)}
@@ -6929,7 +6929,7 @@ function unscDraw(){const U=UN;
 function unscLet(i){const U=UN;if(!U)return;U.built.push(U.letters.splice(i,1)[0]);unscDraw()}
 function unscBack(){const U=UN;if(!U||!U.built.length)return;U.letters.push(U.built.pop());unscDraw()}
 function unscCheck(){const U=UN;if(!U)return;const m=$('unsc-m');
- if(U.built.join('')===U.p.w){uStreak++;const xp=gx(5);
+ if(U.built.join('')===U.p.w){uStreak++;try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('unsc',{outcome:'win',streak:uStreak})}catch(e){}const xp=gx(5);
   ov('🔀 Unscramble',card('<div style="text-align:center"><div style="font-size:40px">🎯</div><div style="font-size:22px;font-weight:800" dir="ltr">'+esc(U.p.w)+'</div><div class="s3sub">Fixed! '+(xp?'+'+xp+' XP · ':'')+'Streak: '+uStreak+'</div><div style="margin-top:12px">'+btn('Next word','s3G2.unsc(undefined,1)')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}
  else{uStreak=0;unH--;if(unH<=0){UN=null;ov('🔀 Unscramble',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div class="s3sub">It was <b dir="ltr">'+esc(U.p.w)+'</b> = <span dir="rtl">'+esc(U.p.a)+'</span></div><div style="margin-top:12px">'+btn('Play again','s3G2.unsc()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}if(m){m.innerHTML='❌ Not quite. The letters are giggling at you.'}else unscDraw();U.built.forEach(c=>U.letters.push(c));U.built=[];later(()=>{if(UN===U)unscDraw()},900)}}
 function unscGive(){const U=UN;if(!U)return;uStreak=0;ov('🔀 Unscramble',card('<div style="text-align:center"><div class="s3sub">It was <b dir="ltr">'+esc(U.p.w)+'</b> = <span dir="rtl">'+esc(U.p.a)+'</span></div><div style="margin-top:12px">'+btn('Next word','s3G2.unsc(undefined,1)')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}
@@ -6948,7 +6948,7 @@ function typeit(keep){clean();if(keep!==1)tyH=3;const P=pairs().filter(p=>/^[a-z
 function tyDist(a,b){const d=[];for(let i=0;i<=a.length;i++){d[i]=[i]}for(let j=0;j<=b.length;j++){d[0][j]=j}
  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
 function tyCheck(){const T=TY;if(!T)return;const e=$('ty-in'),m=$('ty-m');if(!e)return;const v=e.value.trim().toLowerCase();
- if(v===T.p.w){tyStreak++;const xp=gx(3);ov('⌨️ Type It',card('<div style="text-align:center"><div style="font-size:40px">✅</div><div style="font-size:22px;font-weight:800" dir="ltr">'+esc(T.p.w)+'</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Streak: '+tyStreak+'</div><div style="margin-top:12px">'+btn('Next word','s3G2.typeit(1)')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}
+ if(v===T.p.w){tyStreak++;try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('typeit',{outcome:'win',streak:tyStreak})}catch(e){}const xp=gx(3);ov('⌨️ Type It',card('<div style="text-align:center"><div style="font-size:40px">✅</div><div style="font-size:22px;font-weight:800" dir="ltr">'+esc(T.p.w)+'</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Streak: '+tyStreak+'</div><div style="margin-top:12px">'+btn('Next word','s3G2.typeit(1)')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}
  T.tries++;
  if(tyDist(v,T.p.w)===1){if(m)m.innerHTML='🤏 So close! One letter is off.';e.select();return}
  tyStreak=0;tyH--;if(tyH<=0){TY=null;ov('⌨️ Type It',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div class="s3sub">It was <b dir="ltr">'+esc(T.p.w)+'</b> = <span dir="rtl">'+esc(T.p.a)+'</span></div><div style="margin-top:12px">'+btn('Play again','s3G2.typeit()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}if(m)m.innerHTML=T.tries<2?'❌ Not it. Try again.':'❌ Hint: <b dir="ltr">'+esc(T.p.w.slice(0,2))+'…</b>';e.select()}
@@ -6956,9 +6956,9 @@ function tyGive(){const T=TY;if(!T)return;tyStreak=0;ov('⌨️ Type It',card('<
 /* ---------- 5. True or False Lightning ---------- */
 let TF=null;
 function tf(){clean();const P=pairs();if(P.length<12){ov('⚡ True or False',card('Not enough words in the bank yet.'));return}
- TF={P,score:0,left:30,cur:null,q:[],h:3};tfNext();
+ TF={P,score:0,left:30,cur:null,q:[],h:3,run:0,best:0};tfNext();
  every(()=>{const T=TF;if(!T)return;T.left--;const e=$('tf-t');if(e)e.textContent=T.left+'s';
-  if(T.left<=0){const sc=T.score,xp=gx(Math.min(10,sc)),nb=best('tf',sc);TF=null;
+  if(T.left<=0){const sc=T.score,xp=gx(Math.min(10,sc)),nb=best('tf',sc);TF=null;try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('tf',{outcome:'complete',score:sc,streak:T.best})}catch(e){}
    ov('⚡ True or False',card('<div style="text-align:center"><div style="font-size:40px">⏰</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+sc+' correct</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('tf')+(sc>=nb&&sc>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.tf()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}},1000)}
 function tfNext(){const T=TF;if(!T)return;const p=draw(T.P,'tfp',1,x=>x.w)[0];if(!T.q.length)T.q=Math.random()<0.5?[true,false]:[false,true];let truth=T.q.shift(),a=p.a;
  if(!truth){const pool=T.P.filter(x=>x.w!==p.w&&x.a!==p.a),same=pool.filter(x=>x.u&&x.u===p.u),src=same.length>=3?same:pool;a=src[Math.floor(Math.random()*src.length)].a}
@@ -6967,7 +6967,7 @@ function tfNext(){const T=TF;if(!T)return;const p=draw(T.P,'tfp',1,x=>x.w)[0];if
  +'<div style="text-align:center;font-size:20px;font-weight:800;margin:14px 0"><span dir="ltr">'+esc(p.w)+'</span> = <span dir="rtl" style="font-family:Cairo,sans-serif">'+esc(a)+'</span></div>'
  +'<div class="s3sub" style="text-align:center;margin-bottom:12px">True or a dirty lie?</div>'
  +'<div style="display:flex;gap:10px;justify-content:center"><button class="s3btn" style="flex:1;padding:16px;font-size:18px" onclick="s3G2.tfAns(1)">✔ True</button><button class="s3btn" style="flex:1;padding:16px;font-size:18px;background:#e11d48" onclick="s3G2.tfAns(0)">✘ False</button></div>'))}
-function tfAns(v){const T=TF;if(!T||!T.cur)return;const ok=(!!v)===T.cur.truth;if(ok)T.score++;else{T.h--;if(T.h<=0){const sc=T.score,xp=gx(Math.min(10,sc)),nb=best('tf',sc);TF=null;ov('⚡ True or False',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+sc+' correct</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('tf')+(sc>=nb&&sc>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.tf()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}}tfNext()}
+function tfAns(v){const T=TF;if(!T||!T.cur)return;const ok=(!!v)===T.cur.truth;if(ok){T.score++;T.run++;if(T.run>T.best)T.best=T.run}else{T.run=0;T.h--;if(T.h<=0){const sc=T.score,xp=gx(Math.min(10,sc)),nb=best('tf',sc);TF=null;try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('tf',{outcome:'complete',score:sc,streak:T.best})}catch(e){}ov('⚡ True or False',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+sc+' correct</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('tf')+(sc>=nb&&sc>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.tf()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}}tfNext()}
 /* ---------- 6. Unit Sort ---------- */
 let US=null;
 function usort(){clean();const byU={};pairs().forEach(p=>{if(p.u)(byU[p.u]=byU[p.u]||[]).push(p)});
@@ -6975,7 +6975,7 @@ function usort(){clean();const byU={};pairs().forEach(p=>{if(p.u)(byU[p.u]=byU[p
  const two=shuf(us).slice(0,2);const pool=s3Fresh.order(byU[two[0]].concat(byU[two[1]]),'usort',p=>p.w);s3Fresh.mark('usort',pool.slice(0,14).map(p=>p.w),60);
  US={two,pool,i:0,score:0,hearts:3};usDraw()}
 function usDraw(){const U=US;if(!U)return;
- if(U.hearts<=0||U.i>=U.pool.length){const xp=gx(Math.min(15,U.score)),nb=best('us',U.score);
+ if(U.hearts<=0||U.i>=U.pool.length){try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('us',{outcome:'complete',score:U.score,livesLeft:U.hearts,perfect:U.hearts===3})}catch(e){}const xp=gx(Math.min(15,U.score)),nb=best('us',U.score);
   ov('🧺 Unit Sort',card('<div style="text-align:center"><div style="font-size:40px">'+(U.score>=8?'🏆':'🧺')+'</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+U.score+' sorted</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('us')+(U.score>=nb&&U.score>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.usort()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));US=null;return}
  const p=U.pool[U.i];
  ov('🧺 Unit Sort',card('<div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:10px"><span>'+'🧡'.repeat(U.hearts)+'</span><span>✅ '+U.score+'</span></div>'
@@ -7004,9 +7004,9 @@ function bossAns(j){const B=BF;if(!B||B.lock)return;B.lock=true;const q=B.q,ok=j
  else{B.combo=0;B.hearts--}
  const mark='<div class="s3sub" style="margin-top:6px">'+(ok?'⚔️ Hit! '+(B.combo>=2?'Combo! Double damage.':''):'💥 The boss hits back! Answer: <b>'+esc(q.options[q.answer])+'</b>')+(q.explanation?'<br>'+esc(q.explanation):'')+'</div>'
  +'<div style="text-align:center;margin-top:8px">'+btn('Next ▶','s3G2.bossNext()')+'</div>';
- if(B.hp<=0){const nb=best('bosswins');best('bosswins',nb+1);const xp=gx(15);
+ if(B.hp<=0){try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('boss',{outcome:'win',livesLeft:B.hearts})}catch(e){}const nb=best('bosswins');best('bosswins',nb+1);const xp=gx(15);
   ov('👾 Boss Fight',card('<div style="text-align:center"><div style="font-size:56px">🏆</div><div style="font-size:22px;font-weight:800">'+B.b[1]+' is defeated!</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Bosses beaten: '+best('bosswins')+'</div><div style="margin-top:12px">'+btn('Next boss','s3G2.boss()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));BF=null;return}
- if(B.hearts<=0){ov('👾 Boss Fight',card('<div style="text-align:center"><div style="font-size:56px">☠️</div><div style="font-size:22px;font-weight:800">You got eaten.</div><div class="s3sub">'+B.b[1]+' is doing a victory dance. Awkward for everyone.</div><div style="margin-top:12px">'+btn('Rematch','s3G2.boss()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));BF=null;return}
+ if(B.hearts<=0){try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('boss',{outcome:'lose'})}catch(e){}ov('👾 Boss Fight',card('<div style="text-align:center"><div style="font-size:56px">☠️</div><div style="font-size:22px;font-weight:800">You got eaten.</div><div class="s3sub">'+B.b[1]+' is doing a victory dance. Awkward for everyone.</div><div style="margin-top:12px">'+btn('Rematch','s3G2.boss()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));BF=null;return}
  bossDraw(mark)}
 /* ---------- 8. Gap Sprint (listening) ---------- */
 let GS=null;
@@ -7017,7 +7017,7 @@ function gap(){clean();const L=listenData();if(!L.length){ov('🎧 Gap Sprint',c
 function gapStart(u){const L=listenData().find(x=>x.unit===u);if(!L||L.sents.length<4)return;
  GS={L,qs:s3Fresh.order(L.sents,'gap'+u,s=>s.plain||s.raw),i:0,score:0,streak:0,left:60,lock:false,h:3};s3Fresh.mark('gap'+u,GS.qs.slice(0,15).map(s=>s.plain||s.raw),Math.max(15,Math.min(80,Math.floor(L.sents.length*.6))));gapDraw();
  every(()=>{const G=GS;if(!G)return;G.left--;const e=$('gs-t');if(e)e.textContent=G.left+'s';
-  if(G.left<=0){const sc=G.score,xp=gx(Math.min(15,sc*2)),nb=best('gap',sc);GS=null;
+  if(G.left<=0){const sc=G.score,xp=gx(Math.min(15,sc*2)),nb=best('gap',sc);GS=null;try{window.s3Loot&&s3Loot.gameEvent&&s3Loot.gameEvent('gap',{outcome:'complete',score:sc})}catch(e){}
    ov('🎧 Gap Sprint',card('<div style="text-align:center"><div style="font-size:40px">⏰</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+sc+' gaps in 60s</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('gap')+(sc>=nb&&sc>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.gap()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}},1000)}
 function gapDraw(){const G=GS;if(!G)return;G.lock=false;
  if(G.i>=G.qs.length)G.qs=G.qs.concat(shuf(G.L.sents));
@@ -7051,7 +7051,7 @@ const tbKey=()=>'s3g2_tb_'+curCls()+'_'+S.dayKey();
 function tbSetup(){clean();const P=present();
  if(P.length<4){ov('⚔️ Team Battle',card(lesHead()+'<div class="s3sub">Need at least 4 present students. Take attendance first (or add students from other classes).</div>'));return}
  const saved=S.ls.get(tbKey(),null);
- TB={teams:saved&&saved.teams?saved.teams:null,sa:saved?saved.sa|0:0,sb:saved?saved.sb|0:0,turn:saved&&saved.turn==='b'?'b':'a',q:null,lock:false};
+ TB={teams:saved&&saved.teams?saved.teams:null,sa:saved?saved.sa|0:0,sb:saved?saved.sb|0:0,turn:saved&&saved.turn==='b'?'b':'a',q:null,lock:false,gid:Date.now().toString(36),rid:0,ix:{a:0,b:0},steal:false,bad:[]};
  if(TB.teams)tbBoard();else tbSplit()}
 function tbSave(){S.ls.set(tbKey(),{teams:TB.teams,sa:TB.sa,sb:TB.sb,turn:TB.turn})}
 function tbSplit(){const P=shuf(present()).map(s=>s.name);TB.teams={a:P.filter((n,i)=>i%2===0),b:P.filter((n,i)=>i%2===1)};TB.sa=0;TB.sb=0;TB.turn='a';tbSave();tbBoard()}
@@ -7062,17 +7062,43 @@ function tbBoard(){const T=TB,tm=k=>'<div style="flex:1"><b>'+(k==='a'?'🔴 Tea
  +'<div id="tb-q" style="margin-top:10px"></div>'))}
 function tbNext(){const T=TB;if(!T)return;const P=lesQ();
  if(!P.length){const e=$('tb-q');if(e)e.innerHTML=lesEmpty('questions');return}
- T.q=draw(P,'tb',1,q=>q.id)[0];T.lock=false;
+ T.q=draw(P,'tb',1,q=>q.id)[0];T.lock=false;T.steal=false;T.bad=[];T.rid++;T.pick=null;tbShow()}
+function tbWho(k){const L=TB.teams[k]||[];return L.length?L[TB.ix[k]%L.length]:''}
+function tbOpts(){const T=TB,q=T.q,done=T.lock;
+ return q.options.map((o,j)=>{const isAns=j===q.answer,wrong=T.bad.indexOf(j)>=0;let st='display:block;width:100%;text-align:left;padding:10px;border-radius:10px;margin-bottom:6px;font-size:15px;color:var(--tx);cursor:pointer;border:1px solid var(--bd);background:var(--surf2)';
+  if(done&&isAns)st+=';border:2px solid #16a34a;background:#dcfce7;color:#14532d';else if(wrong)st+=';border:2px solid #e11d48;background:#ffe4e6;color:#881337';else if(done)st+=';opacity:.55';
+  return '<button '+(done||wrong?'disabled ':'')+'onclick="s3G2.tbPick('+j+')" style="'+st+'" class="g2big"><b>'+'ABCD'[j]+'.</b> '+esc(o)+(done&&isAns?' ✅':wrong?' ❌':'')+'</button>'}).join('')}
+function tbShow(){const T=TB;if(!T||!T.q)return;
  const e=$('tb-q');if(!e)return;
- e.innerHTML='<div class="s3sub" style="text-align:center;margin-bottom:6px">'+(T.turn==='a'?'🔴 Team A':'🔵 Team B')+', your question:</div>'
+ const k=T.steal?(T.turn==='a'?'b':'a'):T.turn;
+ e.innerHTML='<div class="s3sub" style="text-align:center;margin-bottom:6px">'+(k==='a'?'🔴 Team A':'🔵 Team B')+(T.steal?', steal for +1:':', your question:')+' · 👤 <b>'+esc(tbWho(k))+'</b></div>'
  +'<div class="g2big" style="font-weight:700;line-height:1.6;margin-bottom:10px">'+esc(T.q.question)+'</div>'
- +T.q.options.map((o,j)=>'<div class="g2big" style="padding:8px 10px;border:1px solid var(--bd);border-radius:10px;margin-bottom:6px"><b>'+'ABCD'[j]+'.</b> '+esc(o)+'</div>').join('')
- +'<div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap">'+btn('✅ Correct (+2)','s3G2.tbJudge(1)')+btn('❌ Wrong','s3G2.tbJudge(0)',1)+'</div>'}
+ +tbOpts()
+ +(T.lock?'':'<div style="display:flex;gap:8px;justify-content:center;margin-top:6px;flex-wrap:wrap">'+btn('🔄 Other student','s3G2.tbWhoNext()',1)+(T.steal?btn('No steal','s3G2.tbSteal(0)',1):'')+'</div>')
+ +'<div id="tb-fb"></div>'}
+function tbWhoNext(){const T=TB;if(!T||T.lock)return;const k=T.steal?(T.turn==='a'?'b':'a'):T.turn;T.ix[k]++;tbShow()}
+const TB_CAP=15;
+async function tbPay(team,who,base,extra){const T=TB,names=T.teams[team]||[],ck='s3tb_'+curCls()+'_'+S.dayKey(),used=S.ls.get(ck,{})||{},out=[];
+ if(!(window.S3CLOUD&&S3CLOUD.on&&S3CLOUD.award&&window.s3Att&&s3Att.idOf))return {off:1,out};
+ await Promise.all(names.map(async n=>{const want=base+(n===who?extra:0),n2=Math.min(want,TB_CAP-(used[n]||0));if(n2<=0)return;const u=s3Att.idOf(n);if(!u)return;
+  try{await S3CLOUD.award({id:'tb'+T.gid+'_'+T.rid+'_'+(T.steal?'s':'a')+'_'+u,uid:u,name:n,n:n2,t:Date.now()});used[n]=(used[n]||0)+n2;out.push([n,n2])}catch(e){}}));
+ S.ls.set(ck,used);return {out}}
+function tbMsg(r,team,who){const e=$('tb-fb');if(!e)return;if(r.off){e.innerHTML='<div class="s3sub" style="text-align:center">Points stay on this device (offline). No XP saved.</div>';return}
+ const tot=r.out.reduce((a,x)=>a+x[1],0);e.innerHTML='<div class="s3sub" style="text-align:center">☁️ XP: '+(r.out.length?r.out.length+' students · '+tot+' XP in total'+(r.out.some(x=>x[0]===who)?' · '+esc(who)+' +'+r.out.find(x=>x[0]===who)[1]:''):'daily Team Battle limit reached')+'</div>'}
+async function tbPick(j){const T=TB;if(!T||!T.q||T.lock||T.bad.indexOf(j)>=0)return;const q=T.q,ok=j===q.answer,first=!T.steal,k=first?T.turn:(T.turn==='a'?'b':'a'),who=tbWho(k);
+ const expl=(q.explanation?'<br>'+esc(q.explanation):'');
+ if(ok){T.lock=true;if(k==='a')T.sa+=first?2:1;else T.sb+=first?2:1;T.ix[k]++;const nt=first?(T.turn==='a'?'b':'a'):(T.turn==='a'?'b':'a');T.turn=nt;tbSave();tbBoard();const e=$('tb-q');if(e){T.cur=null;e.innerHTML='<div class="s3sub" style="text-align:center;margin-bottom:6px">👤 <b>'+esc(who)+'</b></div><div class="g2big" style="font-weight:700;margin-bottom:10px">'+esc(q.question)+'</div>'+tbOpts()+'<div class="s3sub" style="text-align:center;margin-top:8px">✅ Correct! '+(first?'+2':'+1')+' for '+(k==='a'?'🔴 Team A':'🔵 Team B')+expl+'</div><div id="tb-fb"></div>'}
+  const r=await tbPay(k,who,1,first?2:1);tbMsg(r,k,who);return}
+ T.bad.push(j);
+ if(first){T.ix[k]++;T.steal=true;tbShow();const e=$('tb-fb');if(e)e.innerHTML='<div class="s3sub" style="text-align:center">❌ Not correct. The other team can steal.</div>'}
+ else{T.lock=true;T.turn=T.turn==='a'?'b':'a';T.ix[k]++;tbSave();tbBoard();const e=$('tb-q');if(e)e.innerHTML='<div class="g2big" style="font-weight:700;margin-bottom:10px">'+esc(q.question)+'</div>'+tbOpts()+'<div class="s3sub" style="text-align:center;margin-top:8px">❌ The answer was <b>'+esc(q.options[q.answer])+'</b>'+expl+'</div>'}}
+function tbJudge(ok){return tbPick(ok?TB.q.answer:-1)}
+
 function tbJudge(ok){const T=TB;if(!T||!T.q||T.lock)return;T.lock=true;const q=T.q;
  let msg='<div class="s3sub" style="text-align:center;margin-top:8px">'+(ok?'✅ Correct! The answer was <b>'+esc(q.options[q.answer])+'</b>':'❌ The answer was <b>'+esc(q.options[q.answer])+'</b>')+(q.explanation?'<br>'+esc(q.explanation):'')+'</div>';
  if(ok){if(T.turn==='a')T.sa+=2;else T.sb+=2;T.turn=T.turn==='a'?'b':'a';tbSave();tbBoard();const e=$('tb-q');if(e)e.innerHTML=msg}
  else{const e=$('tb-q');if(e)e.innerHTML=msg+'<div class="s3sub" style="text-align:center;margin-top:6px">'+(T.turn==='a'?'🔵 Team B':'🔴 Team A')+', steal for +1?</div><div style="display:flex;gap:8px;justify-content:center;margin-top:8px">'+btn('✅ Stolen! (+1)','s3G2.tbSteal(1)')+btn('No steal','s3G2.tbSteal(0)',1)+'</div>'}}
-function tbSteal(got){const T=TB;if(!T)return;if(got){if(T.turn==='a')T.sb+=1;else T.sa+=1}T.turn=T.turn==='a'?'b':'a';tbSave();tbBoard()}
+function tbSteal(got){const T=TB;if(!T)return;if(got){if(T.turn==='a')T.sb+=1;else T.sa+=1}T.turn=T.turn==='a'?'b':'a';T.steal=false;T.lock=true;tbSave();tbBoard()}
 function tbEnd(){const T=TB;if(!T)return;const win=T.sa===T.sb?null:(T.sa>T.sb?'a':'b');
  ov('⚔️ Team Battle',card('<div style="text-align:center"><div style="font-size:44px">'+(win?'🏆':'🤝')+'</div><div style="font-size:22px;font-weight:800;margin:8px 0">'+(win?(win==='a'?'🔴 Team A wins!':'🔵 Team B wins!'):'A noble tie!')+'</div><div class="s3sub">🔴 '+T.sa+' · 🔵 '+T.sb+'</div>'
  +(win?'<div style="margin-top:12px">'+btn('🎁 Give +5 XP to the winners','s3G2.tbAward()')+'</div>':'')
@@ -7170,7 +7196,7 @@ function menuButtons(){return '<div style="margin:14px 0 8px;font-weight:800;fon
  +gbtn('🆘 Word Rescue','rescue','Guess the word before it escapes · Arabic hint')+gbtn('🃏 Memory Flip','memory','Flip cards and match English with Arabic')+gbtn('🔀 Unscramble','unsc','Fix the mixed-up letters')+gbtn('⌨️ Type It','typeit','See the Arabic, type the English word')+gbtn('⚡ True or False','tf','30 seconds: is the meaning true or a dirty lie?')+gbtn('🧺 Unit Sort','usort','Send every word to its unit home · 3 hearts')+gbtn('👾 Boss Fight','boss','Beat the boss one question at a time')+gbtn('🎧 Gap Sprint','gap','Fill the listening gaps against the clock')}
 window.s3G2={close,menu,menuButtons,lessonBar,setU,setL,lesson:getLes,classMenu,
  rescue,rescLet,memory,memFlip,unsc,unscLet,unscBack,unscCheck,unscGive,typeit,tyCheck,tyGive,tf,tfAns,usort,usAns,boss,bossNext,bossAns,gap,gapStart,gapHear,gapAns,
- tbSetup,tbSplit,tbNext,tbJudge,tbSteal,tbEnd,tbAward,buzz,bzPick,bzNext,bzShow,bzJudge,hang,hangLet,lrSetup,lrNext,lrJudge,lrAward,chain,vcSeed,vcOk,vcFail,acts,actWords};
+ tbSetup,tbSplit,tbNext,tbPick,tbWhoNext,tbJudge,tbSteal,tbEnd,tbAward,buzz,bzPick,bzNext,bzShow,bzJudge,hang,hangLet,lrSetup,lrNext,lrJudge,lrAward,chain,vcSeed,vcOk,vcFail,acts,actWords};
 })();
 
 </script>
@@ -8887,6 +8913,283 @@ setInterval(()=>{try{
   const b=document.createElement('button');b.className='s3btn';b.textContent='Frames and avatars';b.onclick=()=>{try{s3Shell.closeS()}catch(e){};setTimeout(open,300)};
   r.appendChild(b);body.appendChild(r)}}catch(e){}},1200);
 window.s3Loot={open,close,check:()=>{weeklyBonus();checkUnlocks(null)}};
+})();
+</script>
+
+/* game_badges.js — game achievements for the student site.
+   Adds window.s3Loot.gameEvent(gameId, result): the games report how a run
+   ended, this module owns tier badges (Bronze/Silver/Gold/Diamond per game),
+   special one-off badges, unlock pops and the Game Badges section in the
+   🎁 Rewards panel.
+   - XP for badges goes ONLY through gx(), so the 60 XP/day game cap is the
+     single gate. No tokens, no Firestore writes, everything client-side.
+   - Works with or without loot_module.js (progression patch), in any load
+     order: window.s3Loot is created if missing and the panel section is
+     injected by wrapping s3Loot.open whenever it appears.
+   Storage key: s3gb2_<studentId> (localStorage only). */
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const S=()=>window.S3;
+const stu=()=>{try{return S()&&S().isStudent()}catch(e){return false}};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','&gt;':'&gt;','&quot;':'&quot;',"'":'&#39;'}[c]));
+const TIERI=['🥉','🥈','🥇','💎'];
+const TIERN=['Bronze','Silver','Gold','Diamond'];
+const TIERC=['#cd7f32','#94a3b8','#f59e0b','#38bdf8'];
+const TIERXP=[5,10,20,40];
+const SPECXP=10;
+
+/* per game: dir 'hi' = bigger number is better, 'lo' = faster time is better,
+   'cum' = running total (boss wins). val() picks the number a result reports.
+   dPerfect: Diamond also needs a flawless run, not just the number. */
+const GAMES=[
+ {id:'speed', ic:'⚡', nm:'Speed Round',  dir:'hi',  tiers:[125,250,450,650], unit:'points',    dn:'Lightning Fingers',       val:r=>r.score||0},
+ {id:'lives', ic:'❤️', nm:'Lives Run',    dir:'hi',  tiers:[15,25,45,60],     unit:'streak',     dn:'Unkillable',              val:r=>r.score||r.streak||0},
+ {id:'tf',    ic:'⚡', nm:'True or False',dir:'hi',  tiers:[10,20,25,35],     unit:'correct',    dn:'Dirty Lie Detector',      val:r=>r.score||0},
+ {id:'memory',ic:'🃏', nm:'Memory Flip',  dir:'lo',  tiers:[50,35,25,15],     unit:'seconds',    dn:'Card Shark',              val:r=>r.score||0},
+ {id:'unsc',  ic:'🔀', nm:'Unscramble',   dir:'hi',  tiers:[7,13,25,45],      unit:'streak',     dn:'Letter Tamer',            val:r=>r.streak||r.score||0},
+ {id:'typeit',ic:'⌨️', nm:'Type It',      dir:'hi',  tiers:[6,15,30,50],      unit:'streak',     dn:'Keyboard Warrior',        val:r=>r.streak||r.score||0},
+ {id:'rescue',ic:'🆘', nm:'Word Rescue',  dir:'hi',  tiers:[4,8,13,20],       unit:'win streak', dn:'The Lifeguard',           val:r=>r.streak||0},
+ {id:'us',    ic:'🧺', nm:'Unit Sort',    dir:'hi',  tiers:[10,13,14,14],     unit:'sorted',     dn:'Sorting Hat',  dPerfect:true, val:r=>r.score||0},
+ {id:'boss',  ic:'👾', nm:'Boss Fight',   dir:'cum', tiers:[1,4,6,13],        unit:'bosses',     dn:"Boss's Worst Nightmare",  val:r=>0},
+ {id:'gap',   ic:'🎧', nm:'Gap Sprint',   dir:'hi',  tiers:[6,13,20,25],      unit:'gaps',       dn:'Golden Ears',             val:r=>r.score||0}
+];
+const SPECIAL=[
+ {id:'first_blood',ic:'⚔️',nm:'First Blood',      ds:'Win your first duel'},
+ {id:'flawless',  ic:'🛡️',nm:'Flawless Victory', ds:'Finish a hearts game without losing a single heart'},
+ {id:'pmatch',    ic:'🃏',nm:'Perfect Match',     ds:'Clear Memory Flip without a single wrong flip'},
+ {id:'tourist',   ic:'🧭',nm:'Tourist',           ds:'Play 5 different games'},
+ {id:'completion',ic:'🌈',nm:'Completionist',     ds:'Play all 10 games'},
+ {id:'daily3',    ic:'📅',nm:'Daily Grind',       ds:'Play at least one game 3 days in a row'},
+ {id:'daily7',    ic:'🗓️',nm:'Creature of Habit', ds:'Play at least one game 7 days in a row'},
+ {id:'speedrec',  ic:'🏎️',nm:'Speed Demon',       ds:'Break your own Speed Round record 3 times'},
+ {id:'comeback',  ic:'🍀',nm:'Comeback Kid',      ds:'Win a Boss Fight with only 1 heart left'},
+ {id:'lucky7',    ic:'🎰',nm:'Lucky Seven',       ds:'Answer 7 in a row in True or False without a miss'}
+];
+
+const KEY=()=>{try{return 's3gb2_'+S().SESS().id}catch(e){return 's3gb2_'}};
+function load(){try{return JSON.parse(localStorage.getItem(KEY())||'{}')||{}}catch(e){return{}}}
+function save(st){try{localStorage.setItem(KEY(),JSON.stringify(st))}catch(e){}}
+const dayKey=()=>{try{return S().dayKey()}catch(e){return new Date().toISOString().slice(0,10)}};
+const wallet=async()=>{try{const x=(window.S3CLOUD&&S3CLOUD.fbx)?S3CLOUD.fbx():null;if(!x)return null;
+ const d=await x.F.getDoc(x.F.doc(x.db,'wallet',x.uid));return d.exists()?d.data():null}catch(e){return null}};
+
+/* unlock pops - same look as the loot module pops, queued */
+const popQ=[];let popping=false;
+function pop(ic,t,s){popQ.push([ic,t,s]);if(!popping)nextPop()}
+function nextPop(){if(!popQ.length){popping=false;return}popping=true;const p=popQ.shift();
+ const o=document.createElement('div');
+ o.style.cssText='position:fixed;left:50%;top:18%;transform:translateX(-50%) scale(.6);z-index:99999;background:var(--surf,#fff);color:var(--tx,#111);border:2px solid var(--ac,#4f46e5);border-radius:20px;padding:18px 26px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.35);opacity:0;transition:all .35s cubic-bezier(.3,1.6,.5,1);max-width:86vw';
+ o.innerHTML='<div style="font-size:46px">'+p[0]+'</div><div style="font-weight:800;font-size:17px">'+p[1]+'</div><div style="font-size:13px;opacity:.75">'+p[2]+'</div>';
+ document.body.appendChild(o);requestAnimationFrame(()=>{o.style.opacity=1;o.style.transform='translateX(-50%) scale(1)'});
+ setTimeout(()=>{o.style.opacity=0;setTimeout(()=>{o.remove();nextPop()},400)},3400);o.onclick=()=>{o.remove();clearTimeout(o._t);nextPop()}}
+
+const myUid=()=>{try{const s=S().SESS();return s?(s.id||'teacher'):'guest'}catch(e){return 'guest'}};
+function awardXP(n){ /* badge XP rides the normal game XP path: 60/day cap stays the only gate.
+   gx() lives inside the games script's IIFE, so replicate its exact logic over the same
+   s3gx bucket and S.addXP - identical behaviour, shared cap with real game XP. */
+ try{if(typeof gx==='function')return gx(n)}catch(e){}
+ try{if(window.gx)return window.gx(n)}catch(e){}
+ try{
+  const s=S();if(!s||!s.isStudent()||n<=0)return 0;
+  const k='s3gx_'+myUid()+'_'+s.dayKey();
+  const used=s.ls.get(k,0),give=Math.max(0,Math.min(n,60-used));
+  if(give){s.ls.set(k,used+give);s.addXP(give,'Game')}
+  return give
+ }catch(e){return 0}}
+function readGameBest(k){ /* read the games' own best-score store (s3gb_ keys, higher=better) */
+ try{if(typeof best==='function')return best(k)}catch(e){}
+ try{return S().ls.get('s3gb_'+myUid()+'_'+k,0)||0}catch(e){return 0}}
+
+/* metric a game reports, as stored */
+function metric(g,st){return g.dir==='cum'?(st.bossWins||0):(st.best&&st.best[g.id])||0}
+function tierCount(g,st){
+ const m=metric(g,st);
+ if(g.dir==='lo'){if(!m)return 0;let n=0;for(let i=0;i<4;i++)if(m<=g.tiers[i])n=i+1;return n}
+ let n=0;for(let i=0;i<4;i++){if(m>=g.tiers[i]){if(g.dPerfect&&i===3&&!st.usFlaw)break;n=i+1}else break}
+ return n}
+
+/* evaluate everything; silent=true marks earned badges without pops or XP
+   (first run after the update, like the loot module's silent grant) */
+function evaluate(st,silent){
+ const fresh=[];
+ GAMES.forEach(g=>{
+  const have=tierCount(g,st);
+  for(let i=0;i<have;i++){const id='t_'+g.id+'_'+i;
+   if(!st.unlocked[id]){st.unlocked[id]=1;
+    if(!silent)fresh.push({ic:TIERI[i],t:TIERN[i]+' badge: '+g.nm,xp:TIERXP[i],col:TIERC[i]});}}});
+ SPECIAL.forEach(sp=>{
+  if(st.unlocked[sp.id])return;
+  let ok=false;
+  try{ok=CHECK[sp.id](st)}catch(e){}
+  if(ok){st.unlocked[sp.id]=1;if(!silent)fresh.push({ic:sp.ic,t:'Badge unlocked: '+sp.nm,xp:SPECXP});}});
+ save(st);
+ fresh.forEach(f=>{const got=awardXP(f.xp);
+  pop(f.ic,f.t,got>0?('+'+got+' XP'):'Daily game XP cap reached - badge kept!')});
+ return fresh.length}
+
+const CHECK={
+ first_blood:st=>(st.duelW||0)>=1,
+ flawless:st=>!!st.flaw,
+ pmatch:st=>!!st.pmatch,
+ tourist:st=>Object.keys(st.played||{}).length>=5,
+ completion:st=>Object.keys(st.played||{}).length>=GAMES.length,
+ daily3:st=>dayStreak(st)>=3,
+ daily7:st=>dayStreak(st)>=7,
+ speedrec:st=>(st.speedRec||0)>=3,
+ comeback:st=>!!st.comeback,
+ lucky7:st=>(st.tfMax||0)>=7
+};
+function dayStreak(st){const d=st.days||{};let n=0;const t=new Date();
+ for(;;){const k=t.toISOString().slice(0,10);if(d[k]){n++;t.setDate(t.getDate()-1)}else break}
+ return n}
+
+/* first run: seed bests from the game's own best-score keys so existing
+   records count, then grant silently (no pop storm, no retroactive XP) */
+let inited=false;
+function init(){
+ if(inited||!stu())return;inited=true;
+ const st=load();
+ if(!st.seeded){
+  st.seeded=1;st.best=st.best||{};st.unlocked=st.unlocked||{};
+  try{
+   ['speed','lives','tf','us','gap'].forEach(k=>{const v=readGameBest(k);if(v>0)st.best[k]=v});
+   /* old Word Match ('match' key) is a different game from Memory Flip: not seeded */
+  }catch(e){}
+  evaluate(st,true)}
+ wallet().then(W=>{try{if(W&&typeof W.w==='number'){const s2=load();
+  if((s2.duelW||0)<W.w){s2.duelW=W.w;save(s2)}
+  if(W.w>=1&&!s2.unlocked.first_blood){s2.unlocked.first_blood=1;save(s2)}}}catch(e){}})}
+
+/* ---- the stable API the games call ---- */
+function gameEvent(g,res){
+ try{
+  if(!stu())return;
+  const game=GAMES.find(x=>x.id===g);if(!game)return;
+  res=res||{};
+  init();
+  const st=load();
+  st.best=st.best||{};st.played=st.played||{};st.days=st.days||{};st.unlocked=st.unlocked||{};
+  st.played[g]=1;
+  st.days[dayKey()]=1;
+  const v=game.val(res);
+  if(game.dir==='cum'){if(res.outcome==='win')st.bossWins=(st.bossWins||0)+1}
+  else if(game.dir==='lo'){if(v>0&&(!st.best[g]||v<st.best[g]))st.best[g]=v}
+  else if(v>0){
+   if(g==='speed'&&st.best.speed>0&&v>st.best.speed)st.speedRec=(st.speedRec||0)+1;
+   if(v>(st.best[g]||0))st.best[g]=v}
+  if(g==='tf'&&(res.streak||0)>(st.tfMax||0))st.tfMax=res.streak;
+  if(res.perfect){st.flaw=1;if(g==='memory')st.pmatch=1;if(g==='us'&&v>=14)st.usFlaw=1}
+  if(g==='boss'&&res.outcome==='win'){if(res.livesLeft===1)st.comeback=1;if(res.livesLeft===3)st.flaw=1}
+  save(st);
+  evaluate(st,false)
+ }catch(e){}}
+
+/* ---- Rewards panel section ---- */
+function bar(cur,next,col){const p=Math.max(0,Math.min(100,Math.round(cur/next*100)));return barP(p,col)}
+function barP(p,col){p=Math.max(0,Math.min(100,p));
+ return '<div style="height:8px;border-radius:99px;background:var(--surf2,#e2e8f0);overflow:hidden;margin-top:6px"><div style="height:100%;width:'+p+'%;background:'+col+';border-radius:99px"></div></div>'}
+function section(){
+ const st=load();st.best=st.best||{};st.unlocked=st.unlocked||{};
+ const card=h=>'<div id="s3-gb-sec" style="background:var(--surf,#fff);border:1px solid var(--bd,#e2e8f0);border-radius:18px;padding:14px;margin-bottom:12px">'+h+'</div>';
+ let h='<div style="font-weight:800;margin-bottom:4px">🎮 Game Badges <span style="font-weight:600;font-size:12px;opacity:.6">(earn by playing, in 🎯 Games)</span></div>';
+ GAMES.forEach(g=>{
+  const have=tierCount(g,st),m=metric(g,st),lo=g.dir==='lo';
+  const med=[0,1,2,3].map(i=>'<span style="font-size:18px;margin-right:2px;opacity:'+(i<have?1:.25)+'" title="'+TIERN[i]+'">'+TIERI[i]+'</span>').join('');
+  let prog;
+  if(have>=4)prog='<div style="font-size:12px;font-weight:700;color:'+TIERC[3]+';margin-top:2px">'+g.dn+' 💎 Top badge earned!</div>';
+  else{
+   const next=g.tiers[have];
+   const lab=lo?('Best: '+(m?m+'s':'-')+' · '+TIERN[have]+' at '+next+'s')
+              :(g.dir==='cum'?('Defeated: '+m+' · '+TIERN[have]+' at '+next)
+              :((g.id==='us'&&have===3)?'Diamond: sort all 14 without losing a heart'
+              :'Best: '+(m||0)+' · '+TIERN[have]+' at '+next));
+   /* lower-is-better games: the bar fills as your time gets closer to the next tier */
+   const pct=lo?(m>0?Math.min(100,Math.round(next/m*100)):0):Math.min(100,Math.round(m/next*100));
+   prog='<div style="font-size:12px;opacity:.7;margin-top:2px">'+lab+'</div>'+(g.dPerfect&&have===3?'':barP(pct,TIERC[have]));
+  }
+  h+='<div style="padding:9px 0;border-bottom:1px solid var(--bd,#e2e8f0)"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:13.5px">'+g.ic+' '+g.nm+'</span><span>'+med+'</span></div>'+prog+'</div>'});
+ h+='<div style="font-weight:800;margin:12px 0 6px">✨ Special badges</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">'
+  +SPECIAL.map(sp=>{const ok=st.unlocked[sp.id];
+   return '<div style="border:1.5px solid '+(ok?'var(--ac,#4f46e5)':'var(--bd,#e2e8f0)')+';border-radius:12px;padding:8px;text-align:center;opacity:'+(ok?1:.55)+'"><div style="font-size:22px">'+(ok?sp.ic:'🔒')+'</div><div style="font-size:11.5px;font-weight:700">'+sp.nm+'</div><div style="font-size:10px;opacity:.7;line-height:1.25">'+sp.ds+'</div></div>'}).join('')
+  +'</div>';
+ return card(h)}
+function inject(){const ov=$('s3-loot-ov');if(!ov)return;const inner=ov.firstElementChild;if(!inner)return;
+ if($('s3-gb-sec')){const old=$('s3-gb-sec');old.outerHTML=section();return}
+ inner.insertAdjacentHTML('beforeend',section())}
+
+/* wrap s3Loot.open whenever it exists (works in any patch order);
+   if the loot panel never appears, badges still pop and evaluate fine */
+function wrapPanel(){try{
+ if(window.s3Loot&&s3Loot.open&&!s3Loot.open._gb){
+  const _o=s3Loot.open;
+  const w=function(){const r=_o.apply(this,arguments);
+   try{Promise.resolve(r).then(inject)}catch(e){try{inject()}catch(e2){}}
+   return r};
+  w._gb=1;s3Loot.open=w;return true}}catch(e){}
+ return !!(window.s3Loot&&s3Loot.open&&s3Loot.open._gb)}
+if(!wrapPanel()){const iv=setInterval(()=>{if(wrapPanel())clearInterval(iv)},800);setTimeout(()=>clearInterval(iv),120000)}
+
+/* duels: no game-side hook needed - watch the wallet win counter after duelEnd */
+function hookDuel(){try{
+ if(window.s3Me&&s3Me.duelEnd&&!s3Me.duelEnd._gb){
+  const _d=s3Me.duelEnd;
+  const f=function(){const r=_d.apply(this,arguments);
+   try{wallet().then(W=>{if(W&&typeof W.w==='number'){const st=load();
+    if(W.w>(st.duelW||0)){st.duelW=W.w;save(st);evaluate(st,false)}}})}catch(e){}
+   return r};
+  f._gb=1;s3Me.duelEnd=f;return true}}catch(e){}
+ return !!(window.s3Me&&s3Me.duelEnd&&s3Me.duelEnd._gb)}
+if(!hookDuel()){const iv2=setInterval(()=>{if(hookDuel())clearInterval(iv2)},1500);setTimeout(()=>clearInterval(iv2),120000)}
+
+/* evaluate once when a student session is active (silent seeding) */
+const iv3=setInterval(()=>{try{if(stu()){init();clearInterval(iv3)}}catch(e){}},2000);
+setTimeout(()=>clearInterval(iv3),120000);
+
+window.s3Loot=window.s3Loot||{};
+s3Loot.gameEvent=gameEvent;
+s3Loot.gbInject=inject;
+})();
+</script>
+
+/* rewards_fix.js — makes the 🎁 Rewards entries appear INSTANTLY.
+   The loot module injects its drawer button / settings row on a 1.2s poll,
+   but openD()/openS() rebuild those panels on every open, so the entry is
+   missing on every fresh open and pops in late with a layout shift (the
+   "appears and disappears, tap does nothing" report).
+   This script injects the same entries from a MutationObserver, which runs
+   before the paint after each rebuild - no visible gap, no flicker.
+   It only ADDS entries when missing; the loot module's own injector stays
+   as a fallback and sees the entries already present. */
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+function addDrawer(){
+ try{
+  const dr=$('s3-drawer');
+  if(!dr||!dr.classList.contains('open')||$('s3-loot-btn'))return;
+  const b=document.createElement('button');b.className='it';b.id='s3-loot-btn';b.innerHTML='🎁 Rewards';
+  b.onclick=()=>{try{s3Shell.closeD()}catch(e){};try{s3Loot.open()}catch(e){}};
+  const h4=[...dr.querySelectorAll('h4')].find(x=>/Home/i.test(x.textContent));
+  if(h4)h4.insertAdjacentElement('afterend',b);
+ }catch(e){}}
+function addSettings(){
+ try{
+  const body=$('s3-set-body');
+  if(!body||$('s3-loot-row'))return;
+  const r=document.createElement('div');r.className='row';r.id='s3-loot-row';
+  r.innerHTML='<span>🎁 Rewards</span>';
+  const b=document.createElement('button');b.className='s3btn';b.textContent='Frames and avatars';
+  b.onclick=()=>{try{s3Shell.closeS()}catch(e){};setTimeout(()=>{try{s3Loot.open()}catch(e){}},300)};
+  r.appendChild(b);body.appendChild(r);
+ }catch(e){}}
+let queued=false;
+function check(){if(queued)return;queued=true;
+ requestAnimationFrame(()=>{queued=false;addDrawer();addSettings()})}
+const mo=new MutationObserver(check);
+mo.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+/* catch the already-open case at load */
+check();
 })();
 </script>
 
