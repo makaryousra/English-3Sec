@@ -6589,6 +6589,7 @@ window.s3Backup={
    if(m)m.textContent='✅ Restored. Reloading...';setTimeout(()=>location.reload(),900)}catch(e){if(m)m.textContent='❌ Not a valid backup file'}};r.readAsText(f)}
 };
 function banner(){const old=$('s3-bk-ban');if(old)old.remove();
+ return; /* backup nag banner removed: student progress now lives in cloud accounts */
  let sess=null;try{sess=JSON.parse(localStorage.getItem('s3_session_v1'))}catch(e){}
  if(!sess||sess.role!=='teacher'||!hasData())return;const last=+localStorage.getItem('s3_lastbackup')||0;if(Date.now()-last<7*864e5)return;
  const b=document.createElement('div');b.id='s3-bk-ban';b.className='no-print';b.style.cssText='background:#fef3c7;color:#78350f;font-size:12px;font-weight:600;padding:8px 12px;text-align:center';
@@ -8091,7 +8092,7 @@ C.init=async function(){try{await sdk()}catch(e){if(resumeOffline()){retryLater(
  fb.Au.onAuthStateChanged(fb.auth,u=>{user=u;onUser(u)})};
 async function onUser(u){const CLS=S().CLS();
  if(!u){stopSync();busy=false;if(S().SESS())S().setSESS(null);S().gate();return}
- const cur=S().SESS();if(cur&&C.offline===false&&(cur.id===u.uid||(cur.role==='teacher'&&(u.email||'').toLowerCase()===TEACHER))){if(cur.role==='student'){startSync();flushing=true;fb.F.getDoc(fb.F.doc(fb.db,'students',u.uid)).then(sn=>{if(sn.exists()){const d=sn.data();if((d.updated||0)>S().ls.get(tk(u.uid),0))pull(u.uid,d)}}).catch(()=>{}).then(()=>{flushing=false;flush()})}return}
+ const cur=S().SESS();if(cur&&C.offline===false&&(cur.id===u.uid||(cur.role==='teacher'&&(u.email||'').toLowerCase()===TEACHER))){if(cur.role==='student'){startSync();flushing=true;fb.F.getDoc(fb.F.doc(fb.db,'students',u.uid)).then(sn=>{if(sn.exists()){const d=sn.data();if(d.name&&cur.name!==d.name){try{S().setSESS(Object.assign({},cur,{name:d.name}));S().ls.set(LAST,{uid:u.uid,name:d.name,cls:d.cls});const m=CLS.students.find(x=>x.id===u.uid);if(m)m.name=d.name}catch(e){}}if((d.updated||0)>S().ls.get(tk(u.uid),0))pull(u.uid,d)}}).catch(()=>{}).then(()=>{flushing=false;flush()})}return}
  try{
   if((u.email||'').toLowerCase()===TEACHER){S().ls.set(LAST,{uid:u.uid,teacher:1});CLS.teacher={name:CFG.teacherName||'Teacher'};busy=false;S().setSESS({role:'teacher',name:CLS.teacher.name});S().start();C.loadTeacher().catch(()=>{});return}
   const snap=await fb.F.getDoc(fb.F.doc(fb.db,'students',u.uid));
@@ -8174,6 +8175,12 @@ C.replace=async function(id){const CLS=S().CLS(),s=CLS.students.find(x=>x.id===i
   if(ob.exists())await F.setDoc(F.doc(fb.db,'board',r.id),ob.data());
   await Promise.all(['students','board','secrets'].map(c=>F.deleteDoc(F.doc(fb.db,c,id))));S().toast('New login for '+s.name+': '+r.un+' / '+r.pw)}catch(e){S().toast(msg(e))}
  await C.loadTeacher();C.renderStudents($('view-students'))};
+C.rename=async function(id){const CLS=S().CLS(),s=CLS.students.find(x=>x.id===id);if(!s||!S().isTeacher())return;
+ let n=prompt('New display name for '+s.name+' (2 to 40 letters). Only the name changes. Progress, XP and login stay the same.',s.name);if(n==null)return;
+ n=n.replace(/\s+/g,' ').trim();if(n===s.name)return;
+ if(n.length<2||n.length>40||!/^[A-Za-z][A-Za-z .'-]*$/.test(n)){S().toast('Use 2 to 40 English letters only');return}
+ const F=fb.F;try{const b=F.writeBatch(fb.db);b.update(F.doc(fb.db,'students',id),{name:n});b.update(F.doc(fb.db,'board',id),{name:n});await b.commit();s.name=n;S().toast('Name changed to '+n)}catch(e){S().toast(msg(e))}
+ await C.loadTeacher();C.renderStudents($('view-students'))};
 C.reset=async function(id){const s=S().CLS().students.find(x=>x.id===id);if(!s||!confirm('Reset all progress and XP for '+s.name+'? (Do it when the student is logged out.)'))return;const F=fb.F;
  try{await F.updateDoc(F.doc(fb.db,'students',id),{prog:EMPTYP,blob:'{}',updated:Date.now()});await F.updateDoc(F.doc(fb.db,'board',id),{xp:0,wxp:0,cur:0,best:0,ds:0,acc:0,att:0,mastered:0,last:0});S().toast('Progress reset')}catch(e){S().toast(msg(e))}
  await C.loadTeacher();C.renderStudents($('view-students'))};
@@ -8188,7 +8195,7 @@ C.cards=function(){const a=$('cards-area');a.style.display='block';const L=S().C
 C.renderStudents=function(v){if(!S().isTeacher()){v.innerHTML='';return}
  if(!C.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';C.loadTeacher().then(()=>{loadedAt=Date.now();C.renderStudents(v)});return}
  const L=S().CLS().students.slice().sort((a,b)=>(a.cls||'').localeCompare(b.cls||'')||a.name.localeCompare(b.name));
- const rows=L.map(s=>{const x=S().statsFor(s);return'<tr class="stu-r" data-n="'+esc(((s.name||'')+' '+(s.cls||'')+' '+(s.un||'')).toLowerCase())+'"><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.un)+'</code></td><td><code>'+esc(s.pw)+'</code></td><td>'+x.xp+' XP'+s3LvTag(x.xp)+'</td><td>'+x.acc+'%</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',0)">📋 Copy</button> <button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',1)">💬 WhatsApp</button> <button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="S3CLOUD.replace(\''+s.id+'\')">New login</button> <button class="s3btn ghost" onclick="S3CLOUD.reset(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="S3CLOUD.remove(\''+s.id+'\')">✕</button></td></tr>'}).join('');
+ const rows=L.map(s=>{const x=S().statsFor(s);return'<tr class="stu-r" data-n="'+esc(((s.name||'')+' '+(s.cls||'')+' '+(s.un||'')).toLowerCase())+'"><td>'+esc(s.cls||'—')+'</td><td><b>'+esc(s.name)+'</b></td><td><code>'+esc(s.un)+'</code></td><td><code>'+esc(s.pw)+'</code></td><td>'+x.xp+' XP'+s3LvTag(x.xp)+'</td><td>'+x.acc+'%</td><td>'+(window.s3PlBadge?s3PlBadge(x.p&&x.p.place):'')+'</td><td style="white-space:nowrap"><button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',0)">📋 Copy</button> <button class="s3btn ghost" onclick="S3CLOUD.share(\''+s.id+'\',1)">💬 WhatsApp</button> <button class="s3btn ghost" onclick="s3ViewRep(\''+s.id+'\')">Report</button> <button class="s3btn ghost" onclick="S3CLOUD.replace(\''+s.id+'\')">New login</button> <button class="s3btn ghost" onclick="S3CLOUD.rename(\''+s.id+'\')">Rename</button> <button class="s3btn ghost" onclick="S3CLOUD.reset(\''+s.id+'\')">Reset</button> <button class="s3btn danger" onclick="S3CLOUD.remove(\''+s.id+'\')">✕</button></td></tr>'}).join('');
  v.innerHTML='<div class="s3noprint" style="display:grid;gap:16px"><div class="bg-white rounded-2xl border p-5"><div class="s3h">👥 My Students</div><div class="s3sub">Paste one student per line as <b>Class, Name</b>. Each gets a username and a password. Students never register.</div>'+
  '<textarea id="stu-new" class="s3in" rows="4" style="margin-top:10px" placeholder="3A, Mohamed Eid&#10;3A, Mariam Ali"></textarea><button class="s3btn" style="margin-top:10px" onclick="S3CLOUD.create()">+ Create accounts</button> <label class="s3btn ghost" style="cursor:pointer;display:inline-block;margin-top:10px">📄 Load .txt / .csv<input type="file" accept=".csv,.txt" hidden onchange="S3CLOUD.file(event)"></label><div id="stu-prog" class="s3sub" style="margin-top:8px"></div></div>'+
  '<div class="bg-white rounded-2xl border p-5" style="overflow-x:auto"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px"><div class="s3h" style="font-size:15px">Class list ('+L.length+')</div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s3btn ghost" onclick="S3CLOUD.cards()">🖨️ Print login cards</button><button class="s3btn ghost" onclick="S3CLOUD.csv()">⬇ Logins (CSV)</button><button class="s3btn ghost" onclick="S3CLOUD.refresh()">🔄 Refresh</button></div></div>'+
@@ -8250,13 +8257,17 @@ const SHOP=[['bk','b','\u{1F4DA} Bookworm badge',30],['gg','b','\u{1F393} Gramma
  ['t1','t','Title: The Challenger',40],['t2','t','Title: Idiom Master',60],['t3','t','Title: Fast Fingers',75],['t4','t','Title: The Night Owl',70],['t5','t','Title: The Early Bird',70],['t6','t','Title: The Word Collector',90],['t7','t','Title: The Marathoner',105],['t8','t','Title: The Perfectionist',120],
  ['nc','n','Name colour: Teal',90],['np','n','Name colour: Purple',90],['nr','n','Name colour: Crimson',105],['no','n','Name colour: Ocean',105],['ng','n','Name colour: Gold',135],['nrw','n','Name colour: Rainbow (animated)',180],
  ['gn','g','Card background: Night',90],['gs','g','Card background: Sunrise',90],['go','g','Card background: Ocean',100],['gf','g','Card background: Forest',100],['gr','g','Card background: Royal',115],['gg2','g','Card background: Galaxy',150],
- ['ct','c','\u{1F451} Custom Title',300]];
+ ['t9','t','Title: The Storyteller',80],['t10','t','Title: The Detective',85],['t11','t','Title: The Poet',95],['t12','t','Title: The Timekeeper',100],['t13','t','Title: The Explorer',110],['t14','t','Title: The Scholar',130],['t15','t','Title: The Strategist',140],['t16','t','Title: The Diplomat',150],['t17','t','Title: The Philosopher',170],['t18','t','Title: 🌟 The Luminous',220],['t19','t','Title: 👑 The Sovereign',250],
+ ['ne','n','Name colour: Emerald',120],['nro','n','Name colour: Rose',120],['nsu','n','Name colour: Sunset',130],['nsh','n','Name colour: Shadow',150],['ni','n','Name colour: Ice',150],['nf','n','Name colour: Fuchsia',200],
+ ['gd','g','Card background: Desert Dunes',110],['gnl','g','Card background: Nile',110],['gc','g','Card background: Cherry Blossom',130],['ga','g','Card background: Aurora',160],['gl','g','Card background: Lava',170],['gsf','g','Card background: Starfield',190],['gdh','g','Card background: 🐉 Dragon\u2019s Hoard',300],
+ ['bd1','b','🧠 Deep Thinker badge',60],['bd2','b','📖 Book Dragon badge',80],['bd3','b','🎧 Podcast Pro badge',70],['bd4','b','🗣️ Chatterbox badge',85],['bd5','b','🔤 Spelling Bee badge',90],['bd6','b','🧩 Puzzle Solver badge',75],['bd7','b','🌙 Night Shift badge',95],['bd8','b','🎯 Bullseye badge',110],['bd9','b','🏆 Trophy Case badge',130],['bd10','b','💎 Diamond Mind badge',160],
+  ['ct','c','\u{1F451} Custom Title',300]];
 const CTA=['The Grammar','The Word','The Quiz','The Sentence','The Vocab','The Lightning','The Midnight','The Golden','The Silver','The Crystal','The Silent','The Brave','The Clever','The Mighty','The Swift','The Lucky','The Cosmic','The Royal','The Epic','The Flying','The Rising','The Shining','The Fearless','The Homework','The Exam','The Puzzle','The Desert','The Nile'];
 const CTB=['Wizard','Knight','Ninja','Master','Champion','Hunter','Queen','King','Captain','Boss','Legend','Hero','Star','Genius','Machine','Rocket','Dragon','Phoenix','Tiger','Falcon','Guardian','Spark','Storm','Comet','Ghost','Samurai','Professor','Explorer'];
 const DT=[['d5',5,'Bronze Duelist'],['d15',15,'Silver Duelist'],['d30',30,'Gold Duelist'],['d60',60,'Champion']];
-const BG={gn:'linear-gradient(135deg,#1e1b4b,#312e81);color:#fff',gs:'linear-gradient(135deg,#fde68a,#fdba74)',go:'linear-gradient(135deg,#0c4a6e,#0284c7);color:#fff',gf:'linear-gradient(135deg,#14532d,#16a34a);color:#fff',gr:'linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff',gg2:'linear-gradient(135deg,#0f172a,#312e81 55%,#7c3aed);color:#fff'};
-const NC={nc:'#0d9488',np:'#7c3aed',nr:'#dc2626',no:'#0284c7',ng:'#d97706',nrw:''};
-const FR=[[110,'Mythic','#f43f5e'],[85,'Galaxy','#a855f7'],[65,'Inferno','#ef4444'],[50,'Crystal','#38bdf8'],[38,'Titanium','#94a3b8'],[30,'Master','#7c3aed'],[20,'Diamond','#06b6d4'],[15,'Platinum','#64748b'],[10,'Gold','#f59e0b'],[5,'Bronze','#b45309'],[1,'Plain','#cbd5e1']];
+const BG={gn:'linear-gradient(135deg,#1e1b4b,#312e81);color:#fff',gs:'linear-gradient(135deg,#fde68a,#fdba74)',go:'linear-gradient(135deg,#0c4a6e,#0284c7);color:#fff',gf:'linear-gradient(135deg,#14532d,#16a34a);color:#fff',gr:'linear-gradient(135deg,#4c1d95,#7c3aed);color:#fff',gg2:'linear-gradient(135deg,#0f172a,#312e81 55%,#7c3aed);color:#fff',gd:'linear-gradient(135deg,#fde68a,#d97706)',gnl:'linear-gradient(135deg,#164e63,#0891b2);color:#fff',gc:'linear-gradient(135deg,#fbcfe8,#f472b6)',ga:'linear-gradient(135deg,#022c22,#0d9488 55%,#a855f7);color:#fff',gl:'linear-gradient(135deg,#450a0a,#dc2626 60%,#f59e0b);color:#fff',gsf:'linear-gradient(135deg,#020617,#1e293b 60%,#334155);color:#fff',gdh:'linear-gradient(135deg,#422006,#a16207 55%,#facc15);color:#fff'};
+const NC={nc:'#0d9488',np:'#7c3aed',nr:'#dc2626',no:'#0284c7',ng:'#d97706',nrw:'',ne:'#059669',nro:'#e11d48',nsu:'#ea580c',nsh:'#334155',ni:'#7dd3fc',nf:'#c026d3'};
+const FR=[[110,'Mythic','#f43f5e'],[85,'Galaxy','#a855f7'],[65,'Inferno','#ef4444'],[50,'Crystal','#38bdf8'],[40,'Titanium','#94a3b8'],[30,'Master','#7c3aed'],[20,'Diamond','#06b6d4'],[15,'Platinum','#64748b'],[10,'Gold','#f59e0b'],[5,'Bronze','#b45309'],[1,'Plain','#cbd5e1']];
 const PRE=['🦁','🐯','🦊','🐼','🐸','🦉','🐙','🦄','🐬','🚀','⚽','🎮','🦖','⭐','🐳','🤖','🦅','🏆','⚡','🐉','👑','🐝','🐺','🦇','🌅','🔥','💎','🧠','🎧','🎤','📖','✍️','🌐','👾','🔁','⚔️'],PC=['#f59e0b','#f97316','#ef4444','#64748b','#22c55e','#8b5cf6','#ec4899','#a855f7','#06b6d4','#3b82f6','#16a34a','#6366f1','#65a30d','#eab308','#0ea5e9','#334155','#0d9488','#b45309','#facc15','#7c2d12','#fbbf24','#ca8a04','#57534e','#1e293b','#fb923c','#b91c1c','#0284c7','#7c3aed','#0f766e','#be185d','#78350f','#166534','#0891b2','#4d7c0f','#9f1239','#dc2626'];
 const avInner=(av,name,sz)=>{if(av&&av.indexOf('data:image/jpeg;base64,')===0)return '<img alt="" src="'+av+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';const m=/^p(\d{1,2})$/.exec(av||'');if(m&&PRE[+m[1]])return '<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;border-radius:50%;background:'+PC[+m[1]]+';font-size:'+Math.round(sz*.5)+'px">'+PRE[+m[1]]+'</span>';return '<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;border-radius:50%;background:#6366f1;color:#fff;font-weight:800;font-size:'+Math.round(sz*.42)+'px">'+esc((FN(name)||'?')[0].toUpperCase())+'</span>'};
 const lvl=xp=>Math.floor((xp||0)/1000)+1;
@@ -8308,6 +8319,22 @@ async function profile(){const s=SS();if(!s||s.role==='teacher'||needNet())retur
    '<div class="mc"><div class="mr"><span>Duels</span><b>'+W.w+' W · '+W.l+' L'+(W.dr?' · '+W.dr+' D':'')+'</b></div><div class="mr"><span>Next frame</span><b>'+nextFrame(L)+'</b></div></div>'+
    '<div class="mc" style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:18px">🪙 <b>'+W.tk+'</b> tokens</div>'+mb('Shop','s3Me.shop()')+'</div>')}catch(e){ov('My profile','<div class="mc">Could not load. '+esc((e&&e.code)||'')+'</div>')}}
 /* ---- shop ---- */
+function framesSec(){let L=1;try{L=lvl(S3.statsFor(SS()).xp)}catch(e){}
+ const cell=(fr,variant,label,wide)=>{const un=variant?false:L>=fr[0],isCur=!variant&&frame(L)&&frame(L)[0]===fr[0];
+  const fx=(window.s3Frx&&s3Frx.av)?s3Frx.av(fr,'<span style="font-size:34px;line-height:78px;display:block;text-align:center">\u{1F981}</span>',variant):'';
+  return '<div style="width:'+(wide?'auto':'25%')+';min-width:78px;text-align:center;padding:4px '+(wide?'16px':'0')+' 8px">'
+   +'<div style="height:66px;display:flex;justify-content:center;align-items:flex-start;overflow:visible"><div style="transform:scale(.6);transform-origin:top center">'+fx+'</div></div>'
+   +'<div style="font-size:11.5px;font-weight:700">'+label+'</div>'
+   +'<div style="font-size:11px;font-weight:700;'+(isCur?'color:#16a34a':'opacity:.55')+'">'+(variant?'Level 110 pick':isCur?'\u2713 Your frame':un?'Unlocked':'\u{1F512} Level '+fr[0])+'</div></div>'};
+ const grid=FR.slice().reverse().filter(f=>f[0]<110).map(f=>cell(f,null,f[1]+' frame')).join('');
+ const myth=FR.find(f=>f[0]>=110);
+ const tree='<div style="font-size:12px;font-weight:800;opacity:.7;margin:10px 0 2px;text-align:center">Level 110 epic pick — free, choose on your Profile</div>'
+  +'<div style="display:flex;justify-content:center">'+cell(myth,null,myth[1]+' frame',true)+'</div>'
+  +'<svg width="180" height="30" viewBox="0 0 180 30" style="display:block;margin:0 auto"><path d="M90 2 V10 M90 10 L34 28 M90 10 L146 28" stroke="#cbd5e1" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>'
+  +'<div style="display:flex;justify-content:center;gap:6px">'+cell(myth,'a','\u{1F409} Dragon King',true)+cell(myth,'b','\u26A1 Volt Emperor',true)+'</div>';
+ return '<div class="mc"><div style="font-weight:800;margin-bottom:4px">\u{1F5BC}️ Avatar frames <span style="font-size:11px;background:#64748b;color:#fff;border-radius:8px;padding:2px 7px;vertical-align:2px">NOT FOR SALE</span></div>'
+  +'<div style="font-size:12px;opacity:.7;margin-bottom:6px">Frames unlock automatically as you level up — you are level '+L+' now.</div>'
+  +'<div style="display:flex;flex-wrap:wrap">'+grid+'</div>'+tree+'</div>'}
 async function shop(msg){const s=SS();if(!s||s.role==='teacher'||needNet())return;const x=fx();
  try{const W=await wget(x.uid),own=id=>W.own.includes(id),eqd=i=>W.eq[i[1]]===i[0];
   const btn=i=>own(i[0])?(eqd(i)?mb('Equipped',"s3Me.eq('"+i[0]+"')",1):mb('Equip',"s3Me.eq('"+i[0]+"')")):mb('\u{1FA99} '+i[3],"s3Me.buy('"+i[0]+"')");
@@ -8322,7 +8349,7 @@ async function shop(msg){const s=SS();if(!s||s.role==='teacher'||needNet())retur
    +'<div id="ct-prev" style="text-align:center;font-weight:800;padding:9px;margin-top:8px;background:#fff;border:2px dashed #4f46e5;border-radius:12px">'+esc(cur||CTA[0]+' '+CTB[0])+'</div>'
    +'<div style="text-align:center;margin-top:8px">'+(own('ct')?mb('Save title','s3Me.ctSave()'):mb('\u{1FA99} 300 · Buy & equip','s3Me.ctBuy()'))+'</div></div>';
   let h=(msg?'<div class="mc" style="color:#b91c1c">'+esc(msg)+'</div>':'')+'<div class="mc"><div style="font-size:12px;opacity:.7;margin-bottom:4px">Tokens come from duels: win '+TOK.win+', draw '+TOK.draw+', loss '+TOK.loss+', up to '+TOK.cap+' a day.</div></div>'
-   +ct+sec('\u{1F3F7}️ Titles','t')+sec('\u{1F3A8} Name colours','n')+sec('\u{1F0CF} Card backgrounds','g')+sec('\u{1F3C5} Badges','b')
+   +ct+sec('\u{1F3F7}️ Titles','t')+sec('\u{1F3A8} Name colours','n')+sec('\u{1F0CF} Card backgrounds','g')+sec('\u{1F3C5} Badges','b')+framesSec()
    +'<div class="mc"><div style="font-weight:800;margin-bottom:4px">Duel-only titles (not for sale)</div>'+DT.map(d=>'<div class="mr"><span>'+d[2]+'</span><span>'+(W.w>=d[1]?'✓ unlocked':d[1]+' wins')+'</span></div>').join('')+'</div>';
   ov('\u{1F6CD}️ Shop · \u{1FA99} '+W.tk,h)}catch(e){ov('Shop','<div class="mc">Could not load. '+esc((e&&e.code)||'')+'</div>')}}
 function ctTitle(){const a=(document.getElementById('ct-a')||{}).value||CTA[0],b=(document.getElementById('ct-b')||{}).value||CTB[0];return a+' '+b}
@@ -10244,7 +10271,7 @@ function lvlOf(xp){try{if(window.s3Me&&s3Me._lvl)return s3Me._lvl(xp)}catch(e){}
  return Math.floor((xp||0)/1000)+1}
 /* frame tiers a teacher can detect from total XP (live FR table when present) */
 const FRT=()=>{try{if(window.s3Me&&s3Me._FR)return s3Me._FR.filter(f=>f[0]>1).map(f=>[f[0],f[1]])}catch(e){}
- return [[5,'Bronze'],[10,'Gold'],[15,'Platinum'],[20,'Diamond'],[30,'Master'],[38,'Titanium'],[50,'Crystal'],[65,'Inferno'],[85,'Galaxy'],[110,'Mythic']]};
+ return [[5,'Bronze'],[10,'Gold'],[15,'Platinum'],[20,'Diamond'],[30,'Master'],[40,'Titanium'],[50,'Crystal'],[65,'Inferno'],[85,'Galaxy'],[110,'Mythic']]};
 /* XP-milestone avatars detectable from the mirror's total XP (subset of the
    loot module's MAV list; stat-based avatars only exist on the student's phone) */
 const XPAV=[[15000,'\u{1F996}','Dino'],[25000,'⭐','Star'],[40000,'\u{1F433}','Whale'],[50000,'\u{1F916}','Robot'],[60000,'\u{1F985}','Eagle'],[90000,'\u{1F3C6}','Champ'],[125000,'⚡','Bolt'],[175000,'\u{1F409}','Dragon'],[250000,'\u{1F451}','King']];
