@@ -5628,7 +5628,7 @@ function refreshAll(){try{updateStats();applyFilters();renderExamDrills();render
 function logEv(q,ok,xp,kind){if(!isStudent())return;const p=getProg(SESS.id);
  p.log.push({t:Date.now(),q:q.id,u:q.unit,c:q.category,ok:ok?1:0,xp,k:kind});if(p.log.length>3000)p.log=p.log.slice(-3000);
  p.xp=(p.xp||0)+xp;p.cur=state.streak;p.best=Math.max(p.best||0,state.streak);const d=dayKey();p.days[d]=(p.days[d]||0)+1;p.last=Date.now();saveProg(p);refreshChip()}
-const _sel=window.selectOption;window.selectOption=function(id,i,quiz){const was=state.userAnswers[id]===undefined;_sel(id,i,quiz);if(was){const q=state.allQuestions.find(x=>x.id===id);if(q){const ok=state.userAnswers[id]===q.answer;logEv(q,ok,ok?10+(state.streak>=5?5:0):1,'q')}}};
+const _sel=window.selectOption;window.selectOption=function(id,i,quiz){const was=state.userAnswers[id]===undefined;_sel(id,i,quiz);if(was){const q=state.allQuestions.find(x=>x.id===id);if(q){const ok=state.userAnswers[id]===q.answer;logEv(q,ok,ok?5+(state.streak>=5?3:0):1,'q')}}};
 const _srs=window.submitSRSReviewAnswer;window.submitSRSReviewAnswer=function(id,i){const q=state.allQuestions.find(x=>x.id===id);_srs(id,i);if(q){const ok=state.userAnswers[id]===q.answer;const grad=state.srsMap[id]&&state.srsMap[id].level===2;logEv(q,ok,ok?(grad?20:5):0,'srs')}};
 const _rw=window.checkRewriteAnswer;window.checkRewriteAnswer=function(id){const was=!!state.rewriteChecked[id];_rw(id);if(!was&&state.rewriteChecked[id]){const d=REWRITE_DRILLS.find(x=>x.id===id);if(d){const ok=(d.acceptableAnswers||[d.modelAnswer.toLowerCase()]).includes(normalizeSentence(state.rewriteUserInputs[id]||''));logEv({id:'rw'+id,unit:d.unit,category:'Rewrite'},ok,ok?15:2,'rw')}}};
 const _tr=window.checkTranslationAnswer;window.checkTranslationAnswer=function(id){const was=!!state.translationChecked[id];_tr(id);if(!was&&state.translationChecked[id]){const d=TRANSLATION_DRILLS.find(x=>x.id===id);if(d){const sim=translationSimilarity(state.translationUserAnswers[id]||'',d.modelAnswer);const ok=sim>=80;logEv({id:'tr'+id,unit:d.unit,category:'Translation'},ok,ok?15:(sim>=50?6:2),'tr')}}};
@@ -5639,7 +5639,7 @@ function statsFor(s){if(s.sum){const m=s.sum;return{s,p:{log:[],days:{},xp:m.xp|
  const real=p.log.filter(e=>e.k!=='srs'&&e.k!=='bonus'),ok=real.filter(e=>e.ok).length,wk=Date.now()-7*864e5;
  const mastered=Object.values(b.srsMap||{}).filter(x=>x.level===2).length;
  const _tp=(window.S3CLOUD&&S3CLOUD.tp)?S3CLOUD.tp(s.id):{t:0,w:0};return{s,p,b,xp:(p.xp||0)+_tp.t,wxp:p.log.filter(e=>e.t>wk).reduce((a,e)=>a+e.xp,0)+_tp.w,att:real.length,ok,acc:real.length?Math.round(ok/real.length*100):0,cur:p.cur||0,best:p.best||0,ds:dayStreak(p.days||{}),mastered,last:p.last||0}}
-const RANKS=[[0,'🌱','Beginner'],[100,'📘','Learner'],[300,'🧭','Explorer'],[700,'🏅','Achiever'],[1500,'💎','Expert'],[3000,'👑','Master'],[5000,'⭐','Star'],[8000,'💠','Elite'],[12000,'🔥','Pro'],[18000,'🏆','Champion'],[25000,'⚔️','Warlord'],[35000,'🐉','Legend'],[50000,'🌌','Mythic']];
+const RANKS=[[0,'🌱','Beginner'],[500,'📘','Learner'],[1500,'🧭','Explorer'],[3500,'🏅','Achiever'],[7500,'💎','Expert'],[15000,'👑','Master'],[25000,'⭐','Star'],[40000,'💠','Elite'],[60000,'🔥','Pro'],[90000,'🏆','Champion'],[125000,'⚔️','Warlord'],[175000,'🐉','Legend'],[250000,'🌌','Mythic']];
 const rankOf=xp=>{let k=0;RANKS.forEach((r,i)=>{if(xp>=r[0])k=i});const r=RANKS[k],n=RANKS[k+1];return{i:k,ic:r[1],n:r[2],next:n?n[2]:null,need:n?n[0]-xp:0,pct:n?Math.round((xp-r[0])/(n[0]-r[0])*100):100}};
 const LC=(x,f)=>{try{let n=0;(x.p.log||[]).forEach(e=>{if(f(e))n++});return n}catch(e){return 0}};const HR=(x,a,b)=>LC(x,e=>{const h=new Date(e.t).getHours();return h>=a&&h<b});const GAP14=x=>{try{const ks=Object.keys(x.p.days||{}).sort();for(let i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};const BDG=[['first','👣','First Steps','Answer 10 questions',x=>x.att>=10],['s5','🔥','Streak 5','5 correct answers in a row',x=>x.best>=5],['s10','⚡','Streak 10','10 correct in a row',x=>x.best>=10],['s20','🚀','Streak 20','20 correct in a row',x=>x.best>=20],
 ['d3','📅','3-Day Habit','Practise 3 days in a row',x=>x.ds>=3],['d7','🗓️','Week Warrior','Practise 7 days in a row',x=>x.ds>=7],['d14','🏕️','Two Weeks Strong','Practise 14 days in a row',x=>x.ds>=14],
@@ -8247,7 +8247,7 @@ const BG={gn:'linear-gradient(135deg,#1e1b4b,#312e81);color:#fff',gs:'linear-gra
 const FR=[[110,'Mythic','#f43f5e'],[85,'Galaxy','#a855f7'],[65,'Inferno','#ef4444'],[50,'Crystal','#38bdf8'],[38,'Titanium','#94a3b8'],[30,'Master','#7c3aed'],[20,'Diamond','#06b6d4'],[15,'Platinum','#64748b'],[10,'Gold','#f59e0b'],[5,'Bronze','#b45309'],[1,'Plain','#cbd5e1']];
 const PRE=['🦁','🐯','🦊','🐼','🐸','🦉','🐙','🦄','🐬','🚀','⚽','🎮','🦖','⭐','🐳','🤖','🦅','🏆','⚡','🐉','👑','🐝','🐺','🦇','🌅','🔥','💎','🧠','🎧','🎤','📖','✍️','🌐','👾','🔁','⚔️'],PC=['#f59e0b','#f97316','#ef4444','#64748b','#22c55e','#8b5cf6','#ec4899','#a855f7','#06b6d4','#3b82f6','#16a34a','#6366f1','#65a30d','#eab308','#0ea5e9','#334155','#0d9488','#b45309','#facc15','#7c2d12','#fbbf24','#ca8a04','#57534e','#1e293b','#fb923c','#b91c1c','#0284c7','#7c3aed','#0f766e','#be185d','#78350f','#166534','#0891b2','#4d7c0f','#9f1239','#dc2626'];
 const avInner=(av,name,sz)=>{if(av&&av.indexOf('data:image/jpeg;base64,')===0)return '<img alt="" src="'+av+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';const m=/^p(\d{1,2})$/.exec(av||'');if(m&&PRE[+m[1]])return '<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;border-radius:50%;background:'+PC[+m[1]]+';font-size:'+Math.round(sz*.5)+'px">'+PRE[+m[1]]+'</span>';return '<span style="display:flex;width:100%;height:100%;align-items:center;justify-content:center;border-radius:50%;background:#6366f1;color:#fff;font-weight:800;font-size:'+Math.round(sz*.42)+'px">'+esc((FN(name)||'?')[0].toUpperCase())+'</span>'};
-const lvl=xp=>Math.floor((xp||0)/150)+1;
+const lvl=xp=>Math.floor((xp||0)/750)+1;
 const frame=l=>FR.find(f=>l>=f[0]);
 const nextFrame=l=>{const a=FR.slice().reverse().find(f=>f[0]>l);return a?a[1]+' at level '+a[0]:'Top frame reached'};
 const dtitle=w=>{let t=null;DT.forEach(d=>{if(w>=d[1])t=d});return t};
@@ -9224,7 +9224,7 @@ window.s3TrackTest={analyze:analyze,insights:insights};
 (function(){
 var S=function(){return window.S3},fx=function(){return window.S3CLOUD&&S3CLOUD.fbx?S3CLOUD.fbx():null};
 var esc=function(s){return S().esc(s)},MAXF=30;
-var RANKS=[[0,'\ud83c\udf31','Beginner'],[100,'\ud83d\udcd8','Learner'],[300,'\ud83e\udded','Explorer'],[700,'\ud83c\udfc5','Achiever'],[1500,'\ud83d\udc8e','Expert'],[3000,'\ud83d\udc51','Master'],[5000,'\u2b50','Star'],[8000,'\ud83d\udca0','Elite'],[12000,'\ud83d\udd25','Pro'],[18000,'\ud83c\udfc6','Champion'],[25000,'\u2694\ufe0f','Warlord'],[35000,'\ud83d\udc09','Legend'],[50000,'\ud83c\udf0c','Mythic']];
+var RANKS=[[0,'\ud83c\udf31','Beginner'],[500,'\ud83d\udcd8','Learner'],[1500,'\ud83e\udded','Explorer'],[3500,'\ud83c\udfc5','Achiever'],[7500,'\ud83d\udc8e','Expert'],[15000,'\ud83d\udc51','Master'],[25000,'\u2b50','Star'],[40000,'\ud83d\udca0','Elite'],[60000,'\ud83d\udd25','Pro'],[90000,'\ud83c\udfc6','Champion'],[125000,'\u2694\ufe0f','Warlord'],[175000,'\ud83d\udc09','Legend'],[250000,'\ud83c\udf0c','Mythic']];
 var BDG=[['first','\ud83d\udc63','First Steps',function(x){return x.att>=10}],['s5','\ud83d\udd25','Streak 5',function(x){return x.best>=5}],['s10','\u26a1','Streak 10',function(x){return x.best>=10}],['s20','\ud83d\ude80','Streak 20',function(x){return x.best>=20}],
 ['d3','\ud83d\udcc5','3-Day Habit',function(x){return x.ds>=3}],['d7','\ud83d\uddd3\ufe0f','Week Warrior',function(x){return x.ds>=7}],['d14','\ud83c\udfd5\ufe0f','Two Weeks Strong',function(x){return x.ds>=14}],
 ['sh','\ud83c\udfaf','Sharpshooter',function(x){return x.att>=20&&x.acc>=90}],['ace','\ud83e\udde0','Accuracy Ace',function(x){return x.att>=100&&x.acc>=85}],
@@ -9537,15 +9537,15 @@ const LC=(x,f)=>{try{let n=0;(x.p.log||[]).forEach(e=>{if(f(e))n++});return n}ca
 const HR=(x,a,b)=>LC(x,e=>{const h=new Date(e.t).getHours();return h>=a&&h<b});
 const GAP14=x=>{try{const ks=Object.keys(x.p.days||{}).sort();for(let i=1;i<ks.length;i++)if((new Date(ks[i])-new Date(ks[i-1]))/864e5>=14)return true}catch(e){}return false};
 const MAV=[
- [12,'🦖','Dino','Reach Master rank (3,000 XP)',x=>x.xp>=3000],
- [13,'⭐','Star','Earn 5,000 XP',x=>x.xp>=5000],
- [14,'🐳','Whale','Earn 8,000 XP',x=>x.xp>=8000],
- [15,'🤖','Robot','Earn 10,000 XP',x=>x.xp>=10000],
- [16,'🦅','Eagle','Earn 12,000 XP',x=>x.xp>=12000],
- [17,'🏆','Champ','Earn 18,000 XP',x=>x.xp>=18000],
- [18,'⚡','Bolt','Earn 25,000 XP',x=>x.xp>=25000],
- [19,'🐉','Dragon','Earn 35,000 XP (Legend)',x=>x.xp>=35000],
- [20,'👑','King','Earn 50,000 XP (Mythic)',x=>x.xp>=50000],
+ [12,'🦖','Dino','Reach Master rank (15,000 XP)',x=>x.xp>=15000],
+ [13,'⭐','Star','Earn 25,000 XP',x=>x.xp>=25000],
+ [14,'🐳','Whale','Earn 40,000 XP',x=>x.xp>=40000],
+ [15,'🤖','Robot','Earn 50,000 XP',x=>x.xp>=50000],
+ [16,'🦅','Eagle','Earn 60,000 XP',x=>x.xp>=60000],
+ [17,'🏆','Champ','Earn 90,000 XP',x=>x.xp>=90000],
+ [18,'⚡','Bolt','Earn 125,000 XP',x=>x.xp>=125000],
+ [19,'🐉','Dragon','Earn 175,000 XP (Legend)',x=>x.xp>=175000],
+ [20,'👑','King','Earn 250,000 XP (Mythic)',x=>x.xp>=250000],
  [21,'🐝','Bee','Answer 1,000 questions',x=>x.att>=1000],
  [22,'🐺','Wolf','Answer 2,500 questions',x=>x.att>=2500],
  [23,'🦇','Bat','Answer 10 questions after midnight',x=>HR(x,0,5)>=10],
@@ -10112,13 +10112,13 @@ function cheerPop(ic,big,t,s,big2){
 function nextCheer(){if(!cheerQ.length){cheering=false;return}cheering=true;
  const c=cheerQ.shift();cheerPop(c[0],c[1],c[2],c[3])}
 function lvlOf(xp){try{if(window.s3Me&&s3Me._lvl)return s3Me._lvl(xp)}catch(e){}
- return Math.floor((xp||0)/150)+1}
+ return Math.floor((xp||0)/750)+1}
 /* frame tiers a teacher can detect from total XP (live FR table when present) */
 const FRT=()=>{try{if(window.s3Me&&s3Me._FR)return s3Me._FR.filter(f=>f[0]>1).map(f=>[f[0],f[1]])}catch(e){}
  return [[5,'Bronze'],[10,'Gold'],[15,'Platinum'],[20,'Diamond'],[30,'Master'],[38,'Titanium'],[50,'Crystal'],[65,'Inferno'],[85,'Galaxy'],[110,'Mythic']]};
 /* XP-milestone avatars detectable from the mirror's total XP (subset of the
    loot module's MAV list; stat-based avatars only exist on the student's phone) */
-const XPAV=[[3000,'\u{1F996}','Dino'],[5000,'⭐','Star'],[8000,'\u{1F433}','Whale'],[10000,'\u{1F916}','Robot'],[12000,'\u{1F985}','Eagle'],[18000,'\u{1F3C6}','Champ'],[25000,'⚡','Bolt'],[35000,'\u{1F409}','Dragon'],[50000,'\u{1F451}','King']];
+const XPAV=[[15000,'\u{1F996}','Dino'],[25000,'⭐','Star'],[40000,'\u{1F433}','Whale'],[50000,'\u{1F916}','Robot'],[60000,'\u{1F985}','Eagle'],[90000,'\u{1F3C6}','Champ'],[125000,'⚡','Bolt'],[175000,'\u{1F409}','Dragon'],[250000,'\u{1F451}','King']];
 /* class-badge tiers crossed between two tag-count snapshots */
 function cbCross(b,a){const out=[];CG.forEach(g=>{
  const vb=g.game?(b[g.game]||0):(b.all||0),va=g.game?(a[g.game]||0):(a.all||0);
