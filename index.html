@@ -5561,9 +5561,9 @@ api.playFrom=i=>{playing=true;setBtn();playSeq(cur.sents[i].ti)};
 /* ---- Match ---- */
 function match(){const L=cur;const pairs=s3Fresh.pick(L.vocab,'lm'+L.unit,6,v=>v.n);M={L,pairs,en:shuf(pairs),ar:shuf(pairs),sel:null,done:{},miss:0,ok:0};drawMatch()}
 function drawMatch(){const m=M;const col=(arr,k)=>arr.map(w=>{const id=k+w.n;const d=m.done[w.n];const s=m.sel&&m.sel.id===id;return '<button class="lsm '+(k==='a'?'lsar ':'')+(d?'done':s?'sel':'')+'" onclick="s3Listen.pick(\''+k+'\','+w.n+')">'+esc(k==='e'?w.en:w.ar)+'</button>'}).join('');
- view().innerHTML=head(m.L,'Match')+'<div class="lsc"><div style="font-size:13px;margin-bottom:8px">Tap an English word, then its Arabic meaning. Mistakes: <b>'+m.miss+'</b></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+col(m.en,'e')+'</div><div>'+col(m.ar,'a')+'</div></div>'+
- (m.ok===m.pairs.length?'<div style="margin-top:12px;font-weight:800;color:#16a34a">🎉 Done! '+m.miss+' mistake(s).</div><button class="lsb" onclick="s3Listen.go(\'match\','+m.L.unit+')">Play again (new words)</button>':'')+'</div>'}
-api.pick=(k,n)=>{const m=M;if(m.done[n])return;const id=k+n;
+ view().innerHTML=head(m.L,'Match')+'<div class="lsc"><div style="font-size:13px;margin-bottom:8px">'+HRT(3-m.miss)+'</div><div style="font-size:13px;margin-bottom:8px">Tap an English word, then its Arabic meaning. 3 wrong = game over.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+col(m.en,'e')+'</div><div>'+col(m.ar,'a')+'</div></div>'+
+ (m.miss>=3?'<div style="margin-top:12px;font-weight:800;color:#e11d48">💔 Out of hearts.</div><button class="lsb" onclick="s3Listen.go(\'match\','+m.L.unit+')">Play again (new words)</button>':m.ok===m.pairs.length?'<div style="margin-top:12px;font-weight:800;color:#16a34a">🎉 Done! '+m.miss+' mistake(s).</div><button class="lsb" onclick="s3Listen.go(\'match\','+m.L.unit+')">Play again (new words)</button>':'')+'</div>'}
+api.pick=(k,n)=>{const m=M;if(m.done[n]||m.miss>=3)return;const id=k+n;
  if(k==='e')sp(m.pairs.find(w=>w.n===n).en);
  if(!m.sel||m.sel.k===k){m.sel={k,n,id};return drawMatch()}
  const a=m.sel;m.sel=null;if(a.n===n){m.done[n]=1;m.ok++;xp(m.L,true,5)}else{m.miss++;xp(m.L,false,0);flash([a.id,id])}drawMatch()};
@@ -5578,10 +5578,11 @@ function mk(L,kind){const out=[];const V=L.vocab.filter(v=>v.en);
  if(kind==='mean'||kind==='timed'){V.forEach(w=>{if(Math.random()<.5){const {o,a}=opts(w,'ar');out.push({t:'m1',w,o,a,ar:true})}else{const {o,a}=opts(w,'en');out.push({t:'m2',w,o,a,ar:false})}})}
  return shuf(out)}
 api.start=kind=>{const L=cur;let qs=mk(L,kind);const lk='lq'+L.unit+kind,lid=q=>(q.t==='m1'||q.t==='m2'?'m':q.t)+':'+(q.w?q.w.n:'')+':'+(q.ti!=null?q.ti:''),ltot=qs.length;qs=s3Fresh.order(qs,lk,lid);if(kind!=='timed')qs=qs.slice(0,Math.min(qs.length,kind==='ear'?10:12));s3Fresh.mark(lk,qs.slice(0,kind==='timed'?20:qs.length).map(lid),Math.max(12,Math.min(80,Math.floor(ltot*.6))));
- Q={L,kind,qs,i:0,score:0,streak:0,ans:null,end:false,t:kind==='timed'?60:0};mode='quiz';clearInterval(timer);
+ Q={L,kind,qs,i:0,score:0,streak:0,h:3,ans:null,end:false,t:kind==='timed'?60:0};mode='quiz';clearInterval(timer);
  if(Q.t)timer=setInterval(()=>{Q.t--;const e=$('ls-time');if(e)e.textContent=Q.t+'s';const bar=$('ls-tb');if(bar)bar.style.width=Q.t/60*100+'%';if(Q.t<=0){clearInterval(timer);Q.end=true;stop();quizUI()}},1000);quizUI();
  const q=Q.qs[0];if(q&&(q.t==='ear'))sp(q.w.en)};
 const TITLE={gap:'Fill the gaps',ear:'Listen & choose',mean:'Meanings',timed:'Timed round'};
+function HRT(n,t){t=t||3;n=Math.max(0,n);return '<span style="letter-spacing:2px">'+'❤️'.repeat(n)+'🖤'.repeat(t-n)+'</span>'}
 function quizUI(){const q0=Q,L=Q.L;const v=view();
  if(Q.end||Q.i>=Q.qs.length){clearInterval(timer);let nb='';if(Q.kind==='timed'){const b=best();if(Q.score>(b[L.unit]||0)){b[L.unit]=Q.score;try{localStorage.setItem(K,JSON.stringify(b))}catch(e){};nb=' 🏆 New best!'}}
   v.innerHTML=head(L,TITLE[Q.kind])+'<div class="lsc" style="text-align:center"><div style="font-size:40px">'+(Q.score>=Q.qs.length*.8||Q.kind==='timed'?'🎉':'💪')+'</div><div style="font-size:20px;font-weight:800">Score: '+Q.score+(Q.kind==='timed'?' correct in 60s':' / '+Q.qs.length)+nb+'</div><div style="margin-top:12px"><button class="lsb" onclick="s3Listen.go(\'quiz\','+L.unit+',\''+Q.kind+'\')">Play again</button><button class="lsb g" onclick="s3Listen.go(\'listen\','+L.unit+')">Back to lesson</button></div></div>';return}
@@ -5590,15 +5591,15 @@ function quizUI(){const q0=Q,L=Q.L;const v=view();
  if(q.t==='ear')prompt='<div style="font-weight:700">👂 Listen and choose the word you hear</div><button class="lsb" onclick="s3Listen.say()">🔊 Play word</button>';
  if(q.t==='m1')prompt='<div style="font-size:12px;opacity:.7">What does it mean?</div><div style="font-size:24px;font-weight:800;margin:6px 0" dir="ltr">'+esc(q.w.en)+' <button class="lsb g" style="padding:4px 10px" onclick="s3Listen.say()">🔊</button></div>';
  if(q.t==='m2')prompt='<div style="font-size:12px;opacity:.7">Choose the English word</div><div class="lsar" style="font-size:22px;font-weight:800;margin:6px 0">'+esc(q.w.ar)+'</div>';
- const head2=Q.kind==='timed'?'<div class="lsbar"><i id="ls-tb" style="width:'+Q.t/60*100+'%"></i></div><div style="display:flex;justify-content:space-between;font-weight:800;margin:6px 0"><span>⏱️ <span id="ls-time">'+Q.t+'s</span></span><span>✅ '+Q.score+' · 🔥 '+Q.streak+'</span></div>':'<div class="lsbar"><i style="width:'+(Q.i/Q.qs.length*100)+'%"></i></div><div style="font-size:12px;opacity:.7;margin:4px 0">Question '+(Q.i+1)+' / '+Q.qs.length+' · ✅ '+Q.score+'</div>';
+ const head2=Q.kind==='timed'?'<div class="lsbar"><i id="ls-tb" style="width:'+Q.t/60*100+'%"></i></div><div style="display:flex;justify-content:space-between;font-weight:800;margin:6px 0"><span>⏱️ <span id="ls-time">'+Q.t+'s</span></span><span>'+HRT(Q.h)+' ✅ '+Q.score+' · 🔥 '+Q.streak+'</span></div>':'<div class="lsbar"><i style="width:'+(Q.i/Q.qs.length*100)+'%"></i></div><div style="font-size:12px;opacity:.7;margin:4px 0">Question '+(Q.i+1)+' / '+Q.qs.length+' · ✅ '+Q.score+' · '+HRT(Q.h)+'</div>';
  v.innerHTML=head(L,TITLE[Q.kind])+'<div class="lsc">'+head2+prompt+audioBar()+q.o.map((o,i)=>'<button class="lsopt '+(q.ar?'ar':'')+'" onclick="s3Listen.ans('+i+')">'+esc(o)+'</button>').join('')+'<div id="ls-fb" style="min-height:24px;margin-top:6px;font-weight:700"></div></div>'}
 api.say=()=>{const q=Q.qs[Q.i];if(q.t==='gap')playTurn(Q.L,q.ti);else sp(q.w.en)};
 api.ans=i=>{if(Q.ans!=null||Q.end)return;const q=Q.qs[Q.i];Q.ans=i;const ok=i===q.a;const btns=document.querySelectorAll('.lsopt');
  btns.forEach((b,k)=>{if(k===q.a)b.classList.add('ok');else if(k===i)b.classList.add('no')});
- if(ok){Q.score++;Q.streak++}else Q.streak=0;xp(Q.L,ok,q.t==='ear'||q.t==='gap'?10:8);
+ if(ok){Q.score++;Q.streak++}else{Q.streak=0;Q.h--}xp(Q.L,ok,q.t==='ear'||q.t==='gap'?10:8);
  const fb=$('ls-fb');if(fb)fb.innerHTML=(ok?'✅ Correct! ':'❌ Answer: ')+'<span class="lsar">'+(q.t==='m2'||q.t==='m1'||q.t==='gap'||q.t==='ear'?esc(q.w.en+' = '+q.w.ar):'')+'</span>';
  if(q.t==='m2')sp(q.w.en);
- const my=Q;setTimeout(()=>{if(Q!==my||Q.end)return;Q.ans=null;Q.i++;
+ const my=Q;setTimeout(()=>{if(Q!==my||Q.end)return;Q.ans=null;if(Q.h<=0){Q.end=true;quizUI();return}Q.i++;
   if(Q.kind==='timed'&&Q.i>=Q.qs.length){Q.qs=Q.qs.concat(mk(Q.L,'timed'))}
   quizUI();const nq=Q.qs[Q.i];if(nq&&nq.t==='ear')sp(nq.w.en)},Q.kind==='timed'?900:(ok?1500:2600))};
 window.addEventListener('beforeunload',stop);
@@ -5833,6 +5834,36 @@ const F={recent:get,
  fresh(pool,k,idf,min){idf=idf||idd;const r=get(k),f=pool.filter(x=>r.indexOf(idf(x))<0);return f.length>=(min||1)?f:pool},
  pick(pool,k,n,idf){idf=idf||idd;const o=F.order(pool,k,idf).slice(0,n);F.mark(k,o.map(idf),Math.max(n,Math.min(80,Math.floor(pool.length*.6))));return o}};
 window.s3Fresh=F})();
+</script>
+<script id="s3-preview">
+/* Teacher "Student view": shows the student interface with a throwaway local student. Nothing is written online
+   (all Firestore writes are no-ops while window.S3_PREVIEW is true) and nothing touches real student accounts. */
+(function(){
+const $=id=>document.getElementById(id);
+window.S3PV=function(F){const o=Object.assign({},F);
+ ['setDoc','updateDoc','addDoc','deleteDoc'].forEach(n=>{const f=F[n];if(typeof f==='function')o[n]=function(){return window.S3_PREVIEW?Promise.resolve():f.apply(this,arguments)}});
+ const wb=F.writeBatch;if(typeof wb==='function')o.writeBatch=function(){return window.S3_PREVIEW?{set(){return this},update(){return this},delete(){return this},commit(){return Promise.resolve()}}:wb.apply(this,arguments)};
+ const rt=F.runTransaction;if(typeof rt==='function')o.runTransaction=function(){return window.S3_PREVIEW?Promise.resolve():rt.apply(this,arguments)};
+ return o};
+let T=null;
+/* verified teacher: with online accounts it must be the signed-in teacher Firebase account; offline mode needs a teacher session */
+function ok(){try{const S=window.S3;if(!S||!S.isTeacher())return false;if(window.S3CLOUD&&S3CLOUD.on)return !!(S3CLOUD.vTeacher&&S3CLOUD.vTeacher());return true}catch(e){return false}}
+function wipe(){try{Object.keys(localStorage).filter(k=>k.indexOf('__preview')>=0).forEach(k=>localStorage.removeItem(k))}catch(e){}}
+function bar(){let b=$('s3pv-bar');if(!window.S3_PREVIEW){if(b)b.remove();document.body.style.paddingTop='';return}
+ if(!b){b=document.createElement('div');b.id='s3pv-bar';b.className='no-print';b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:100000;background:#4f46e5;color:#fff;font-size:13px;font-weight:700;padding:8px 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+  b.innerHTML='<span>👁 Student view. Nothing is saved.</span><button style="background:#fff;color:#4f46e5;border:0;border-radius:8px;padding:6px 12px;font-weight:800;cursor:pointer" onclick="s3Preview.exit()">⬅ Back to teacher</button>';document.body.appendChild(b)}
+ document.body.style.paddingTop='44px'}
+window.s3Preview={
+ enter(){if(window.S3_PREVIEW||!ok())return;const S=window.S3;T=S.SESS();wipe();window.S3_PREVIEW=true;{const o=$('s3-bk-ban');if(o)o.remove()}
+  S.setSESS({role:'student',id:'__preview',name:'Student preview',cls:'Preview',preview:true});
+  try{localStorage.setItem('s3_session_v1',JSON.stringify(T))}catch(e){}
+  S.start();bar()},
+ exit(){if(!window.S3_PREVIEW||!T)return;const S=window.S3;window.S3_PREVIEW=false;S.setSESS(T);wipe();S.start();bar();T=null;try{switchTab('students')}catch(e){}},
+ active:()=>!!window.S3_PREVIEW,
+ canShow:()=>!window.S3_PREVIEW&&ok()
+};
+addEventListener('pagehide',()=>{if(window.S3_PREVIEW)wipe()});
+})();
 </script>
 <script id="s3-backup">
 (function(){
@@ -6289,12 +6320,13 @@ function parsePairs(){const out=[],seen={};shuf(Q().filter(q=>q.category==='Main
 function match(){clean();const P=s3Fresh.pick(parsePairs(),'wm',6,p=>p[0]);if(P.length<6){ov('🧩 Word Match',card('Not enough words found.'));return}
  const M={P,L:shuf(P.map((p,i)=>i)),R:shuf(P.map((p,i)=>i)),sel:null,done:{},err:0,t0:Date.now()};window.__m=M;
  function draw(){const colB=(arr,side)=>arr.map(i=>{const d=M.done[i],s=M.sel&&M.sel.side===side&&M.sel.i===i;return '<button '+(d?'disabled ':'')+'onclick="s3Game.mpick(\''+side+'\','+i+')" style="display:block;width:100%;padding:12px 6px;margin-bottom:8px;border-radius:12px;font-size:'+(side==='r'?'16':'15')+'px;cursor:pointer;color:var(--tx);'+(d?'border:2px solid var(--ok);background:var(--okbg);opacity:.7':s?'border:2px solid var(--ac);background:var(--acs)':'border:1px solid var(--bd);background:var(--surf2)')+(side==='r'?';direction:rtl;font-family:Cairo,sans-serif':'')+'">'+esc(side==='l'?M.P[i][0]:M.P[i][1])+'</button>'}).join('');
-  ov('🧩 Word Match',card('<div class="s3sub" style="margin-bottom:8px">Tap an English word, then its Arabic meaning. Mistakes: '+M.err+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+colB(M.L,'l')+'</div><div>'+colB(M.R,'r')+'</div></div>'))}
+  ov('🧩 Word Match',card('<div class="s3sub" style="margin-bottom:8px">'+HRT(3-M.err)+'</div><div class="s3sub" style="margin-bottom:8px">Tap an English word, then its Arabic meaning. 3 wrong = game over.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div>'+colB(M.L,'l')+'</div><div>'+colB(M.R,'r')+'</div></div>'))}
  M.draw=draw;draw()}
+function HRT(n,t){t=t||3;n=Math.max(0,n);return '<span style="font-size:16px;letter-spacing:2px">'+'❤️'.repeat(n)+'🖤'.repeat(t-n)+'</span>'}
 function mpick(side,i){const M=window.__m;if(!M)return;if(!M.sel||M.sel.side===side){M.sel={side,i};return M.draw()}
  const a=side==='l'?i:M.sel.i,b=side==='r'?i:M.sel.i;M.sel=null;
  if(a===b){M.done[a]=1;if(Object.keys(M.done).length===6){const s=Math.round((Date.now()-M.t0)/1000),stars=M.err===0&&s<60?3:M.err<=2?2:1,old=best('match');if(!old||s<old)S.ls.set('s3gb_'+uid()+'_match',s);const xp=gx(stars*2);ov('🧩 Word Match',card('<div style="text-align:center"><div style="font-size:44px">'+'⭐'.repeat(stars)+'</div><div style="font-size:28px;font-weight:800;color:var(--ac)">'+s+' seconds</div><div class="s3sub">Mistakes: '+M.err+(xp?' · +'+xp+' XP':'')+' · Best: '+best('match')+'s</div><div style="margin-top:12px">'+btn('Play again','s3Game.match()')+btn('Games menu','s3Game.menu()',1)+'</div></div>'));return}}
- else{M.err++}M.draw()}
+ else{M.err++;if(M.err>=3){window.__m=null;ov('🧩 Word Match',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div class="s3sub">Three wrong matches. Try again!</div><div style="margin-top:12px">'+btn('Play again','s3Game.match()')+btn('Games menu','s3Game.menu()',1)+'</div></div>'));return}}M.draw()}
 /* ================= PLACEMENT TEST ================= */
 const SK=[['g','Grammar',12],['v','Vocabulary',10],['r','Reading',8],['l','Listening',8],['w','Writing skills',6],['s','Speaking',6]];
 const LINK=/\b(however|although|though|despite|in spite|because|therefore|moreover|besides|as a result|in addition|on the other hand|whereas|unless|in order to|so that|consequently|nevertheless)\b/i;
@@ -6867,7 +6899,7 @@ function memory(){clean();const P=draw(pairs(),'memory',6,x=>x.w);
  if(P.length<6){ov('🃏 Memory Flip',card('Not enough words in the bank yet.'));return}
  MM={cards:shuf(P.flatMap((p,i)=>[{i,t:'e',txt:p.w},{i,t:'a',txt:p.a}])),open:[],done:{},mv:0,t0:Date.now()};memLock=false;memDraw()}
 function memDraw(){const M=MM,s=Math.round((Date.now()-M.t0)/1000);
- ov('🃏 Memory Flip',card('<div class="s3sub" style="margin-bottom:8px">Moves: '+M.mv+' · Time: '+s+'s · Matched: '+Object.keys(M.done).length+'/6</div>'
+ ov('🃏 Memory Flip',card('<div class="s3sub" style="margin-bottom:8px">'+HRT(5-(M.bad||0),5)+' Moves: '+M.mv+' · Time: '+s+'s · Matched: '+Object.keys(M.done).length+'/6</div>'
  +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">'
  +M.cards.map((c,k)=>{const d=M.done[c.i]&&M.done[c.i]===2,face=M.open.indexOf(k)>=0||M.done[c.i];
   return '<button onclick="s3G2.memFlip('+k+')" style="min-height:64px;padding:6px;border-radius:12px;border:2px solid '+(face?'var(--ac)':'var(--bd)')+';background:'+(face?'var(--acs)':'var(--surf2)')+';color:var(--tx);font-size:13px;font-weight:700;cursor:pointer;'+(c.t==='a'?'direction:rtl;font-family:Cairo,sans-serif':'')+'">'+(face?esc(c.txt):'❓')+'</button>'}).join('')+'</div>'))}
@@ -6878,17 +6910,18 @@ function memFlip(k){const M=MM;if(!M||memLock||M.open.indexOf(k)>=0)return;const
   if(Object.keys(M.done).length===6){const s=Math.round((Date.now()-M.t0)/1000),stars=M.mv<=8&&s<90?3:M.mv<=12?2:1,old=best('memt');if(!old||s<old)best('memt',s);const xp=gx(stars*2);
    later(()=>ov('🃏 Memory Flip',card('<div style="text-align:center"><div style="font-size:44px">'+'⭐'.repeat(stars)+'</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+s+' seconds</div><div class="s3sub">Moves: '+M.mv+(xp?' · +'+xp+' XP':'')+' · Best: '+best('memt')+'s</div><div style="margin-top:12px">'+btn('Play again','s3G2.memory()')+btn('Games menu','s3G2.menu()',1)+'</div></div>')),600)}
   return}
- memLock=true;memDraw();later(()=>{if(MM!==M)return;M.open=[];memLock=false;memDraw()},900)}
+ M.bad=(M.bad||0)+1;memLock=true;memDraw();later(()=>{if(MM!==M)return;M.open=[];if(M.bad>=5){MM=null;memLock=false;ov('🃏 Memory Flip',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div class="s3sub">Five wrong pairs. Try again!</div><div style="margin-top:12px">'+btn('Play again','s3G2.memory()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}memLock=false;memDraw()},900)}
 /* ---------- 3. Unscramble ---------- */
-let UN=null,uStreak=0,unHard=false;
-function unsc(hard){clean();if(hard!==undefined)unHard=!!hard;
+let UN=null,uStreak=0,unHard=false,unH=3;function HRT(n,t){t=t||3;n=Math.max(0,n);return '<span style="font-size:16px;letter-spacing:2px">'+'❤️'.repeat(n)+'🖤'.repeat(t-n)+'</span>'}
+
+function unsc(hard,keep){clean();if(!keep)unH=3;if(hard!==undefined)unHard=!!hard;
  const P=pairs().filter(p=>/^[a-z]{5,9}$/.test(p.w));
  if(P.length<8){ov('🔀 Unscramble',card('Not enough words in the bank yet.'));return}
  const p=draw(P,'unsc',1,x=>x.w)[0];let letters=shuf(p.w.split(''));
  if(letters.join('')===p.w)letters=shuf(p.w.split(''));
  UN={p,letters,built:[]};unscDraw()}
 function unscDraw(){const U=UN;
- ov('🔀 Unscramble',card('<div class="s3sub">'+(unHard?'Hard mode: no hint. You brave thing.':'Hint: <b dir="rtl">'+esc(U.p.a)+'</b>')+' · Unit '+U.p.u+' · Streak: '+uStreak+'</div>'
+ ov('🔀 Unscramble',card('<div class="s3sub">'+(unHard?'Hard mode: no hint. You brave thing.':'Hint: <b dir="rtl">'+esc(U.p.a)+'</b>')+' · Unit '+U.p.u+' · Streak: '+uStreak+'</div><div style="margin-top:4px">'+HRT(unH)+'</div>'
  +'<div dir="ltr" style="min-height:44px;text-align:center;margin:12px 0;font-size:24px;font-weight:800;letter-spacing:3px">'+(U.built.join('')||'<span style="opacity:.3;font-size:16px">tap the letters…</span>')+'</div>'
  +'<div dir="ltr" style="display:flex;flex-wrap:wrap;justify-content:center">'+U.letters.map((c,i)=>'<button onclick="s3G2.unscLet('+i+')" style="width:38px;height:42px;margin:3px;border-radius:10px;border:1px solid var(--bd);background:var(--surf2);color:var(--tx);font-size:18px;font-weight:800;cursor:pointer">'+c+'</button>').join('')+'</div>'
  +'<div style="text-align:center;margin-top:12px">'+btn('⌫ Undo','s3G2.unscBack()',1)+btn('✅ Check','s3G2.unscCheck()')+btn('Give up','s3G2.unscGive()',1)+'</div>'
@@ -6897,15 +6930,15 @@ function unscLet(i){const U=UN;if(!U)return;U.built.push(U.letters.splice(i,1)[0
 function unscBack(){const U=UN;if(!U||!U.built.length)return;U.letters.push(U.built.pop());unscDraw()}
 function unscCheck(){const U=UN;if(!U)return;const m=$('unsc-m');
  if(U.built.join('')===U.p.w){uStreak++;const xp=gx(5);
-  ov('🔀 Unscramble',card('<div style="text-align:center"><div style="font-size:40px">🎯</div><div style="font-size:22px;font-weight:800" dir="ltr">'+esc(U.p.w)+'</div><div class="s3sub">Fixed! '+(xp?'+'+xp+' XP · ':'')+'Streak: '+uStreak+'</div><div style="margin-top:12px">'+btn('Next word','s3G2.unsc()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}
- else{uStreak=0;if(m){m.innerHTML='❌ Not quite. The letters are giggling at you.'}else unscDraw();U.built.forEach(c=>U.letters.push(c));U.built=[];later(()=>{if(UN===U)unscDraw()},900)}}
-function unscGive(){const U=UN;if(!U)return;uStreak=0;ov('🔀 Unscramble',card('<div style="text-align:center"><div class="s3sub">It was <b dir="ltr">'+esc(U.p.w)+'</b> = <span dir="rtl">'+esc(U.p.a)+'</span></div><div style="margin-top:12px">'+btn('Next word','s3G2.unsc()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}
+  ov('🔀 Unscramble',card('<div style="text-align:center"><div style="font-size:40px">🎯</div><div style="font-size:22px;font-weight:800" dir="ltr">'+esc(U.p.w)+'</div><div class="s3sub">Fixed! '+(xp?'+'+xp+' XP · ':'')+'Streak: '+uStreak+'</div><div style="margin-top:12px">'+btn('Next word','s3G2.unsc(undefined,1)')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}
+ else{uStreak=0;unH--;if(unH<=0){UN=null;ov('🔀 Unscramble',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div class="s3sub">It was <b dir="ltr">'+esc(U.p.w)+'</b> = <span dir="rtl">'+esc(U.p.a)+'</span></div><div style="margin-top:12px">'+btn('Play again','s3G2.unsc()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}if(m){m.innerHTML='❌ Not quite. The letters are giggling at you.'}else unscDraw();U.built.forEach(c=>U.letters.push(c));U.built=[];later(()=>{if(UN===U)unscDraw()},900)}}
+function unscGive(){const U=UN;if(!U)return;uStreak=0;ov('🔀 Unscramble',card('<div style="text-align:center"><div class="s3sub">It was <b dir="ltr">'+esc(U.p.w)+'</b> = <span dir="rtl">'+esc(U.p.a)+'</span></div><div style="margin-top:12px">'+btn('Next word','s3G2.unsc(undefined,1)')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}
 /* ---------- 4. Type It ---------- */
-let TY=null,tyStreak=0;
-function typeit(){clean();const P=pairs().filter(p=>/^[a-z][a-z' -]{2,14}$/.test(p.w));
+let TY=null,tyStreak=0,tyH=3;
+function typeit(keep){clean();if(keep!==1)tyH=3;const P=pairs().filter(p=>/^[a-z][a-z' -]{2,14}$/.test(p.w));
  if(P.length<8){ov('⌨️ Type It',card('Not enough words in the bank yet.'));return}
  TY={p:draw(P,'typeit',1,x=>x.w)[0],tries:0};
- ov('⌨️ Type It',card('<div class="s3sub">What is this in English? Streak: '+tyStreak+'</div>'
+ ov('⌨️ Type It',card('<div class="s3sub">What is this in English? Streak: '+tyStreak+'</div><div style="margin-top:4px">'+HRT(tyH)+'</div>'
  +'<div dir="rtl" style="font-size:22px;font-weight:800;text-align:center;margin:12px 0;font-family:Cairo,sans-serif">'+esc(TY.p.a)+'</div>'
  +'<div class="s3sub" style="text-align:center;margin-bottom:8px">Starts with: <b dir="ltr">'+esc(TY.p.w[0].toUpperCase())+'…</b></div>'
  +'<input id="ty-in" class="s3in" dir="ltr" autocomplete="off" autocapitalize="none" placeholder="Type the English word" style="width:100%;font-size:18px;text-align:center" onkeydown="if(event.key===\'Enter\')s3G2.tyCheck()">'
@@ -6915,26 +6948,26 @@ function typeit(){clean();const P=pairs().filter(p=>/^[a-z][a-z' -]{2,14}$/.test
 function tyDist(a,b){const d=[];for(let i=0;i<=a.length;i++){d[i]=[i]}for(let j=0;j<=b.length;j++){d[0][j]=j}
  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
 function tyCheck(){const T=TY;if(!T)return;const e=$('ty-in'),m=$('ty-m');if(!e)return;const v=e.value.trim().toLowerCase();
- if(v===T.p.w){tyStreak++;const xp=gx(3);ov('⌨️ Type It',card('<div style="text-align:center"><div style="font-size:40px">✅</div><div style="font-size:22px;font-weight:800" dir="ltr">'+esc(T.p.w)+'</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Streak: '+tyStreak+'</div><div style="margin-top:12px">'+btn('Next word','s3G2.typeit()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}
+ if(v===T.p.w){tyStreak++;const xp=gx(3);ov('⌨️ Type It',card('<div style="text-align:center"><div style="font-size:40px">✅</div><div style="font-size:22px;font-weight:800" dir="ltr">'+esc(T.p.w)+'</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Streak: '+tyStreak+'</div><div style="margin-top:12px">'+btn('Next word','s3G2.typeit(1)')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}
  T.tries++;
  if(tyDist(v,T.p.w)===1){if(m)m.innerHTML='🤏 So close! One letter is off.';e.select();return}
- tyStreak=0;if(m)m.innerHTML=T.tries<2?'❌ Not it. Try again.':'❌ Hint: <b dir="ltr">'+esc(T.p.w.slice(0,2))+'…</b>';e.select()}
-function tyGive(){const T=TY;if(!T)return;tyStreak=0;ov('⌨️ Type It',card('<div style="text-align:center"><div class="s3sub">It was <b dir="ltr">'+esc(T.p.w)+'</b> = <span dir="rtl">'+esc(T.p.a)+'</span></div><div style="margin-top:12px">'+btn('Next word','s3G2.typeit()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}
+ tyStreak=0;tyH--;if(tyH<=0){TY=null;ov('⌨️ Type It',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div class="s3sub">It was <b dir="ltr">'+esc(T.p.w)+'</b> = <span dir="rtl">'+esc(T.p.a)+'</span></div><div style="margin-top:12px">'+btn('Play again','s3G2.typeit()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}if(m)m.innerHTML=T.tries<2?'❌ Not it. Try again.':'❌ Hint: <b dir="ltr">'+esc(T.p.w.slice(0,2))+'…</b>';e.select()}
+function tyGive(){const T=TY;if(!T)return;tyStreak=0;ov('⌨️ Type It',card('<div style="text-align:center"><div class="s3sub">It was <b dir="ltr">'+esc(T.p.w)+'</b> = <span dir="rtl">'+esc(T.p.a)+'</span></div><div style="margin-top:12px">'+btn('Next word','s3G2.typeit(1)')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}
 /* ---------- 5. True or False Lightning ---------- */
 let TF=null;
 function tf(){clean();const P=pairs();if(P.length<12){ov('⚡ True or False',card('Not enough words in the bank yet.'));return}
- TF={P,score:0,left:30,cur:null};tfNext();
+ TF={P,score:0,left:30,cur:null,q:[],h:3};tfNext();
  every(()=>{const T=TF;if(!T)return;T.left--;const e=$('tf-t');if(e)e.textContent=T.left+'s';
   if(T.left<=0){const sc=T.score,xp=gx(Math.min(10,sc)),nb=best('tf',sc);TF=null;
    ov('⚡ True or False',card('<div style="text-align:center"><div style="font-size:40px">⏰</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+sc+' correct</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('tf')+(sc>=nb&&sc>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.tf()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}},1000)}
-function tfNext(){const T=TF;if(!T)return;const p=draw(T.P,'tfp',1,x=>x.w)[0];let truth=Math.random()<0.5,a=p.a;
- if(!truth){const others=T.P.filter(x=>x.w!==p.w);a=others[Math.floor(Math.random()*others.length)].a}
+function tfNext(){const T=TF;if(!T)return;const p=draw(T.P,'tfp',1,x=>x.w)[0];if(!T.q.length)T.q=Math.random()<0.5?[true,false]:[false,true];let truth=T.q.shift(),a=p.a;
+ if(!truth){const pool=T.P.filter(x=>x.w!==p.w&&x.a!==p.a),same=pool.filter(x=>x.u&&x.u===p.u),src=same.length>=3?same:pool;a=src[Math.floor(Math.random()*src.length)].a}
  T.cur={p,truth};
- ov('⚡ True or False',card('<div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:10px"><span>⏱️ <span id="tf-t">'+T.left+'s</span></span><span>✅ '+T.score+'</span></div>'
+ ov('⚡ True or False',card('<div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:10px"><span>⏱️ <span id="tf-t">'+T.left+'s</span></span><span>'+HRT(T.h)+' ✅ '+T.score+'</span></div>'
  +'<div style="text-align:center;font-size:20px;font-weight:800;margin:14px 0"><span dir="ltr">'+esc(p.w)+'</span> = <span dir="rtl" style="font-family:Cairo,sans-serif">'+esc(a)+'</span></div>'
  +'<div class="s3sub" style="text-align:center;margin-bottom:12px">True or a dirty lie?</div>'
  +'<div style="display:flex;gap:10px;justify-content:center"><button class="s3btn" style="flex:1;padding:16px;font-size:18px" onclick="s3G2.tfAns(1)">✔ True</button><button class="s3btn" style="flex:1;padding:16px;font-size:18px;background:#e11d48" onclick="s3G2.tfAns(0)">✘ False</button></div>'))}
-function tfAns(v){const T=TF;if(!T||!T.cur)return;const ok=(!!v)===T.cur.truth;if(ok)T.score++;tfNext()}
+function tfAns(v){const T=TF;if(!T||!T.cur)return;const ok=(!!v)===T.cur.truth;if(ok)T.score++;else{T.h--;if(T.h<=0){const sc=T.score,xp=gx(Math.min(10,sc)),nb=best('tf',sc);TF=null;ov('⚡ True or False',card('<div style="text-align:center"><div style="font-size:44px">💔</div><div style="font-size:22px;font-weight:800">Out of hearts</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+sc+' correct</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('tf')+(sc>=nb&&sc>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.tf()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'));return}}tfNext()}
 /* ---------- 6. Unit Sort ---------- */
 let US=null;
 function usort(){clean();const byU={};pairs().forEach(p=>{if(p.u)(byU[p.u]=byU[p.u]||[]).push(p)});
@@ -6982,7 +7015,7 @@ function gap(){clean();const L=listenData();if(!L.length){ov('🎧 Gap Sprint',c
  +L.map(x=>'<button class="s3btn ghost" style="display:block;width:100%;margin-bottom:8px;padding:12px;text-align:left" onclick="s3G2.gapStart('+x.unit+')">Unit '+x.unit+': '+esc(x.title)+'</button>').join('')
  +'<div class="s3sub" style="margin-top:8px">Best so far: '+best('gap')+'</div>'))}
 function gapStart(u){const L=listenData().find(x=>x.unit===u);if(!L||L.sents.length<4)return;
- GS={L,qs:s3Fresh.order(L.sents,'gap'+u,s=>s.plain||s.raw),i:0,score:0,streak:0,left:60,lock:false};s3Fresh.mark('gap'+u,GS.qs.slice(0,15).map(s=>s.plain||s.raw),Math.max(15,Math.min(80,Math.floor(L.sents.length*.6))));gapDraw();
+ GS={L,qs:s3Fresh.order(L.sents,'gap'+u,s=>s.plain||s.raw),i:0,score:0,streak:0,left:60,lock:false,h:3};s3Fresh.mark('gap'+u,GS.qs.slice(0,15).map(s=>s.plain||s.raw),Math.max(15,Math.min(80,Math.floor(L.sents.length*.6))));gapDraw();
  every(()=>{const G=GS;if(!G)return;G.left--;const e=$('gs-t');if(e)e.textContent=G.left+'s';
   if(G.left<=0){const sc=G.score,xp=gx(Math.min(15,sc*2)),nb=best('gap',sc);GS=null;
    ov('🎧 Gap Sprint',card('<div style="text-align:center"><div style="font-size:40px">⏰</div><div style="font-size:26px;font-weight:800;color:var(--ac)">'+sc+' gaps in 60s</div><div class="s3sub">'+(xp?'+'+xp+' XP · ':'')+'Best: '+best('gap')+(sc>=nb&&sc>0?' 🏆':'')+'</div><div style="margin-top:12px">'+btn('Play again','s3G2.gap()')+btn('Games menu','s3G2.menu()',1)+'</div></div>'))}},1000)}
@@ -6990,12 +7023,12 @@ function gapDraw(){const G=GS;if(!G)return;G.lock=false;
  if(G.i>=G.qs.length)G.qs=G.qs.concat(shuf(G.L.sents));
  const q=G.qs[G.i],opts=shuf([q.w].concat(shuf(G.L.vocab.map(v=>v.w).filter(w=>w.toLowerCase()!==q.w.toLowerCase())).slice(0,3)));
  G.cur={q,opts,a:opts.indexOf(q.w)};
- ov('🎧 Gap Sprint',card('<div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:8px"><span>⏱️ <span id="gs-t">'+G.left+'s</span></span><span>✅ '+G.score+' · 🔥 '+G.streak+'</span></div>'
+ ov('🎧 Gap Sprint',card('<div style="display:flex;justify-content:space-between;font-weight:800;margin-bottom:8px"><span>⏱️ <span id="gs-t">'+G.left+'s</span></span><span>'+HRT(G.h)+' ✅ '+G.score+' · 🔥 '+G.streak+'</span></div>'
  +'<div style="font-size:16px;line-height:1.7;font-weight:600;margin-bottom:6px">'+esc(q.gap).replace('_____','<span style="border-bottom:3px solid var(--ac);padding:0 16px">&nbsp;</span>')+'</div>'
  +'<button class="s3btn ghost" style="margin-bottom:10px" onclick="s3G2.gapHear()">🔊 Hear the sentence</button>'
  +opts.map((o,j)=>'<button onclick="s3G2.gapAns('+j+')" style="display:block;width:100%;text-align:left;padding:12px;border-radius:12px;margin-bottom:8px;cursor:pointer;color:var(--tx);font-size:15px;border:1px solid var(--bd);background:var(--surf2)">'+esc(o)+'</button>').join('')))}
 function gapHear(){const G=GS;if(G&&G.cur)say(G.cur.q.plain)}
-function gapAns(j){const G=GS;if(!G||G.lock)return;G.lock=true;const ok=j===G.cur.a;if(ok){G.score++;G.streak++}else G.streak=0;G.i++;gapDraw()}
+function gapAns(j){const G=GS;if(!G||G.lock)return;G.lock=true;const ok=j===G.cur.a;if(ok){G.score++;G.streak++}else{G.streak=0;G.h--}G.i++;if(G.h<=0){G.left=0;return}gapDraw()}
 /* ---------- classroom helpers ---------- */
 const roster=()=>((window.S3&&S3.CLS&&S3.CLS().students)||[]).filter(s=>s&&s.name);
 function present(){const ab=new Set();try{(window.s3Att&&s3Att.absentNames?s3Att.absentNames():[]).forEach(n=>ab.add(n))}catch(e){}
@@ -7185,7 +7218,7 @@ function openD(){const cur=(document.querySelector('.s3nav button.active,.s3nav 
  const sec=(t,x)=>x?'<h4>'+t+'</h4>'+x:'';
  h+=sec('Home',(stu?bt('s3Me.profile()','🪪 Profile')+bt('s3Game.place()','🧭 My level (placement test)'):'')+bt('s3Game.open()','🎮 Games')+(stu?bt('s3Me.chal()','🤝 Duel Challenges'):'')+tab('play')+tab('board')+bt('s3Com.friends()',stu?'👥 Friends':'👥 Friendships'));
  h+=sec('Skills',tab('bank')+tab('read')+(stu?bt('s3Game.spk()','🗣️ Speaking'):'')+tab('write')+tab('listen')+tab('exam')+tab('srs')+tab('notebook')+tab('reference'));
- h+=sec('Teacher',tab('track')+tab('worksheet')+tab('add')+tab('attend'));
+ h+=sec('Teacher',tab('track')+tab('worksheet')+tab('add')+tab('attend')+(window.s3Preview&&s3Preview.canShow()?bt('s3Preview.enter()','👁 Student view'):''));
  h+=sec('More',tab('quiz')+(stu?bt('s3Game.rec()','🎯 Recommended for me')+bt('s3Ach()','🏅 My rank and badges')+bt('s3Me.shop()','🛍️ Shop'):'')+tab('report')+tab('students')+(!stu?bt('s3Me.pics()','🖼️ Student pictures')+bt('s3Rpt.tOpen()','🚩 Problem reports'):'')+bt('s3Shell.openS()','⚙️ Settings')+bt('s3Logout()','🚪 Log out'));
  dr.innerHTML=h;dbg.style.display='block';dr.classList.add('open')}
 function closeD(){dr.classList.remove('open');dbg.style.display='none'}
@@ -7244,7 +7277,7 @@ const emailOf=u=>{u=String(u||'').trim().toLowerCase();return u.indexOf('@')>-1?
 async function sdk(){if(fb)return fb;const[A,Au,F]=await Promise.all([import(BASE+'firebase-app.js'),import(BASE+'firebase-auth.js'),import(BASE+'firebase-firestore.js')]);
  const app=A.initializeApp(CFG),auth=Au.getAuth(app),db=F.getFirestore(app),emu=window.S3_EMU;
  if(emu){Au.connectAuthEmulator(auth,emu.auth,{disableWarnings:true});F.connectFirestoreEmulator(db,emu.fsHost,emu.fsPort)}
- fb={A,Au,F,app,auth,db};return fb}
+ fb={A,Au,F:(window.S3PV?S3PV(F):F),app,auth,db};return fb}
 let second=null;
 async function creator(){if(second)return second;await sdk();const app2=fb.A.initializeApp(CFG,'creator'),auth2=fb.Au.getAuth(app2);if(window.S3_EMU)fb.Au.connectAuthEmulator(auth2,window.S3_EMU.auth,{disableWarnings:true});second={app2,auth2};return second}
 const msg=e=>{const c=(e&&e.code)||'';if(/invalid-credential|wrong-password|user-not-found|invalid-email|invalid-login/.test(c))return 'Wrong username or password';if(/too-many/.test(c))return 'Too many tries, wait a few minutes';if(/network/.test(c))return 'No internet connection';if(/permission/.test(c))return 'Permission denied';return 'Error: '+(c||e&&e.message||e)};
@@ -7403,6 +7436,7 @@ function applyMis(uid,d){const ent=Object.entries(d.tmis||{});if(!ent.length)ret
 C.flushNow=function(){return flush()};
 C.logDuel=async function(op){await fb.F.setDoc(fb.F.doc(fb.db,'duelLog',op.id),op.log)};
 C.idToken=async function(){return(fb&&fb.auth.currentUser)?fb.auth.currentUser.getIdToken():null};
+C.vTeacher=function(){return !!(fb&&fb.auth&&fb.auth.currentUser&&(fb.auth.currentUser.email||'').toLowerCase()===TEACHER)};
 C.fbx=function(){return(fb&&fb.auth.currentUser)?{F:fb.F,db:fb.db,uid:fb.auth.currentUser.uid}:null};
 C.refresh=async function(){loadedAt=0;C.renderStudents($('view-students'))};
 C.file=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('stu-new').value=String(r.result).trim();S().toast('File loaded. Press Create accounts')};r.readAsText(f,'utf-8');e.target.value=''};
