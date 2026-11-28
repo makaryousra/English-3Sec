@@ -12937,7 +12937,7 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
  window.s3Rec=function(R,opt){
   opt=opt||{};var o={lang:opt.lang||'en-US',maxAlternatives:3,onresult:null,onerror:null,onend:null,onnomatch:null,live:false};
   var silenceMs=opt.silenceMs||3000,firstMs=opt.firstMs||9000,maxMs=opt.maxMs||40000;
-  var r=null,tS=null,tM=null,tF=null,ended=false,errored=null,alts=['','',''],btn=null,m=opt.m||null;
+  var r=null,tS=null,tM=null,tF=null,ended=false,errored=null,alts=['','',''],btn=null,m=opt.m||null,base=[],sessA=['','',''],stopping=false,restarts=0,t0=0;
   function clear(){clearTimeout(tS);clearTimeout(tM);clearTimeout(tF)}
   function removeBtn(){if(btn&&btn.parentNode)btn.parentNode.removeChild(btn);btn=null}
   function status(){if(!m)return;m.innerHTML='\uD83C\uDF99\uFE0F Speak now\u2026 take your time, I wait.'+(alts[0]?'<div style="margin-top:6px;font-style:italic;opacity:.85">\u201C'+esc(alts[0])+'\u201D</div>':'');
@@ -12948,14 +12948,22 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
    else if(alts[0]){if(o.onresult)o.onresult({results:[alts.filter(Boolean).map(function(t){return{transcript:t}})]})}
    else{if(o.onerror)o.onerror({error:'no-speech'})}
    if(o.onend)o.onend()}
-  o.stop=function(){if(ended)return;clear();try{r.stop()}catch(e){}clearTimeout(tF);tF=setTimeout(conclude,1500)};
+  o.stop=function(){if(ended)return;stopping=true;clear();try{r.stop()}catch(e){}clearTimeout(tF);tF=setTimeout(conclude,1500)};
   o.abort=function(){ended=true;o.live=false;if(cur===o)cur=null;clear();removeBtn();try{r.abort()}catch(e){}};
-  o.start=function(){
-   r=new R();r.lang=o.lang;r.continuous=true;r.interimResults=true;r.maxAlternatives=3;
+  function mk(){
+   r=new R();r.lang=o.lang;r.continuous=true;r.interimResults=true;r.maxAlternatives=3;sessA=['','',''];
    r.onresult=function(e){var A=[[],[],[]];for(var i=0;i<e.results.length;i++){var rr=e.results[i];for(var j=0;j<3;j++)A[j].push((rr[j]||rr[0]).transcript)}
-    alts=A.map(join);clearTimeout(tF);clearTimeout(tS);tS=setTimeout(o.stop,silenceMs);status()};
+    sessA=A.map(join);alts=[0,1,2].map(function(j){return join(base.map(function(b){return b[j]}).concat(sessA[j]))});
+    clearTimeout(tF);clearTimeout(tS);tS=setTimeout(o.stop,silenceMs);status()};
    r.onerror=function(e){var c=e&&e.error;if(c==='no-speech'||c==='aborted')return;errored=e};
-   r.onend=conclude;
+   /* Android Chrome often ends a session by itself after a short pause: keep what was heard and listen again until the student is done */
+   r.onend=function(){if(ended)return;
+    if(stopping||errored||Date.now()-t0>=maxMs-800||++restarts>40){conclude();return}
+    if(sessA[0])base.push(sessA);sessA=['','',''];
+    setTimeout(function(){if(ended||stopping)return;try{mk();r.start()}catch(e){conclude()}},300)};
+  }
+  o.start=function(){
+   mk();t0=Date.now();stopping=false;
    cur=o;o.live=true;ended=false;r.start();status();
    tS=setTimeout(o.stop,firstMs);tM=setTimeout(o.stop,maxMs)};
   return o}
