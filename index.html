@@ -7610,13 +7610,13 @@ function resetRnd(){RN.picked[st.cls]=[];S.ls.set(RK,RN);rcur=null;rmsg='';draw(
 function setMode(m){if(m==='att'&&spinT)return;st.mode=m;rmsg='';draw()}
 /* ---- session flow: class -> attendance -> Start session -> continue / unit and lessons / explain a lesson ---- */
 function asked(c){try{const o=JSON.parse(localStorage.getItem('s3_picker_v1')||'{}');return ((o.uq||{})[c]||[]).length}catch(e){return 0}}
-function goHtml(){const c=st.cls,n=asked(c);let sl='';try{sl=window.s3Scope?s3Scope.labelFor(c):''}catch(e){}
+function goHtml(){const c=st.cls;let cpn=0;try{cpn=(JSON.parse(localStorage.getItem('s3_classprog_v1')||'{}')||{})[c]||0}catch(e){}const n=0;let sl='';try{sl=window.s3Scope?s3Scope.labelFor(c):''}catch(e){}
  const card=(ic,t,sub,act,pri)=>'<button type="button" class="s3btn'+(pri?'':' ghost')+'" style="display:block;width:100%;text-align:left;margin-bottom:10px;padding:16px" onclick="'+act+'"><b style="font-size:17px">'+ic+' '+t+'</b><span style="display:block;font-size:12.5px;opacity:.85;margin-top:3px">'+sub+'</span></button>';
  return '<div class="bg-white rounded-2xl border p-4"><div class="s3h" style="font-size:17px">▶ Session started · Class '+esc(c)+'</div><div class="s3sub" style="margin:4px 0 12px">What do you want to do now?</div>'+
-  card('▶','Continue from the last point','Question picker for this class'+(n?' · '+n+' questions already asked':' · starts from the beginning'),'s3Att.go(\'cont\')',1)+
-  card('📚','Choose unit and lessons','Now: '+esc(sl||'All units')+' · then the question picker starts','s3Att.go(\'units\')')+
+  card('▶','Continue from the last point','Question Bank (Focus) · class point '+(cpn?('#'+cpn):'not set yet'),'s3Att.go(\'cont\')',1)+
+  card('📚','Choose unit and lessons','Now: '+esc(bsLabel(c))+' · saved for this class','s3Att.go(\'units\')')+
   card('📖','Explain a lesson','Open the Study Guide: grammar slides, reading and writing for a unit','s3Att.go(\'explain\')')+
-  '<div class="s3sub" style="margin-top:4px">Random student, Question picker, Class games, 1v1 Duel and Attendance are in the buttons above.</div></div>'}
+  '<div class="s3sub" style="margin-top:4px">Random student, Class games, 1v1 Duel and Attendance are in the buttons above. In the Question Bank, use the 🎲 Class button to pick students.</div></div>'}
 async function startSession(){if(st.saving)return;if(st.dirty){await save();if(st.dirty&&!confirm('Attendance was not saved. Start the session anyway?'))return}
  window.__s3stage='session';st.mode='go';st.msg='';draw();window.scrollTo({top:0})}
 const UTS=["Inside the World of Care","The Power of Machines","Protect Nature, Protect Future","Marine Life","From Muscles to Mindset","Let's Hang Out!","At the Airport","A Journey Through Time","The Universe's Mysteries","People's Hospitality & Kindness","Literature","University Life & Career Choices"];
@@ -7629,8 +7629,23 @@ function exSheet(n){let h=$('s3-ex-sheet');if(!h){h=document.createElement('div'
   '<button type="button" class="s3btn ghost" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:14px" onclick="s3Att.exOpen('+n+',0)"><b>📖 Study Guide page</b><span style="display:block;font-size:12.5px;opacity:.8">Grammar, reading lessons, writing and flashcards of this unit</span></button>'+
   '<button type="button" class="s3btn ghost" style="display:block;width:100%;padding:12px" onclick="s3Att.exUnit(0)">← Other unit</button>')}
 function exOpen(n,deck){const h=$('s3-ex-sheet');if(h)h.remove();try{window.switchTab('reference')}catch(e){}try{window.guideSel(n)}catch(e){}if(deck)setTimeout(()=>{try{window.guideOpenDeck(n)}catch(e){}},200)}
-function goDo(k){if(k==='cont'){setMode('quiz');return}
- if(k==='units'){try{s3Scope.open()}catch(e){return}let t=0;const iv=setInterval(()=>{if(!$('s3sc-sheet')||++t>600){clearInterval(iv);if(window.__s3stage==='session'&&st.mode==='go'){setMode('quiz')}}},300);return}
+const KB='s3_bankscope_v1';
+function bsAll(){try{return JSON.parse(localStorage.getItem(KB)||'{}')||{}}catch(e){return {}}}
+function bsGet(c){const o=bsAll()[c];return o&&typeof o==='object'?o:{u:'all',l:'all',lv:'all'}}
+function bsRead(){const g=id=>{const e=$(id);return e&&e.value?e.value:'all'};return {u:g('filter-unit'),l:g('filter-lesson'),lv:g('filter-level')}}
+function bsApply(o){const set=(id,v)=>{const e=$(id);if(e)e.value=v};set('filter-unit',o.u||'all');set('filter-lesson',o.l||'all');set('filter-level',o.lv||'all');try{if(typeof applyFilters==='function')applyFilters()}catch(e){}}
+function bsLabel(c){const o=bsGet(c);const u=o.u==='all'?'All units':'Unit '+String(o.u).split(',').join(', ');return u+(o.l&&o.l!=='all'?' · Lesson '+o.l:' · all lessons')+(o.lv&&o.lv!=='all'?' · '+o.lv:'')}
+(function hook(n){const f=window.applyFilters;if(typeof f!=='function'){if(n<60)setTimeout(()=>hook(n+1),300);return}if(f.__bs)return;
+ const w=function(){const r=f.apply(this,arguments);try{if(!window.__s3bsLock&&window.__s3stage==='session'&&S.isTeacher()&&st.cls&&typeof state!=='undefined'&&state.currentTab==='bank'){const all=bsAll();all[st.cls]=bsRead();localStorage.setItem(KB,JSON.stringify(all))}}catch(e){}return r};w.__bs=1;
+ for(const k in f)try{w[k]=f[k]}catch(e){}window.applyFilters=w})(0);
+function bankGo(units){const c=st.cls;window.__s3bsLock=true;try{localStorage.setItem('qb3_view_v1','focus')}catch(e){}
+ document.body.classList.remove('qb3-home');
+ try{window.switchTab('bank')}catch(e){}
+ setTimeout(()=>{const hc=$('qb3-st-cont');if(hc)hc.click();
+  setTimeout(()=>{bsApply(bsGet(c));const fb=document.querySelector('.qb3-vt button[data-v="focus"]');if(fb)fb.click();try{window.scrollTo(0,0)}catch(e){}
+   setTimeout(()=>{window.__s3bsLock=false;if(units){const b=$('qb3-units-btn');if(b)b.click()}},250)},120)},300)}
+function goDo(k){if(k==='cont'){bankGo(0);return}
+ if(k==='units'){bankGo(1);return}
  if(k==='explain')exSheet(0)}
 function render(){if(!S.isTeacher())return;const v=$('view-attend');if(!v)return;
  if(cloud()&&S3CLOUD.offline){v.innerHTML='<div class="bg-white rounded-2xl border p-5 s3sub">Attendance needs the internet. Try again when you are online.</div>';return}
@@ -11222,7 +11237,7 @@ html[data-theme=dark] .qb3-seg button.on{color:#fff}
     var nx=nextUnanswered();
     var h='';
     if(isT){
-      var cps=cpRead(), cls=classesOf(), cur=cls[0]||'';
+      var cps=cpRead(), cls=classesOf(), cur=cls[0]||''; try{ if(window.__s3stage==='session'&&window.s3Att&&cls.indexOf(s3Att.curCls())>-1) cur=s3Att.curCls(); }catch(e){}
       h+='<span class="qb3-pl">📍 Class point</span>';
       if(cls.length){
         h+='<select id="qb3-cp-cls" aria-label="Class">'+cls.map(function(c){return '<option value="'+c+'"'+(c===cur?' selected':'')+'>'+c+'</option>';}).join('')+'</select>';
@@ -11523,7 +11538,7 @@ body.qb3-fm .qb3-fnav .qb3-fnext{flex:1.4}
   function getMode(){ try{ var m=localStorage.getItem(K); if(m==='list'||m==='focus') return m; }catch(e){} return isTeacher()?'list':'focus'; }
   function setMode(m){ try{ localStorage.setItem(K,m); }catch(e){} apply(); }
   function questions(){ try{ return (typeof getFilteredQuestions==='function')?getFilteredQuestions():(state.displayOrder||[]); }catch(e){ return (state&&state.allQuestions)||[]; } }
-  function cpOf(){ try{ var s=S3.SESS&&S3.SESS(); var cls=(s&&s.cls)||''; var o=JSON.parse(localStorage.getItem('s3_classprog_v1')||'{}'); return o[cls]||0; }catch(e){ return 0; } }
+  function cpOf(){ try{ var s=S3.SESS&&S3.SESS(); var cls=(s&&s.cls)||''; if(window.__s3stage==='session'&&S3.isTeacher&&S3.isTeacher()&&window.s3Att&&s3Att.curCls) cls=s3Att.curCls()||cls; var o=JSON.parse(localStorage.getItem('s3_classprog_v1')||'{}'); return o[cls]||0; }catch(e){ return 0; } }
   function firstUnanswered(L,floor){
     var f=(floor&&floor>1)?floor-1:0;
     for(var i=f;i<L.length;i++){ if(!state||!state.userAnswers||state.userAnswers[L[i].id]===undefined) return i; }
