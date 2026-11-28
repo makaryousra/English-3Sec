@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><link rel="preconnect" href="https://script.google.com"><link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>E-Squad | Mr. Makaryous · Secondary 3</title>
@@ -7227,7 +7227,14 @@ window.S3GEM=GEM;
  window.S3DG=DG;['touchend','pointerdown','click'].forEach(ev=>document.addEventListener(ev,function f(){DG.unlock();document.removeEventListener(ev,f,true)},true));
  try{const os=window.S3A&&S3A.stop;if(os)S3A.stop=function(){DG.stop();return os.apply(this,arguments)}}catch(e){}
 })();
-function coachSay(t){const fb=()=>{try{say(t)}catch(e){}};try{S3DG.say(t,fb)}catch(e){fb()}}
+function coachSay(t){let spoke=0;const fb=()=>{spoke=1;try{say(t)}catch(e){}};
+ const m=document.getElementById('rp-m')||document.getElementById('oc-m'),MSG='🤖 The coach is thinking… getting the voice ready';let mine=0;
+ const clr=()=>{if(mine&&m&&m.textContent===MSG)m.textContent='';mine=0};
+ try{if(m&&!m.textContent.trim()&&S3DG.on()){m.textContent=MSG;mine=1}}catch(e){}
+ try{S3DG.say(t,()=>{clr();fb()})}catch(e){clr();fb();return}
+ /* if the natural voice is not ready in 5 s, the phone voice speaks instead (a late natural voice is dropped) */
+ const t0=Date.now();(function w(){if(spoke)return clr();try{if(S3DG.playing)return clr()}catch(e){}
+  if(Date.now()-t0>5000){try{S3DG.stop()}catch(e){}clr();fb();return}setTimeout(w,250)})()}
 function coachVoiceWait(cb,m){let busy=0;try{const a=S3DG&&S3DG.cur&&S3DG.cur();if(a&&(S3DG.playing||(!a.paused&&!a.ended)))busy=1}catch(e){}
  try{const p=window.S3A&&S3A.probe&&S3A.probe();if(p&&!p.e&&!p.p)busy=1}catch(e){}
  if(!busy)return cb();if(m)try{m.textContent='🔊 Listen…'}catch(e){}
@@ -12999,7 +13006,7 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
    r.onend=function(){if(ended)return;
     if(stopping||errored||Date.now()-t0>=maxMs-800||++restarts>40){conclude();return}
     if(sessA[0])base.push(sessA);sessA=['','',''];
-    setTimeout(function(){if(ended||stopping)return;try{mk();r.start()}catch(e){conclude()}},300)};
+    var again=function(n){if(ended||stopping)return;try{mk();r.start()}catch(e){if(n<3)setTimeout(function(){again(n+1)},120);else conclude()}};again(0)};
   }
   o.start=function(){
    mk();t0=Date.now();stopping=false;
