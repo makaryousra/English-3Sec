@@ -1,5 +1,5 @@
 /* Offline support: caches the site, its JSON files, audio and the Firebase scripts after the first online visit. */
-const V='s3-offline-v31';
+const V='s3-offline-v42';
 const CORE=['./','index.html','reading.json','writing.json'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(V).then(c=>Promise.all([fetch('./').then(r=>{if(r&&r.ok){c.put(new Request('./'),r.clone());c.put(new Request('index.html'),r.clone())}}).catch(()=>{}),...CORE.filter(u=>u!=='./'&&u!=='index.html').map(u=>c.add(new Request(u)).catch(()=>{}))])))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
