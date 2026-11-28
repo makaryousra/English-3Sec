@@ -7135,10 +7135,10 @@ function pdraw(){clean();const f=T.f[T.i];if(!f){return pfinish()}resolve(f);con
 function hear(){const f=T.f[T.i];say(full(f.it.q))}
 function pans(j){const f=T.f[T.i];if(T.a[T.i]!==undefined)return;const q=f.it.qs?f.it.qs[f.qi]:f.it.q;T.a[T.i]=j===q.answer?1:0;adapt(f,T.a[T.i]);T.i++;savePr();setTimeout(pdraw,150)}
 function spDone(ok){T.a[T.i]=ok?1:0;T.i++;savePr();pdraw()}
-function speak(){const f=T.f[T.i],txt=full(f.it.q),R=window.SpeechRecognition||window.webkitSpeechRecognition,r=$('sp-r'),s=$('sp-s');
+function speak(){if(window.s3RecStop&&s3RecStop())return;const f=T.f[T.i],txt=full(f.it.q),R=window.SpeechRecognition||window.webkitSpeechRecognition,r=$('sp-r'),s=$('sp-s');
  const manual=msg=>{r.innerHTML=msg+'<br>Say the sentence aloud, then check yourself.';s.innerHTML=btn('✅ I said it clearly','s3Game.spDone(1)')+btn('Not yet','s3Game.spDone(0)',1)};
  if(!R||!navigator.onLine){manual(!R?'Speech recognition is not available on this browser.':'You are offline.');return}
- try{rec=new R();rec.lang='en-US';rec.interimResults=false;rec.maxAlternatives=3;$('sp-b').textContent='🎙️ Listening…';
+ try{rec=s3Rec(R,{m:$('sp-r'),lang:'en-US'});$('sp-b').textContent='🎙️ Listening…';
   rec.onresult=e=>{const heard=[...e.results[0]].map(a=>a.transcript);const tw=norm(txt).split(' ');let bestP=0,bh=heard[0];heard.forEach(h=>{const hw=norm(h).split(' ');const p=tw.filter(w=>hw.includes(w)).length/tw.length;if(p>bestP){bestP=p;bh=h}});const pc=Math.round(bestP*100);r.innerHTML='I heard: <b>'+esc(bh)+'</b><br>Match: '+pc+'% (approximate)';s.innerHTML=btn('Next ▶','s3Game.spDone('+(pc>=70?1:0)+')')+btn('Try again','s3Game.speak()',1)+'<div class="s3sub" style="margin-top:6px">Speech scoring is approximate. 70% or more counts as correct.</div>'};
   rec.onerror=()=>manual('I could not hear you.');rec.onnomatch=()=>manual('I could not understand.');rec.onend=()=>{const b=$('sp-b');if(b)b.textContent='🎤 Say it'};rec.start()}catch(e){manual('Microphone is not available.')}}
 const LV=p=>p>=80?3:p>=50?2:1,LVN=['','Level 1 · Foundation','Level 2 · Developing','Level 3 · Strong'];
@@ -7292,7 +7292,7 @@ function voiceMenu(){clean();aiStop();
 /* ===== DIALOGUE PARTNER + OPEN CONVERSATION (patch2) ===== */
 function aiMic(m,onText,onFail){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R){m.textContent='This browser cannot listen to you. Use Chrome on Android.';if(onFail)onFail();return}
  try{speechSynthesis.cancel()}catch(e){}try{if(window.s3Listen&&s3Listen.stopAudio)s3Listen.stopAudio()}catch(e){}
- try{rec=new R();rec.lang='en-US';rec.interimResults=false;let got=false;m.textContent='🎙️ Speak now…';
+ try{rec=s3Rec(R,{m:m,lang:'en-US'});let got=false;m.textContent='🎙️ Speak now…';
   rec.onresult=e=>{got=true;onText(e.results[0][0].transcript)};
   rec.onerror=ev=>{got=true;const c=ev&&ev.error;m.textContent=c==='not-allowed'?'The microphone is blocked. Allow it for this site.':c==='no-speech'?'I did not hear anything. Try again, a little louder.':'I could not hear you. Try again.';if(onFail)onFail()};
   rec.onend=()=>{if(!got){m.textContent='I did not hear anything. Try again.';if(onFail)onFail()}};rec.start()}catch(e){m.textContent='The microphone is not available.';if(onFail)onFail()}}
@@ -7380,8 +7380,8 @@ function ocEnd(){const O=OC;if(!O)return;aiStop();try{if(rec)rec.abort()}catch(e
 
 function rpRetry(){if(RP)rpTurn(RP.last||'')}
 function rpHear(){try{const l=RP.hist[RP.hist.length-1];coachSay(l.c||'')}catch(e){}}
-function rpRec(){const R=window.SpeechRecognition||window.webkitSpeechRecognition,m=$('rp-m'),a=$('rp-a');if(!R)return m.textContent='This browser cannot listen to you. Use Chrome on Android.';
- coachVoiceWait(()=>{try{speechSynthesis.cancel()}catch(e){}try{rec=new R();rec.lang='en-US';rec.interimResults=false;let got=false;m.textContent='🎙️ Speak now…';
+function rpRec(){if(window.s3RecStop&&s3RecStop())return;const R=window.SpeechRecognition||window.webkitSpeechRecognition,m=$('rp-m'),a=$('rp-a');if(!R)return m.textContent='This browser cannot listen to you. Use Chrome on Android.';
+ coachVoiceWait(()=>{try{speechSynthesis.cancel()}catch(e){}try{rec=s3Rec(R,{m:m,lang:'en-US'});let got=false;m.textContent='🎙️ Speak now…';
   rec.onresult=e=>{got=true;const t=e.results[0][0].transcript;rpLog('🧑 You:',t);rpTurn(t)};
   rec.onerror=ev=>{got=true;const c=ev&&ev.error;m.textContent=c==='not-allowed'?'The microphone is blocked. Allow it for this site.':c==='no-speech'?'I did not hear anything. Try again, a little louder.':'I could not hear you. Try again.';a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')};
   rec.onend=()=>{if(!got){m.textContent='I did not hear anything. Try again.';a.innerHTML=btn('🎤 Answer','s3Game.rpRec()')}};rec.start()}catch(e){m.textContent='The microphone is not available.'}},m)}
@@ -7432,10 +7432,20 @@ function spStart(l){clean();const P0=spPool()[l];if(!P0||P0.length<8)return S.to
  const by={};shuf(P).forEach(x=>(by[x.q.unit]=by[x.q.unit]||[]).push(x));const us=shuf(Object.keys(by)),items=[];let k=0;while(items.length<8&&us.some(u=>by[u].length)){const u=us[k%us.length];if(by[u].length)items.push(by[u].pop());k++}
  s3Fresh.mark('sp'+l,items.map(x=>x.q.id),Math.max(8,Math.min(80,Math.floor(P0.length*.6))));SP={lv:l,items,i:0,res:[],best:0,tries:0,can:!!(window.SpeechRecognition||window.webkitSpeechRecognition)&&navigator.onLine,done:false};spDraw()}
 function spWords(t){return t.split(/\s+/)}
-function spAlign(target,heard){const a=norm(target).split(' '),b=norm(heard).split(' '),n=a.length,m=b.length,d=[];for(let i=0;i<=n;i++){d.push(new Array(m+1).fill(0))}
+let _spCom=null;
+function spCom(){if(_spCom)return _spCom;_spCom=new Set();try{(state.allQuestions||[]).forEach(q=>{String(q.question||'').split(/[^A-Za-z']+/).forEach(w=>{if(w&&/^[a-z]/.test(w))_spCom.add(w)});(q.options||[]).forEach(o=>String(o).split(/[^A-Za-z']+/).forEach(w=>{if(w&&/^[a-z]/.test(w))_spCom.add(w)}))})}catch(e){}return _spCom}
+/* proper names (capitalised words that never appear in lower case in the bank, like Tamer or Mansour) are not scored: the recognizer spells them differently */
+function spNames(target){const s=String(target).replace(/[\u2019]/g,"'"),C=spCom(),out=[],re=/[A-Za-z0-9']+/g;let m;
+ while((m=re.exec(s))){let w=m[0];const pre=s.slice(0,m.index).replace(/[\s"'(\[]+$/,''),start=!pre||/[.!?:]$/.test(pre);
+  let stem=w.replace(/'s$/i,'');let nm=/^[A-Z][A-Za-z]{2,}$/.test(stem)&&!C.has(stem.toLowerCase());
+  if(nm&&start&&/(ing|ly|ed|ion|ions|ers|ies|ate|ize|ise|ify|ful|ness|ment|ous|ive|ant|ent|ity|ish)$/i.test(stem))nm=false;
+  out.push(nm)}
+ return out}
+function spAlign(target,heard){const a0=norm(target).split(' '),b=norm(heard).split(' '),fl=spNames(target);const isN=a0.map((w,i)=>fl.length===a0.length&&!!fl[i]);
+ const idx=[];a0.forEach((w,i)=>{if(!isN[i])idx.push(i)});const a=idx.map(i=>a0[i]),n=a.length,m=b.length,d=[];for(let i=0;i<=n;i++){d.push(new Array(m+1).fill(0))}
  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)d[i][j]=a[i-1]===b[j-1]?d[i-1][j-1]+1:Math.max(d[i-1][j],d[i][j-1]);
- const hit=new Array(n).fill(false);let i=n,j=m;while(i>0&&j>0){if(a[i-1]===b[j-1]){hit[i-1]=true;i--;j--}else if(d[i-1][j]>=d[i][j-1])i--;else j--}
- return{hit,pct:Math.round(d[n][m]/n*100)}}
+ const hit=a0.map((w,i)=>isN[i]);let i=n,j=m;while(i>0&&j>0){if(a[i-1]===b[j-1]){hit[idx[i-1]]=true;i--;j--}else if(d[i-1][j]>=d[i][j-1])i--;else j--}
+ return{hit,pct:n?Math.round(d[n][m]/n*100):(m?100:0)}}
 function spHtml(t,hit){const w=spWords(t),nw=norm(t).split(' ');
  // map original tokens to normalized tokens (tokens that normalize to nothing stay neutral)
  let k=0;return w.map(x=>{const nx=norm(x);if(!nx)return esc(x);const parts=nx.split(' ').length;let ok=true;for(let c=0;c<parts;c++){if(!hit||!hit[k+c])ok=false}k+=parts;return hit?'<span style="'+(ok?'color:var(--ok,#16a34a);font-weight:700':'color:#e11d48;font-weight:700;text-decoration:underline')+'">'+esc(x)+'</span>':esc(x)}).join(' ')}
@@ -7450,10 +7460,10 @@ function spDraw(){if(GEM.recStop)GEM.recStop();clean();const it=SP.items[SP.i];S
 function spHear(){if(SP)say(SP.items[SP.i].t)}
 function spManual(msg){const m=$('sp-m'),a=$('sp-a');if(!m||!a)return;m.innerHTML=msg+'<br>Listen, say the sentence aloud 2 times, then check yourself.';a.innerHTML=btn('✅ I said it clearly','s3Game.spSelf(1)')+btn('Again','s3Game.spHear()',1)}
 function spSelf(){if(!SP)return;SP.res.push({pct:-1,self:1});spAdvance()}
-function spRec(){if(!SP)return;const R=window.SpeechRecognition||window.webkitSpeechRecognition,m=$('sp-m'),a=$('sp-a'),b=$('sp-b');
+function spRec(){if(!SP)return;if(window.s3RecStop&&s3RecStop())return;const R=window.SpeechRecognition||window.webkitSpeechRecognition,m=$('sp-m'),a=$('sp-a'),b=$('sp-b');
  try{speechSynthesis.cancel()}catch(e){}
- try{rec=new R();rec.lang=(typeof state!=='undefined'&&state.voiceAccent==='en-GB')?'en-GB':'en-US';rec.interimResults=false;rec.maxAlternatives=3;let got=false;
-  if(b)b.textContent='🎙️ Listening…';m.textContent='Speak now…';
+ try{rec=s3Rec(R,{m:m,lang:(typeof state!=='undefined'&&state.voiceAccent==='en-GB')?'en-GB':'en-US'});let got=false;
+  if(b)b.textContent='⏹ Tap when done';m.textContent='Speak now…';
   rec.onresult=e=>{got=true;const alts=[...e.results[0]].map(x=>x.transcript);const t=SP.items[SP.i].t;let best=null,bh=alts[0];alts.forEach(h=>{const r=spAlign(t,h);if(!best||r.pct>best.pct){best=r;bh=h}});
    SP.heard=bh;SP.tries++;if(best.pct>=SP.best){SP.best=best.pct;SP.hit=best.hit}
    $('sp-t').innerHTML=spHtml(t,best.hit);const ok=best.pct>=70;
@@ -12901,6 +12911,41 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
     return any;
   }
   setInterval(tick,350);
+})();
+
+</script>
+<script id="s3-rec">
+/* s3-rec: patient speech recognition for Speaking. Keeps listening through short pauses, shows what it hears, and ends after ~3 s of silence or when the student taps Done. */
+(function(){
+ var cur=null;
+ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+ function join(list){var out='';list.forEach(function(t){t=String(t||'').trim();if(!t)return;if(out&&t.toLowerCase().indexOf(out.toLowerCase())===0)out=t;else out=out?out+' '+t:t});return out}
+ window.s3RecStop=function(){if(cur&&cur.live){cur.stop();return true}return false};
+ window.s3Rec=function(R,opt){
+  opt=opt||{};var o={lang:opt.lang||'en-US',maxAlternatives:3,onresult:null,onerror:null,onend:null,onnomatch:null,live:false};
+  var silenceMs=opt.silenceMs||3000,firstMs=opt.firstMs||9000,maxMs=opt.maxMs||40000;
+  var r=null,tS=null,tM=null,tF=null,ended=false,errored=null,alts=['','',''],btn=null,m=opt.m||null;
+  function clear(){clearTimeout(tS);clearTimeout(tM);clearTimeout(tF)}
+  function removeBtn(){if(btn&&btn.parentNode)btn.parentNode.removeChild(btn);btn=null}
+  function status(){if(!m)return;m.innerHTML='\uD83C\uDF99\uFE0F Speak now\u2026 take your time, I wait.'+(alts[0]?'<div style="margin-top:6px;font-style:italic;opacity:.85">\u201C'+esc(alts[0])+'\u201D</div>':'');
+   if(!btn){btn=document.createElement('button');btn.className='s3btn';btn.type='button';btn.textContent='\u2705 I am done';btn.style.cssText='margin-top:8px;padding:12px 18px;border-radius:14px;font-weight:800;width:100%';btn.onclick=function(){o.stop()}}
+   if(btn.parentNode!==m.parentNode&&m.parentNode)m.parentNode.insertBefore(btn,m.nextSibling)}
+  function conclude(){if(ended)return;ended=true;o.live=false;if(cur===o)cur=null;clear();removeBtn();
+   if(errored){if(o.onerror)o.onerror(errored)}
+   else if(alts[0]){if(o.onresult)o.onresult({results:[alts.filter(Boolean).map(function(t){return{transcript:t}})]})}
+   else{if(o.onerror)o.onerror({error:'no-speech'})}
+   if(o.onend)o.onend()}
+  o.stop=function(){if(ended)return;clear();try{r.stop()}catch(e){}clearTimeout(tF);tF=setTimeout(conclude,1500)};
+  o.abort=function(){ended=true;o.live=false;if(cur===o)cur=null;clear();removeBtn();try{r.abort()}catch(e){}};
+  o.start=function(){
+   r=new R();r.lang=o.lang;r.continuous=true;r.interimResults=true;r.maxAlternatives=3;
+   r.onresult=function(e){var A=[[],[],[]];for(var i=0;i<e.results.length;i++){var rr=e.results[i];for(var j=0;j<3;j++)A[j].push((rr[j]||rr[0]).transcript)}
+    alts=A.map(join);clearTimeout(tF);clearTimeout(tS);tS=setTimeout(o.stop,silenceMs);status()};
+   r.onerror=function(e){var c=e&&e.error;if(c==='no-speech'||c==='aborted')return;errored=e};
+   r.onend=conclude;
+   cur=o;o.live=true;ended=false;r.start();status();
+   tS=setTimeout(o.stop,firstMs);tM=setTimeout(o.stop,maxMs)};
+  return o}
 })();
 
 </script>
