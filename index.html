@@ -6429,9 +6429,9 @@ function getItem(k,id){
  return null}
 function nextQ(){const g={};poolAll().forEach(x=>(g[x.k]=g[x.k]||[]).push(x));const ks=Object.keys(g);if(!ks.length)return null;
  const k=ks[Math.floor(Math.random()*ks.length)],pool=g[k],uk=x=>x.k+':'+x.id;
- let fresh=pool.filter(x=>!S.usedQ.includes(uk(x)));if(!fresh.length){S.usedQ=S.usedQ.filter(u=>!pool.some(x=>uk(x)===u));fresh=pool}
+ S.uq=S.uq||{};const UQ=S.uq[S.cls]=S.uq[S.cls]||[];let fresh=pool.filter(x=>!UQ.includes(uk(x)));if(!fresh.length){S.uq[S.cls]=S.uq[S.cls].filter(u=>!pool.some(x=>uk(x)===u));fresh=pool}
  const d=fresh[Math.floor(Math.random()*fresh.length)];if(d.k==='mcq'){const bq=qById(d.id);if(bq)s3Shuf.one(bq)}
- S.usedQ.push(uk(d));if(S.usedQ.length>3000)S.usedQ=S.usedQ.slice(-1500);return d}
+ S.uq[S.cls].push(uk(d));if(S.uq[S.cls].length>3000)S.uq[S.cls]=S.uq[S.cls].slice(-1500);return d}
 function mount(){const w=$('pk-wrap');if(w)w.remove()}
 window.s3Picker={
  mount,
@@ -6479,7 +6479,7 @@ function mainUI(cl){const c=S.cls,ab=ABS(),allM=members(c),all=allM.filter(n=>!a
  let h='<div class="'+(S.proj?'pkproj':'')+'"><div class="pkc"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center"><b style="font-size:18px">❓ Question picker · Class '+esc(c)+'</b><div><button class="pkb g" onclick="s3Picker.proj()">'+(S.proj?'Normal size':'🖥 Projector size')+'</button></div></div><div style="margin-top:8px">'+
   ''+'</div>'+
   '<div style="margin:8px 0 4px;font-size:13px">Round: <b>'+done+' / '+all.length+'</b> students have had a turn'+(ab.length?' · <span style="color:#e11d48">'+ab.length+' absent today (skipped)</span>':'')+'</div><div class="pkbar"><i style="width:'+(all.length?done/all.length*100:0)+'%"></i></div>'+
-  '<div style="margin-top:10px;font-size:13px;font-weight:700">Question types</div><div>'+Object.keys(TY).map(k=>'<span class="pkchip '+(S.types[k]?'on':'')+'" onclick="s3Picker.type(\''+k+'\')">'+TY[k]+'</span>').join('')+'</div><div style="margin-top:6px;font-size:12px;opacity:.75"><b>'+pl+'</b> questions match. The Unit filter in the Question Bank tab applies to every type; multiple choice also follows its Lesson and Category filters. XP by level: Easy x1, Medium x1.5, Hard x2. Every question has a level, and the Level filter in the Question Bank applies to all types. Rewrite, Translation and Writing are always Hard.</div></div>';
+  '<div style="font-size:12px;opacity:.75;margin-top:4px">Questions already asked in class '+esc(c)+': <b>'+(((S.uq||{})[c])||[]).length+'</b> (every class has its own list)</div><div style="margin-top:10px;font-size:13px;font-weight:700">Question types</div><div>'+Object.keys(TY).map(k=>'<span class="pkchip '+(S.types[k]?'on':'')+'" onclick="s3Picker.type(\''+k+'\')">'+TY[k]+'</span>').join('')+'</div><div style="margin-top:6px;font-size:12px;opacity:.75"><b>'+pl+'</b> questions match. The Unit filter in the Question Bank tab applies to every type; multiple choice also follows its Lesson and Category filters. XP by level: Easy x1, Medium x1.5, Hard x2. Every question has a level, and the Level filter in the Question Bank applies to all types. Rewrite, Translation and Writing are always Hard.</div></div>';
  h+='<div class="pkc">'+(msg?'<div style="font-weight:700;margin-bottom:8px;font-size:14px">'+esc(msg)+'</div>':'');
  const nm=S.cur?S.cur.name:(rev?rev.name:'Ready');
  h+='<div class="pkname" id="pk-name" dir="auto">'+esc(nm)+'</div>'+awStatus();
@@ -7549,7 +7549,7 @@ async function save(){if(st.saving)return;st.saving=true;draw(true);const ids=ne
  st.saving=false;draw(true)}
 function shift(n){if(st.dirty&&!confirm('You have unsaved changes. Leave this date?'))return;const d=new Date(st.date+'T12:00:00');d.setDate(d.getDate()+n);setDate(ymd(d))}
 function setDate(v){if(!v)return;if(st.dirty&&v!==st.date&&!confirm('You have unsaved changes. Leave this date?')){draw(true);return}st.date=v;applyDay();st.msg='';draw()}
-function setCls(c){if(st.dirty&&c!==st.cls&&!confirm('You have unsaved changes. Leave this class?'))return;rcur=null;rmsg='';pick(c,st.date)}
+function setCls(c){if(st.dirty&&c!==st.cls&&!confirm('You have unsaved changes. Leave this class?'))return;try{localStorage.setItem('s3_lastcls',c)}catch(e){}rcur=null;rmsg='';pick(c,st.date)}
 function open(d){if(st.dirty&&!confirm('You have unsaved changes. Leave this date?'))return;st.date=d;applyDay();st.msg='';draw();window.scrollTo({top:0})}
 function wa(){const L=sessList(),ab=L.filter(s=>st.abs.has(s.id));const t='✅ Attendance · Class '+st.cls+'\n'+dnice(st.date)+'\nPresent: '+(L.length-ab.length)+' / '+L.length+'\n'+(ab.length?'Absent ('+ab.length+'):\n'+ab.map((s,i)=>(i+1)+'. '+tagName(s)).join('\n'):'No absentees 🎉');window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 function csvCell(x){return '"'+String(x==null?'':x).replace(/"/g,'""')+'"'}
@@ -7566,11 +7566,17 @@ function xpanel(){const ex=extraList(),others=clsList().filter(c=>c!==st.cls);if
  if(st.xopen){h+='<div style="margin-top:8px;border:1px solid var(--bd);border-radius:12px;padding:8px">'+others.map(c=>{const L=allS().filter(s=>s.cls===c).sort((a,b)=>a.name.localeCompare(b.name)),all=L.every(s=>st.extra.has(s.id));
    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Class '+esc(c)+'</b><button class="s3btn ghost" style="font-size:12px;padding:6px 10px" onclick="s3Att.addXC(\''+esc(c).replace(/'/g,"\\'")+'\')">'+(all?'Remove all':'Add all')+'</button></div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">'+L.map(s=>'<button onclick="s3Att.addX(\''+s.id+'\')" style="padding:6px 10px;border-radius:999px;font-size:13px;cursor:pointer;color:'+(st.extra.has(s.id)?'#fff':'var(--tx)')+';border:2px solid '+(st.extra.has(s.id)?'var(--ac,#4f46e5)':'var(--bd)')+';background:'+(st.extra.has(s.id)?'var(--ac,#4f46e5)':'var(--surf2,#f1f5f9)')+'">'+(st.extra.has(s.id)?'✓ ':'')+esc(s.name)+'</button>').join('')+'</div></div>'}).join('')+(ex.length?'<button class="s3btn ghost" style="font-size:12px" onclick="s3Att.clearX()">Remove all added students</button>':'')+'</div>'}
  return h+'</div>'}
+function gateHtml(cl){let lc='';try{lc=localStorage.getItem('s3_lastcls')||''}catch(e){}
+ const sl=c=>{try{return (window.s3Scope&&s3Scope.labelFor)?s3Scope.labelFor(c):''}catch(e){return ''}};
+ return '<div class="bg-white rounded-2xl border p-5" style="margin-bottom:12px"><div class="s3h" style="font-size:19px">🏫 Which class are you teaching now?</div><div class="s3sub" style="margin:6px 0 12px">Each class keeps its own questions and unit scope, so every class continues from where it stopped.</div>'+
+ cl.map(c=>'<button class="s3btn'+(c===lc?'':' ghost')+'" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:14px 16px" onclick="s3Att.gate(\''+esc(c).replace(/'/g,"\\'")+'\')"><b style="font-size:18px">Class '+esc(c)+'</b>'+(c===lc?' <span style="font-size:12px;opacity:.85">· last used</span>':'')+'<span style="display:block;font-size:12.5px;opacity:.8;margin-top:2px">📚 '+esc(sl(c))+'</span></button>').join('')+'</div>'}
+function gate(c){window.__s3gated=true;try{localStorage.setItem('s3_lastcls',c)}catch(e){}rcur=null;rmsg='';pick(c,st.date)}
 function draw(keepScroll){const v=$('view-attend');if(!v)return;if(!S.isTeacher()){v.innerHTML='';return}
  const cl=clsList();if(!cl.length){v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div class="s3h">✅ Attendance</div><div class="s3sub" style="margin-top:6px">No students yet. Create accounts in the Students tab first.</div></div>';return}
- if(!st.cls||!cl.includes(st.cls)){st.cls=cl[0];pick(st.cls,st.date);return}
+ if(!st.cls||!cl.includes(st.cls)){let lc='';try{lc=localStorage.getItem('s3_lastcls')||''}catch(e){}st.cls=cl.includes(lc)?lc:cl[0];pick(st.cls,st.date);return}
+ if(!window.__s3gated){v.innerHTML=gateHtml(cl);return}
  const L=stuList(),cnt=counts(),days=Object.keys(st.rec).length,nAbs=sessList().filter(s=>st.abs.has(s.id)).length,y=window.scrollY;
- let h='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div class="s3h" style="font-size:17px">🏫 Classroom mode</div>'+(window.s3G2?s3G2.lessonBar():'')+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="s3btn'+(st.mode==='att'?'':' ghost')+'" style="flex:1 1 100%" onclick="s3Att.mode(\'att\')">✅ Attendance</button><button class="s3btn'+(st.mode==='rnd'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'rnd\')">🎲 Random student</button><button class="s3btn'+(st.mode==='quiz'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'quiz\')">❓ Question picker</button><button class="s3btn ghost" style="flex:1 1 100%" onclick="s3Duel.teacher()">⚔️ 1v1 Duel</button></div>'+
+ let h='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div class="s3h" style="font-size:17px">🏫 Classroom mode · Class '+esc(st.cls)+'</div>'+(window.s3G2?s3G2.lessonBar():'')+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="s3btn'+(st.mode==='att'?'':' ghost')+'" style="flex:1 1 100%" onclick="s3Att.mode(\'att\')">✅ Attendance</button><button class="s3btn'+(st.mode==='rnd'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'rnd\')">🎲 Random student</button><button class="s3btn'+(st.mode==='quiz'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'quiz\')">❓ Question picker</button><button class="s3btn ghost" style="flex:1 1 100%" onclick="s3Duel.teacher()">⚔️ 1v1 Duel</button></div>'+
  '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+cl.map(c=>'<button class="s3btn'+(c===st.cls?'':' ghost')+'" onclick="s3Att.cls(\''+esc(c).replace(/'/g,"\\'")+'\')">'+esc(c)+'</button>').join('')+'</div>'+xpanel()+
  (st.mode!=='att'?'':'<div style="display:flex;gap:6px;align-items:center"><button class="s3btn ghost" onclick="s3Att.shift(-1)" aria-label="Previous day">◀</button><input type="date" class="s3in" style="flex:1;min-width:0" value="'+st.date+'" onchange="s3Att.date(this.value)"><button class="s3btn ghost" onclick="s3Att.shift(1)" aria-label="Next day">▶</button></div>'+
  '<div class="s3sub" style="margin-top:6px">'+dnice(st.date)+(st.date===today()?' · Today':'')+(st.loaded==='saved'?' · <b style="color:var(--ok,#16a34a)">Saved before, you can edit</b>':' · Not saved yet')+'</div>')+'</div>';
@@ -7597,7 +7603,7 @@ function render(){if(!S.isTeacher())return;const v=$('view-attend');if(!v)return
  if(cloud()&&S3CLOUD.offline){v.innerHTML='<div class="bg-white rounded-2xl border p-5 s3sub">Attendance needs the internet. Try again when you are online.</div>';return}
  if(cloud()&&!S3CLOUD.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';S3CLOUD.loadTeacher().then(()=>{st.cls='';draw()});return}
  st.cls='';st.date=today();draw()}
-window.s3Att={curCls:()=>st.cls,absentNames:()=>{const ab=absToday();return sessList().filter(s=>ab.has(s.id)).map(tagName)},idOf:tn=>{const s=sessList().find(x=>tagName(x)===tn);return s?s.id:null},extraNames:()=>extraList().map(tagName),addX:toggX,addXC:toggXC,clearX,xopen,mode:setMode,pickRnd,resetRnd,render,tog,save,all:allPresent,shift,date:setDate,cls:setCls,open,wa,csv,csvAll,del:delRec};
+window.s3Att={gate,curCls:()=>st.cls,absentNames:()=>{const ab=absToday();return sessList().filter(s=>ab.has(s.id)).map(tagName)},idOf:tn=>{const s=sessList().find(x=>tagName(x)===tn);return s?s.id:null},extraNames:()=>extraList().map(tagName),addX:toggX,addXC:toggXC,clearX,xopen,mode:setMode,pickRnd,resetRnd,render,tog,save,all:allPresent,shift,date:setDate,cls:setCls,open,wa,csv,csvAll,del:delRec};
 })();
 
 </script>
@@ -7634,7 +7640,7 @@ function pairs(){if(_pairs)return _pairs;const out=[],seen={};shuf(allQ().filter
  const w=m[1].trim().toLowerCase(),a=m[2].split(/\s*[\/،;]\s*/)[0].trim();
  if(!a||a.length>28||seen[w]||/[A-Za-z]{4,}/.test(a))return;seen[w]=1;out.push({w,a,u:+q.unit||0,l:+q.lesson||0})});_pairs=out;return out}
 /* anti-repeat draw: nothing from the recent list until the pool runs dry */
-function draw(pool,key,n,idf){idf=idf||(x=>x);const rk='s3g2rec_'+uid()+'_'+key;let rec=S.ls.get(rk,[]);
+function draw(pool,key,n,idf){idf=idf||(x=>x);const rk='s3g2rec_'+uid()+'_'+curCls()+'_'+key;let rec=S.ls.get(rk,[]);
  const cap=Math.max(1,Math.min(24,Math.floor(pool.length/2)));let fresh=pool.filter(x=>rec.indexOf(idf(x))<0);
  if(fresh.length<n){rec=[];fresh=pool.slice()}
  const pick=shuf(fresh).slice(0,n);S.ls.set(rk,rec.concat(pick.map(idf)).slice(-cap));return pick}
@@ -11964,22 +11970,29 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
   var VN={e:'Easy',m:'Medium',h:'Hard'};
   function $(id){return document.getElementById(id);}
   function isT(){ try{ return !!((window.s3IsTeacher&&s3IsTeacher())||(window.S3&&S3.isTeacher&&S3.isTeacher())); }catch(e){ return false; } }
-  function load(){ try{ var o=JSON.parse(localStorage.getItem(K)||'{}'); return {u:(o.u||[]).map(Number),l:(o.l||[]).map(String),v:(o.v||[]).map(String)}; }catch(e){ return {u:[],l:[],v:[]}; } }
-  var sc=load();
-  function save(){ try{ localStorage.setItem(K,JSON.stringify(sc)); }catch(e){} }
-  function anySet(){ return sc.u.length||sc.l.length||sc.v.length; }
+  function norm(o){ o=o||{}; return {u:(o.u||[]).map(Number),l:(o.l||[]).map(String),v:(o.v||[]).map(String)}; }
+  var KC='s3_scope_cls_v1';
+  function cc(){ try{ return (window.s3Att&&s3Att.curCls&&s3Att.curCls())||''; }catch(e){ return ''; } }
+  function rawMap(){ try{ return JSON.parse(localStorage.getItem(KC)||'{}')||{}; }catch(e){ return {}; } }
+  function loadFor(c){ var m=rawMap(); if(c&&m[c]) return norm(m[c]); try{ return norm(JSON.parse(localStorage.getItem(K)||'{}')); }catch(e){ return norm(); } }
+  var lastC=cc(), sc=loadFor(lastC);
+  var hold=false;
+  function ensure(){ if(hold) return; var c=cc(); if(c!==lastC){ lastC=c; sc=loadFor(c); } }
+  function save(){ ensure(); try{ var m=rawMap(); if(lastC) m[lastC]=sc; localStorage.setItem(KC,JSON.stringify(m)); if(!lastC) localStorage.setItem(K,JSON.stringify(sc)); }catch(e){} }
+  function anySet(){ ensure(); return sc.u.length||sc.l.length||sc.v.length; }
   function active(){ return !!anySet()&&isT(); }
+  function labelFor(c){ var keep=sc; hold=true; try{ sc=loadFor(c); return label(); }finally{ sc=keep; hold=false; } }
   function lesOf(l){ return /^[1-5]$/.test(String(l))?String(l):'x'; }
   function lvOf(q){ try{ return s3Level(q); }catch(e){ return 'm'; } }
-  function uOk(u,s){ s=s||sc; return !s.u.length||s.u.indexOf(Number(u))>-1; }
-  function qOk(q,s){ s=s||sc; return uOk(q.unit,s)&&(!s.l.length||s.l.indexOf(lesOf(q.lesson))>-1)&&(!s.v.length||s.v.indexOf(lvOf(q))>-1); }
+  function uOk(u,s){ ensure(); s=s||sc; return !s.u.length||s.u.indexOf(Number(u))>-1; }
+  function qOk(q,s){ ensure(); s=s||sc; return uOk(q.unit,s)&&(!s.l.length||s.l.indexOf(lesOf(q.lesson))>-1)&&(!s.v.length||s.v.indexOf(lvOf(q))>-1); }
   function valid(q){ return q&&q.options&&q.options.length>1&&q.answer!=null; }
   function all(){ try{ return (state.allQuestions||[]).filter(valid); }catch(e){ return []; } }
-  function pool(){ return all().filter(function(q){ return qOk(q); }); }
-  function pOk(p){ return uOk(p.u)&&(!sc.l.length||sc.l.indexOf(lesOf(p.l))>-1); }
-  function vOk(t){ return !sc.v.length||sc.v.indexOf(t)>-1; }
+  function pool(){ ensure(); return all().filter(function(q){ return qOk(q); }); }
+  function pOk(p){ ensure(); return uOk(p.u)&&(!sc.l.length||sc.l.indexOf(lesOf(p.l))>-1); }
+  function vOk(t){ ensure(); return !sc.v.length||sc.v.indexOf(t)>-1; }
   function label(){
-    var p=[];
+    ensure(); var p=[];
     if(sc.u.length) p.push((sc.u.length>1?'Units ':'Unit ')+sc.u.slice().sort(function(a,b){return a-b}).join(', '));
     if(sc.l.length) p.push((sc.l.length>1?'Lessons ':'Lesson ')+sc.l.slice().sort().map(function(x){return x==='x'?'Extra':x}).join(', '));
     if(sc.v.length) p.push(['e','m','h'].filter(function(x){return sc.v.indexOf(x)>-1}).map(function(x){return VN[x]}).join(' + '));
@@ -12001,10 +12014,10 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
   function chip(){ return '<div class="s3sc-chip s3sc-chipin" style="margin-bottom:8px">'+chipInner()+'</div>'; }
   /* ---- sheet (same look as Browse by unit) ---- */
   function open(){
-    var old=$('s3sc-sheet'); if(old) old.remove();
+    ensure(); var old=$('s3sc-sheet'); if(old) old.remove();
     var host=document.createElement('div'); host.id='s3sc-sheet'; host.className='qb3-sheet';
     var h='<div class="qb3-sheet-in" role="dialog" aria-label="Class scope">'
-      +'<div class="qb3-sheet-top"><div><div class="qb3-sh">Class scope</div><div class="qb3-ss">Choose once. Random student, the question picker and every class game use it.</div></div><button type="button" class="qb3-done" id="s3sc-done">✓ Done</button></div>'
+      +'<div class="qb3-sheet-top"><div><div class="qb3-sh">Class scope</div><div class="qb3-ss">For class '+cc()+'. Random student, the question picker and every class game use it. Each class keeps its own.</div></div><button type="button" class="qb3-done" id="s3sc-done">✓ Done</button></div>'
       +'<div class="s3sc-body"><div class="qb3-ugrid" id="s3sc-ugrid">';
     for(var n=1;n<=12;n++) h+='<button type="button" class="qb3-ucard" data-u="'+n+'"><span class="qb3-upill">UNIT '+n+'</span><span class="qb3-ut">'+UT[n].replace(/&/g,'&amp;')+'</span><span class="qb3-uc"></span><span class="qb3-uck"></span></button>';
     h+='</div><div class="qb3-less"><div class="qb3-lh">Lessons <span class="qb3-lsub">(inside the units you picked)</span></div><div class="qb3-lchips" id="s3sc-lch">';
@@ -12040,7 +12053,7 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
     $('s3sc-reset').addEventListener('click',function(){ sc={u:[],l:[],v:[]}; save(); paint(); refresh(); });
     paint();
   }
-  window.s3Scope={active:active,pool:pool,q:function(q){return qOk(q);},p:pOk,u:uOk,v:vOk,label:label,chip:chip,open:open,bar:barHtml,state:function(){return sc;}};
+  window.s3Scope={labelFor:labelFor,active:active,pool:pool,q:function(q){return qOk(q);},p:pOk,u:uOk,v:vOk,label:label,chip:chip,open:open,bar:barHtml,state:function(){return sc;}};
   /* take over the old unit/lesson dropdowns in Classroom mode */
   function hook(){
     if(!window.s3G2) return false;
