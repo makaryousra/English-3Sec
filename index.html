@@ -11762,6 +11762,35 @@ html[data-theme=dark] article[data-lv=h]>div:first-child>div:nth-child(2)::befor
   var n=0,iv=setInterval(function(){ attach(); sched(); if(++n>40) clearInterval(iv); },500);
   attach(); sched();
 })();
+/* Focus: the hidden list holds a card with the same id, so the site's own card refresh hit the hidden one. Refresh the Focus card ourselves. */
+(function(){
+  'use strict';
+  function fcard(){ return document.querySelector('#qb3-focus-card article[id^="q-card-"]'); }
+  function inFocus(){ return document.body.classList.contains('qb3-fm') && fcard(); }
+  function redraw(id){
+    try{
+      var a=fcard(); if(!a||a.id!=='q-card-'+id) return;
+      var q=(state.allQuestions||[]).find(function(x){return String(x.id)===String(id);}); if(!q) return;
+      var sp=a.querySelector('span'), m=sp&&/#\s*(\d+)/.exec(sp.textContent||''); var n=m?+m[1]:1;
+      var h=document.createElement('div'); h.innerHTML=buildQuestionCardHTML(q,n,false,false);
+      var nu=h.firstElementChild; if(nu) a.replaceWith(nu);
+    }catch(e){}
+  }
+  function wrap(name,fn){
+    var o=window[name]; if(typeof o!=='function'||o.__qb3fx) return;
+    var w=function(){ var f=inFocus(), id=arguments[0]; var r=fn(o,this,arguments,f); if(f) redraw(id); return r; };
+    w.__qb3fx=1; window[name]=w;
+  }
+  function install(){
+    wrap('selectOption',function(o,t,a,f){ return o.apply(t,a); });
+    wrap('toggleBookmark',function(o,t,a,f){ return o.apply(t,a); });
+    wrap('retryQuestion',function(o,t,a,f){
+      if(f && !a[1]){ delete state.userAnswers[a[0]]; try{ saveState(); updateStats(); }catch(e){} return; }
+      return o.apply(t,a);
+    });
+  }
+  install(); setTimeout(install,600); setTimeout(install,2500);
+})();
 </script>
 <script id="s3-clsauto">
 (function(){
