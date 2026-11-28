@@ -7556,7 +7556,7 @@ async function save(){if(st.saving)return;st.saving=true;draw(true);const ids=ne
  st.saving=false;draw(true)}
 function shift(n){if(st.dirty&&!confirm('You have unsaved changes. Leave this date?'))return;const d=new Date(st.date+'T12:00:00');d.setDate(d.getDate()+n);setDate(ymd(d))}
 function setDate(v){if(!v)return;if(st.dirty&&v!==st.date&&!confirm('You have unsaved changes. Leave this date?')){draw(true);return}st.date=v;applyDay();st.msg='';draw()}
-function setCls(c){if(st.dirty&&c!==st.cls&&!confirm('You have unsaved changes. Leave this class?'))return;try{localStorage.setItem('s3_lastcls',c)}catch(e){}rcur=null;rmsg='';pick(c,st.date)}
+function setCls(c){if(st.dirty&&c!==st.cls&&!confirm('You have unsaved changes. Leave this class?'))return;if(c!==st.cls){window.__s3stage='setup';st.mode='att'}try{localStorage.setItem('s3_lastcls',c)}catch(e){}rcur=null;rmsg='';pick(c,st.date)}
 function open(d){if(st.dirty&&!confirm('You have unsaved changes. Leave this date?'))return;st.date=d;applyDay();st.msg='';draw();window.scrollTo({top:0})}
 function wa(){const L=sessList(),ab=L.filter(s=>st.abs.has(s.id));const t='✅ Attendance · Class '+st.cls+'\n'+dnice(st.date)+'\nPresent: '+(L.length-ab.length)+' / '+L.length+'\n'+(ab.length?'Absent ('+ab.length+'):\n'+ab.map((s,i)=>(i+1)+'. '+tagName(s)).join('\n'):'No absentees 🎉');window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}
 function csvCell(x){return '"'+String(x==null?'':x).replace(/"/g,'""')+'"'}
@@ -7577,23 +7577,25 @@ function gateHtml(cl){let lc='';try{lc=localStorage.getItem('s3_lastcls')||''}ca
  const sl=c=>{try{return (window.s3Scope&&s3Scope.labelFor)?s3Scope.labelFor(c):''}catch(e){return ''}};
  return '<div class="bg-white rounded-2xl border p-5" style="margin-bottom:12px"><div class="s3h" style="font-size:19px">🏫 Which class are you teaching now?</div><div class="s3sub" style="margin:6px 0 12px">Each class keeps its own questions and unit scope, so every class continues from where it stopped.</div>'+
  cl.map(c=>'<button class="s3btn'+(c===lc?'':' ghost')+'" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:14px 16px" onclick="s3Att.gate(\''+esc(c).replace(/'/g,"\\'")+'\')"><b style="font-size:18px">Class '+esc(c)+'</b>'+(c===lc?' <span style="font-size:12px;opacity:.85">· last used</span>':'')+'<span style="display:block;font-size:12.5px;opacity:.8;margin-top:2px">📚 '+esc(sl(c))+'</span></button>').join('')+'</div>'}
-function gate(c){window.__s3gated=true;try{localStorage.setItem('s3_lastcls',c)}catch(e){}rcur=null;rmsg='';pick(c,st.date)}
+function gate(c){window.__s3gated=true;window.__s3stage='setup';st.mode='att';try{localStorage.setItem('s3_lastcls',c)}catch(e){}rcur=null;rmsg='';pick(c,st.date)}
 function draw(keepScroll){const v=$('view-attend');if(!v)return;if(!S.isTeacher()){v.innerHTML='';return}
  const cl=clsList();if(!cl.length){v.innerHTML='<div class="bg-white rounded-2xl border p-5"><div class="s3h">✅ Attendance</div><div class="s3sub" style="margin-top:6px">No students yet. Create accounts in the Students tab first.</div></div>';return}
  if(!st.cls||!cl.includes(st.cls)){let lc='';try{lc=localStorage.getItem('s3_lastcls')||''}catch(e){}st.cls=cl.includes(lc)?lc:cl[0];pick(st.cls,st.date);return}
  if(!window.__s3gated){v.innerHTML=gateHtml(cl);return}
  const L=stuList(),cnt=counts(),days=Object.keys(st.rec).length,nAbs=sessList().filter(s=>st.abs.has(s.id)).length,y=window.scrollY;
- let h='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div class="s3h" style="font-size:17px">🏫 Classroom mode · Class '+esc(st.cls)+'</div>'+(window.s3G2?s3G2.lessonBar():'')+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="s3btn'+(st.mode==='att'?'':' ghost')+'" style="flex:1 1 100%" onclick="s3Att.mode(\'att\')">✅ Attendance</button><button class="s3btn'+(st.mode==='rnd'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'rnd\')">🎲 Random student</button><button class="s3btn'+(st.mode==='quiz'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'quiz\')">❓ Question picker</button><button class="s3btn ghost" style="flex:1 1 100%" onclick="s3Duel.teacher()">⚔️ 1v1 Duel</button></div>'+
+ const SS=window.__s3stage!=='session';if(SS&&st.mode!=='att')st.mode='att';
+ let h='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div class="s3h" style="font-size:17px">🏫 Classroom mode · Class '+esc(st.cls)+'</div>'+(SS?'<div class="s3sub" style="margin-top:4px;line-height:1.5">Step 1: take attendance. Add students from other classes if needed. Then press Start session.</div>':(window.s3G2?s3G2.lessonBar():'')+'<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="s3btn'+(st.mode==='att'?'':' ghost')+'" style="flex:1 1 100%" onclick="s3Att.mode(\'att\')">✅ Attendance</button><button class="s3btn'+(st.mode==='rnd'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'rnd\')">🎲 Random student</button><button class="s3btn'+(st.mode==='quiz'?'':' ghost')+'" style="flex:1 1 40%" onclick="s3Att.mode(\'quiz\')">❓ Question picker</button><button class="s3btn ghost" style="flex:1 1 100%" onclick="s3Duel.teacher()">⚔️ 1v1 Duel</button></div>')+
  '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">'+cl.map(c=>'<button class="s3btn'+(c===st.cls?'':' ghost')+'" onclick="s3Att.cls(\''+esc(c).replace(/'/g,"\\'")+'\')">'+esc(c)+'</button>').join('')+'</div>'+xpanel()+
  (st.mode!=='att'?'':'<div style="display:flex;gap:6px;align-items:center"><button class="s3btn ghost" onclick="s3Att.shift(-1)" aria-label="Previous day">◀</button><input type="date" class="s3in" style="flex:1;min-width:0" value="'+st.date+'" onchange="s3Att.date(this.value)"><button class="s3btn ghost" onclick="s3Att.shift(1)" aria-label="Next day">▶</button></div>'+
  '<div class="s3sub" style="margin-top:6px">'+dnice(st.date)+(st.date===today()?' · Today':'')+(st.loaded==='saved'?' · <b style="color:var(--ok,#16a34a)">Saved before, you can edit</b>':' · Not saved yet')+'</div>')+'</div>';
+ if(st.mode==='go'){v.innerHTML=goHtml()+'<div style="height:12px"></div>'+h;return}
  if(st.mode==='rnd'){v.innerHTML=h+rndHtml();return}
  if(st.mode==='quiz'){v.innerHTML=h+'<div id="pk-host"></div>';if(window.s3Picker)s3Picker.render();return}
  if(st.busy)h+='<div class="s3sub" style="padding:20px;text-align:center">Loading… ⏳</div>';
  else{h+='<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px"><div><b style="color:var(--ok,#16a34a)">Present '+(sessList().length-nAbs)+'</b> · <b style="color:#e11d48">Absent '+nAbs+'</b> <span class="s3sub">of '+sessList().length+'</span></div><button class="s3btn ghost" onclick="s3Att.all()">Mark all present</button></div>'+
  '<div class="s3sub" style="margin-bottom:8px">Tap a name to mark absent. Tap again to undo.</div>'+
  L.concat(extraList()).map(s=>{const a=st.abs.has(s.id),ex=s.cls!==st.cls,n=ex?0:(cnt[s.id]||0);return '<button onclick="s3Att.tog(\''+s.id+'\')" style="display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;padding:13px 12px;margin-bottom:6px;border-radius:12px;font-size:15px;cursor:pointer;color:var(--tx);border:2px solid '+(a?'#e11d48':'var(--bd)')+';background:'+(a?'var(--nobg,#fee2e2)':'var(--surf2,#f1f5f9)')+'"><span style="min-width:0"><b>'+esc(s.name)+'</b>'+(ex?' <span class="s3sub" style="font-size:12px">· Class '+esc(s.cls)+'</span>':'')+(n?'<span class="s3sub" style="display:block;font-size:11px">Absent '+n+(n===1?' time':' times')+' of '+days+' days</span>':'')+'</span><span style="font-weight:800;white-space:nowrap;color:'+(a?'#e11d48':'var(--ok,#16a34a)')+'">'+(a?'✗ Absent':'✓ Present')+'</span></button>'}).join('')+'</div>'+
- '<div style="position:sticky;bottom:0;z-index:5;background:var(--bg,#f1f5f9);padding:8px 0 10px"><button class="s3btn" style="width:100%;padding:14px;font-size:16px" onclick="s3Att.save()" '+(st.saving?'disabled':'')+'>'+(st.saving?'Saving…':st.dirty?'💾 Save attendance':'💾 Save attendance')+'</button>'+(st.msg?'<div style="text-align:center;margin-top:6px;font-size:13px">'+st.msg+'</div>':st.dirty?'<div class="s3sub" style="text-align:center;margin-top:6px">Unsaved changes</div>':'')+'</div>'+
+ '<div style="position:sticky;bottom:0;z-index:5;background:var(--bg,#f1f5f9);padding:8px 0 10px">'+(SS?'<div style="display:flex;gap:8px"><button class="s3btn ghost" style="flex:1;padding:14px;font-size:15px" onclick="s3Att.save()" '+(st.saving?'disabled':'')+'>'+(st.saving?'Saving…':'💾 Save')+'</button><button class="s3btn" style="flex:1.5;padding:14px;font-size:16px" onclick="s3Att.start()" '+(st.saving?'disabled':'')+'>▶ Start session</button></div>':'<button class="s3btn" style="width:100%;padding:14px;font-size:16px" onclick="s3Att.save()" '+(st.saving?'disabled':'')+'>'+(st.saving?'Saving…':'💾 Save attendance')+'</button>')+(st.msg?'<div style="text-align:center;margin-top:6px;font-size:13px">'+st.msg+'</div>':st.dirty?'<div class="s3sub" style="text-align:center;margin-top:6px">Unsaved changes</div>':'')+'</div>'+
  '<div class="bg-white rounded-2xl border p-4" style="margin-bottom:12px"><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="s3btn ghost" onclick="s3Att.wa()">💬 WhatsApp absentees</button><button class="s3btn ghost" onclick="s3Att.csv()">⬇ Excel (this class)</button><button class="s3btn ghost" onclick="s3Att.csvAll()">⬇ Excel (all classes)</button></div>'+(st.rec[st.date]?'<div style="margin-top:8px"><button class="s3btn ghost" style="font-size:12px" onclick="s3Att.del()">Delete this day\'s record</button></div>':'')+'</div>'+
  '<div class="bg-white rounded-2xl border p-4"><div class="s3h" style="font-size:15px">History · Class '+esc(st.cls)+' ('+days+' days)</div>'+(days?'<div style="margin-top:8px">'+Object.keys(st.rec).sort().reverse().slice(0,60).map(d=>{const n=(st.rec[d].absent||[]).length;return '<button onclick="s3Att.open(\''+d+'\')" style="display:flex;justify-content:space-between;width:100%;padding:10px 4px;border:0;border-bottom:1px solid var(--bd);background:none;color:var(--tx);font-size:14px;text-align:left;cursor:pointer"><span'+(d===st.date?' style="font-weight:800"':'')+'>'+dnice(d)+'</span><span style="color:'+(n?'#e11d48':'var(--ok,#16a34a)')+'">'+(n?n+' absent':'all present')+'</span></button>'}).join('')+'</div>':'<div class="s3sub" style="margin-top:6px">No saved days yet.</div>')+'</div>'}
  v.innerHTML=h;if(keepScroll)window.scrollTo(0,y)}
@@ -7606,11 +7608,35 @@ function pickRnd(){if(spinT)return;const L=sessList(),ab=absToday(),avail=L.filt
  spinT=setInterval(()=>{n++;const e=el();if(e)e.textContent=tagName(avail[Math.floor(Math.random()*avail.length)]);if(n>=14){clearInterval(spinT);spinT=null;pk.push(win.id);RN.picked[st.cls]=pk;try{if(window.s3Rota&&s3Rota.mark){s3Rota.sync('rand',avail.map(tagName));s3Rota.mark('rand',tagName(win))}}catch(e){}S.ls.set(RK,RN);rcur=win.id;draw(true)}},70)}
 function resetRnd(){RN.picked[st.cls]=[];S.ls.set(RK,RN);rcur=null;rmsg='';draw(true)}
 function setMode(m){if(m==='att'&&spinT)return;st.mode=m;rmsg='';draw()}
+/* ---- session flow: class -> attendance -> Start session -> continue / unit and lessons / explain a lesson ---- */
+function asked(c){try{const o=JSON.parse(localStorage.getItem('s3_picker_v1')||'{}');return ((o.uq||{})[c]||[]).length}catch(e){return 0}}
+function goHtml(){const c=st.cls,n=asked(c);let sl='';try{sl=window.s3Scope?s3Scope.labelFor(c):''}catch(e){}
+ const card=(ic,t,sub,act,pri)=>'<button type="button" class="s3btn'+(pri?'':' ghost')+'" style="display:block;width:100%;text-align:left;margin-bottom:10px;padding:16px" onclick="'+act+'"><b style="font-size:17px">'+ic+' '+t+'</b><span style="display:block;font-size:12.5px;opacity:.85;margin-top:3px">'+sub+'</span></button>';
+ return '<div class="bg-white rounded-2xl border p-4"><div class="s3h" style="font-size:17px">▶ Session started · Class '+esc(c)+'</div><div class="s3sub" style="margin:4px 0 12px">What do you want to do now?</div>'+
+  card('▶','Continue from the last point','Question picker for this class'+(n?' · '+n+' questions already asked':' · starts from the beginning'),'s3Att.go(\'cont\')',1)+
+  card('📚','Choose unit and lessons','Now: '+esc(sl||'All units')+' · then the question picker starts','s3Att.go(\'units\')')+
+  card('📖','Explain a lesson','Open the Study Guide: grammar slides, reading and writing for a unit','s3Att.go(\'explain\')')+
+  '<div class="s3sub" style="margin-top:4px">Random student, Question picker, Class games, 1v1 Duel and Attendance are in the buttons above.</div></div>'}
+async function startSession(){if(st.saving)return;if(st.dirty){await save();if(st.dirty&&!confirm('Attendance was not saved. Start the session anyway?'))return}
+ window.__s3stage='session';st.mode='go';st.msg='';draw();window.scrollTo({top:0})}
+const UTS=["Inside the World of Care","The Power of Machines","Protect Nature, Protect Future","Marine Life","From Muscles to Mindset","Let's Hang Out!","At the Airport","A Journey Through Time","The Universe's Mysteries","People's Hospitality & Kindness","Literature","University Life & Career Choices"];
+function exSheet(n){let h=$('s3-ex-sheet');if(!h){h=document.createElement('div');h.id='s3-ex-sheet';h.style.cssText='position:fixed;inset:0;z-index:99990;background:rgba(2,6,23,.55);display:flex;align-items:flex-end;justify-content:center';document.body.appendChild(h);h.addEventListener('click',e=>{if(e.target===h)h.remove()})}
+ const box=b=>'<div style="width:100%;max-width:520px;max-height:82vh;overflow:auto;background:var(--surf,#fff);color:var(--tx,#0f172a);border-radius:22px 22px 0 0;padding:16px 16px 20px">'+b+'</div>';
+ const top=t=>'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b style="font-size:18px">'+t+'</b><button type="button" class="s3btn ghost" style="padding:6px 12px" onclick="document.getElementById(\'s3-ex-sheet\').remove()">✕</button></div>';
+ if(!n){h.innerHTML=box(top('Explain which unit?')+UTS.map((t,i)=>'<button type="button" class="s3btn ghost" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:12px 14px" onclick="s3Att.exUnit('+(i+1)+')"><b>Unit '+(i+1)+'</b> · '+esc(t)+'</button>').join(''));return}
+ h.innerHTML=box(top('Unit '+n+' · '+esc(UTS[n-1]))+
+  '<button type="button" class="s3btn" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:14px" onclick="s3Att.exOpen('+n+',1)"><b>▶ Grammar slides</b><span style="display:block;font-size:12.5px;opacity:.85">Open the slides full screen to explain</span></button>'+
+  '<button type="button" class="s3btn ghost" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:14px" onclick="s3Att.exOpen('+n+',0)"><b>📖 Study Guide page</b><span style="display:block;font-size:12.5px;opacity:.8">Grammar, reading lessons, writing and flashcards of this unit</span></button>'+
+  '<button type="button" class="s3btn ghost" style="display:block;width:100%;padding:12px" onclick="s3Att.exUnit(0)">← Other unit</button>')}
+function exOpen(n,deck){const h=$('s3-ex-sheet');if(h)h.remove();try{window.switchTab('reference')}catch(e){}try{window.guideSel(n)}catch(e){}if(deck)setTimeout(()=>{try{window.guideOpenDeck(n)}catch(e){}},200)}
+function goDo(k){if(k==='cont'){setMode('quiz');return}
+ if(k==='units'){try{s3Scope.open()}catch(e){return}let t=0;const iv=setInterval(()=>{if(!$('s3sc-sheet')||++t>600){clearInterval(iv);if(window.__s3stage==='session'&&st.mode==='go'){setMode('quiz')}}},300);return}
+ if(k==='explain')exSheet(0)}
 function render(){if(!S.isTeacher())return;const v=$('view-attend');if(!v)return;
  if(cloud()&&S3CLOUD.offline){v.innerHTML='<div class="bg-white rounded-2xl border p-5 s3sub">Attendance needs the internet. Try again when you are online.</div>';return}
  if(cloud()&&!S3CLOUD.fresh()){v.innerHTML='<div class="s3sub" style="padding:20px">Loading… ⏳</div>';S3CLOUD.loadTeacher().then(()=>{st.cls='';draw()});return}
  st.cls='';st.date=today();draw()}
-window.s3Att={gate,curCls:()=>st.cls,absentNames:()=>{const ab=absToday();return sessList().filter(s=>ab.has(s.id)).map(tagName)},idOf:tn=>{const s=sessList().find(x=>tagName(x)===tn);return s?s.id:null},extraNames:()=>extraList().map(tagName),addX:toggX,addXC:toggXC,clearX,xopen,mode:setMode,pickRnd,resetRnd,render,tog,save,all:allPresent,shift,date:setDate,cls:setCls,open,wa,csv,csvAll,del:delRec};
+window.s3Att={start:startSession,go:goDo,exUnit:exSheet,exOpen,gate,curCls:()=>st.cls,absentNames:()=>{const ab=absToday();return sessList().filter(s=>ab.has(s.id)).map(tagName)},idOf:tn=>{const s=sessList().find(x=>tagName(x)===tn);return s?s.id:null},extraNames:()=>extraList().map(tagName),addX:toggX,addXC:toggXC,clearX,xopen,mode:setMode,pickRnd,resetRnd,render,tog,save,all:allPresent,shift,date:setDate,cls:setCls,open,wa,csv,csvAll,del:delRec};
 })();
 
 </script>
@@ -12213,49 +12239,12 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
     chev:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>'
   };
   function fmt(n){ try{ return Number(n).toLocaleString('en-US'); }catch(e){ return String(n); } }
-  /* teacher home: class profile in place of the progress ring */
-  function isTch(){ try{ return !!(window.S3&&S3.isTeacher&&S3.isTeacher()); }catch(e){ return false; } }
-  function eh(x){ return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-  function roster(){ try{ return (S3.CLS().students)||[]; }catch(e){ return []; } }
-  function classes(){ var m={}; roster().forEach(function(s){ if(s&&s.cls) m[s.cls]=(m[s.cls]||0)+1; }); return Object.keys(m).sort(function(a,b){return a.localeCompare(b,undefined,{numeric:true})}).map(function(c){return {c:c,n:m[c]}}); }
-  function lastCls(){ var c=''; try{ c=localStorage.getItem('s3_lastcls')||''; }catch(e){} return classes().some(function(x){return x.c===c})?c:''; }
-  function scopeOf(c){ try{ return (window.s3Scope&&s3Scope.labelFor)?s3Scope.labelFor(c):''; }catch(e){ return ''; } }
-  function tName(){ try{ return (S3.SESS()||{}).name||'Teacher'; }catch(e){ return 'Teacher'; } }
-  function tHero(){
-    var c=lastCls(), n=0; classes().forEach(function(x){ if(x.c===c) n=x.n; });
-    var circ=c?'<b style="font-size:'+(c.length>3?'20':'28')+'px">'+eh(c)+'</b><span>class</span>':'<b style="font-size:34px">\ud83c\udfeb</b>';
-    return '<div class="qb3-hero qb3-thero" id="qb3-th-hero" role="button" tabindex="0" style="cursor:pointer"><div class="qb3-ring" style="--p:100"><div class="qb3-ringin">'+circ+'</div></div>'
-      +'<div class="qb3-hm"><div class="qb3-hk">'+(c?'Class profile':'Teacher profile')+'</div><div class="qb3-hn" style="margin-bottom:8px"><b style="font-size:'+(c?'24':'20')+'px">'+(c?'Class '+eh(c):eh(tName()))+'</b></div>'
-      +'<div class="qb3-chips">'+(c?'<span>\ud83d\udc65 '+n+' students</span><span style="white-space:normal">\ud83d\udcda '+eh(scopeOf(c))+'</span>':'<span>Tap to choose a class</span>')+(c?'<span>Change \u203a</span>':'')+'</div></div></div>';
-  }
-  function tCard(){
-    var c=lastCls();
-    return '<button type="button" class="qb3-sc pri" id="qb3-st-class"><span class="qb3-sci"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11a3 3 0 1 0-6 0M5 20a7 7 0 0 1 14 0"/><circle cx="12" cy="8" r="3.2"/></svg></span><span class="qb3-sct"><b>'+(c?'Open class '+eh(c):'Choose a class')+'</b><span>Attendance, add students, unit and lessons</span></span><span class="qb3-scc">'+IC.chev+'</span></button>';
-  }
-  function openClass(c){
-    var sh=$('qb3-th-sheet'); if(sh) sh.remove();
-    leave();
-    try{ window.s3Att.gate(c); }catch(e){}
-    try{ window.switchTab('attend'); }catch(e){}
-  }
-  function tSheet(){
-    var old=$('qb3-th-sheet'); if(old){ old.remove(); return; }
-    var lc=lastCls(), h=document.createElement('div'); h.id='qb3-th-sheet';
-    h.style.cssText='position:fixed;inset:0;z-index:99990;background:rgba(2,6,23,.55);display:flex;align-items:flex-end;justify-content:center';
-    var b='<div style="width:100%;max-width:520px;max-height:82vh;overflow:auto;background:var(--surf,#fff);color:var(--tx,#0f172a);border-radius:22px 22px 0 0;padding:16px 16px 20px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:18px">Choose a class</b><button type="button" id="qb3-th-x" class="s3btn ghost" style="padding:6px 12px">\u2715</button></div><div style="font-size:12.5px;opacity:.7;margin-bottom:10px">Each class keeps its own questions, unit scope and attendance.</div>';
-    classes().forEach(function(x){ b+='<button type="button" class="s3btn'+(x.c===lc?'':' ghost')+'" data-c="'+eh(x.c)+'" style="display:block;width:100%;text-align:left;margin-bottom:8px;padding:13px 15px"><b style="font-size:17px">Class '+eh(x.c)+'</b> <span style="font-size:12px;opacity:.85">\u00b7 '+x.n+' students'+(x.c===lc?' \u00b7 last used':'')+'</span><span style="display:block;font-size:12.5px;opacity:.8;margin-top:2px">\ud83d\udcda '+eh(scopeOf(x.c))+'</span></button>'; });
-    if(!classes().length) b+='<div style="padding:12px;opacity:.7">No students yet. Create accounts in the Students tab first.</div>';
-    b+='<button type="button" id="qb3-th-me" class="s3btn ghost" style="display:block;width:100%;text-align:left;padding:13px 15px"><b>Personal</b> <span style="font-size:12px;opacity:.85">\u00b7 my own practice, no class</span></button></div>';
-    h.innerHTML=b; document.body.appendChild(h);
-    h.addEventListener('click',function(e){ var t=e.target; if(t===h){ h.remove(); return; } var cb=t.closest&&t.closest('button[data-c]'); if(cb){ openClass(cb.getAttribute('data-c')); return; } if(t.closest&&t.closest('#qb3-th-x')){ h.remove(); return; } if(t.closest&&t.closest('#qb3-th-me')){ try{ localStorage.removeItem('s3_lastcls'); }catch(e2){} h.remove(); build(); } });
-  }
   function html(p){
     var pct=p.t?Math.round(p.a*100/p.t):0, acc=p.a?Math.round(p.ok*100/p.a):0, st=0;
     try{ st=state.streak||0; }catch(e){}
     var nextT=p.n?('Question #'+fmt(p.n)+(p.unit?' \u00b7 Unit '+p.unit:'')):'Start from question #1';
     var cont='<button type="button" class="qb3-sc pri" id="qb3-st-cont"><span class="qb3-sci">'+IC.play+'</span><span class="qb3-sct"><b>Continue where I stopped</b><span>'+nextT+'</span></span><span class="qb3-scc">'+IC.chev+'</span></button>';
     var units='<button type="button" class="qb3-sc" id="qb3-st-units"><span class="qb3-sci">'+IC.grid+'</span><span class="qb3-sct"><b>Browse by unit</b><span>'+p.units+' units \u00b7 '+fmt(p.t)+' questions</span></span><span class="qb3-scc">'+IC.chev+'</span></button>';
-    if(isTch()){ cont=cont.replace(' pri"','"'); return tHero()+'<div class="qb3-cards">'+tCard()+cont+units+'</div>'; }
     return '<div class="qb3-hero"><div class="qb3-ring" style="--p:'+pct+'"><div class="qb3-ringin"><b>'+pct+'%</b><span>done</span></div></div>'
         +'<div class="qb3-hm"><div class="qb3-hk">Your progress</div><div class="qb3-hn"><b>'+fmt(p.a)+'</b> / '+fmt(p.t)+'</div>'
         +'<div class="qb3-chips"><span>\ud83c\udfaf '+acc+'% accuracy</span><span>\ud83d\udd25 '+st+' streak</span></div></div></div>'
@@ -12268,8 +12257,6 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
     if(!el){ el=document.createElement('div'); el.id='qb3-start'; v.insertBefore(el,v.firstChild); }
     var p=pos();
     el.innerHTML=html(p);
-    if(isTch()){ var th=$('qb3-th-hero'); if(th){ th.onclick=tSheet; th.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tSheet(); } }; }
-      var tc=$('qb3-st-class'); if(tc) tc.onclick=function(){ var c=lastCls(); if(c) openClass(c); else tSheet(); }; }
     $('qb3-st-units').onclick=function(){ var b=$('qb3-units-btn'); if(b) b.click(); };
     $('qb3-st-cont').onclick=function(){
       try{ if(typeof unitMsSet==='function') unitMsSet('all'); }catch(e){}
