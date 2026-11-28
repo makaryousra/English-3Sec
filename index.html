@@ -271,11 +271,11 @@ function ahead(pk,s){var sv=false;try{sv=navigator.connection&&navigator.connect
 function clip(f,ix,e){var k=f+e.join(','),pk=ix.p[e[0]],off=e[1],len=e[2];if(cache.has(k))return Promise.resolve(cache.get(k));
  return pget(k).then(function(h){if(h&&h.byteLength>=len){var u=mk(k,h);warm(f,ix,pk,e[0],off+len);return u}return clip2(f,ix,e,k,pk,off,len)})}
 function clip2(f,ix,e,k,pk,off,len){
- var bl=blocks[pk];if(bl&&off>=bl.s&&off+len<=bl.s+bl.b.byteLength){var u=mk(k,bl.b.slice(off-bl.s,off-bl.s+len));ahead(pk,off+len);return Promise.resolve(u)}
+ var bl=blocks[pk];if(bl&&off>=bl.s&&off+len<=bl.s+bl.b.byteLength){var u=mk(k,bl.b.slice(off-bl.s,off-bl.s+len));if(len>30000)ahead(pk,off+len);return Promise.resolve(u)}
  if(bad[pk]&&Date.now()-bad[pk]<5000)return Promise.resolve(null);
  function one(){return rng(pk,off,len).then(function(b){return b&&b.byteLength>=len?b:null})}
  return one().then(function(b){if(b||Date.now()<rangeBad)return b;return new Promise(function(r){setTimeout(r,300)}).then(one)}).then(function(b){
-  if(!b){bad[pk]=Date.now();return null}var u=mk(k,b.slice(0,len));pput(k,b.slice(0,len));ahead(pk,off+len);warm(f,ix,pk,e[0],off+len);return u})}
+  if(!b){bad[pk]=Date.now();return null}var u=mk(k,b.slice(0,len));pput(k,b.slice(0,len));if(len>30000)ahead(pk,off+len);warm(f,ix,pk,e[0],off+len);return u})}
 window.s3Pill=function(msg,retry,alt){var p=document.getElementById('s3-pill');var LD=document.getElementById('ls-load');if(LD){if(msg&&!retry&&/^\u23f3/.test(msg)){LD.textContent=msg;LD.style.display='block';if(p)p.remove();return}LD.style.display='none'}if(!msg){if(p)p.remove();return}
  if(!p){p=document.createElement('div');p.id='s3-pill';p.style.cssText='position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:99999;background:#0f172a;color:#fff;border-radius:999px;padding:10px 16px;font:600 14px system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.3);display:flex;gap:10px;align-items:center;max-width:92vw';document.body.appendChild(p)}
  p.textContent=msg;if(retry){var b=document.createElement('button');b.textContent='Try again';b.style.cssText='background:#6366f1;color:#fff;border:0;border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer';b.onclick=function(){window.s3Pill();retry()};p.appendChild(b);if(alt){var a2=document.createElement('button');a2.textContent='Phone voice';a2.style.cssText='background:#475569;color:#fff;border:0;border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer';a2.onclick=function(){window.s3Pill();alt()};p.appendChild(a2)}clearTimeout(window.__pillT);window.__pillT=setTimeout(function(){window.s3Pill()},20000);var x=document.createElement('button');x.textContent='✕';x.style.cssText='background:none;color:#fff;border:0;cursor:pointer';x.onclick=function(){window.s3Pill()};p.appendChild(x)}};
@@ -5578,13 +5578,13 @@ function vStatus(){const s=document.getElementById('s3-vstat');if(!s)return;cons
  else if(!VOICES.length)s.textContent=vTries<25?'⏳ Loading voices...':'⚠️ No English voices on this device. Install one in the device settings (Text-to-speech)';
  else s.textContent='⚠️ No '+(uk?'British':'American')+' voice on this device. The closest available voice will be used'}
 let spkId=0,keep=null,pending=null;
-function speak(raw,cb,pitch,langOv,_try){
+function speak(raw,cb,pitch,langOv,_try,_nolw){
  if(!raw||!String(raw).trim())return;
  if(!window.speechSynthesis){toast('Speech is not supported in this browser. Try Chrome, Edge or Safari.');return}
  const text=prep(raw);if(!text)return;
  const arabic=AR.test(text),lang=arabic?'ar-SA':(langOv||state.voiceAccent||'en-US');
  if(!VOICES.length)loadV();
- const id=++spkId;clearInterval(keep);
+ const id=++spkId;clearInterval(keep);try{if(window.__lwA){window.__lwA.onended=window.__lwA.onerror=null;window.__lwA.pause();window.__lwA=null}}catch(e){}
  const run=()=>{if(id!==spkId)return;
   const v=bestVoice(lang);
   const parts=(text.match(/[^.!?;:؟،]+[.!?;:؟،]*/g)||[text]).map(p=>p.trim()).filter(Boolean);
@@ -5610,6 +5610,14 @@ function speak(raw,cb,pitch,langOv,_try){
   if(/Chrome/.test(ua)&&!/Android|Edg|OPR/.test(ua)&&v&&v.localService===false)
    keep=setInterval(()=>{if(!speechSynthesis.speaking){clearInterval(keep);return}speechSynthesis.pause();speechSynthesis.resume()},10000)};
  const fam=!arabic&&window.S3A?S3A.fam(lang):null;
+ const lwu=(fam&&!_nolw&&/^[A-Za-z'\-]{2,30}$/.test(text)&&S3A.key&&location.protocol!=='file:')?'lw/'+fam+'_'+S3A.key(text.toLowerCase())+'.mp3':null;
+ /* single words: a tiny per-word clip (lw/ folder) first, so a word tap never touches the big packs */
+ if(lwu){S3A.stop();const B=window.__lwB=window.__lwB||{};const nx=()=>{if(id===spkId)speak(raw,cb,pitch,langOv,_try,1)};
+  const play=src=>{if(id!==spkId)return;const a=new Audio(src);window.__lwA=a;a.playbackRate=Math.max(.5,Math.min(1.5,state.voiceRate||1));try{a.preservesPitch=true}catch(e){}
+   a.onended=()=>{if(window.__lwA===a){window.__lwA=null;if(cb)cb()}};a.onerror=()=>{if(window.__lwA===a){window.__lwA=null;nx()}};
+   const pr=a.play();if(pr&&pr.catch)pr.catch(()=>{if(window.__lwA===a){window.__lwA=null;nx()}})};
+  if(B[lwu])play(B[lwu]);else fetch(lwu).then(r=>{if(!r.ok)throw 0;return r.blob()}).then(b=>{if(b.size<1000||/html|json/.test(b.type||''))throw 0;B[lwu]=URL.createObjectURL(b);play(B[lwu])}).catch(nx);
+  return}
  if(fam){S3A.stop();const lt0=setTimeout(()=>{if(id===spkId)s3Pill('⏳ Loading audio…')},500),lt1=setTimeout(()=>{if(id===spkId)s3Pill('⏳ Slow connection, still loading…')},5000);const retry=()=>speak(raw,cb,pitch,langOv);
   S3A.play(fam,text,Math.max(.5,Math.min(1.5,state.voiceRate||1)),()=>id===spkId,cb).then(ok=>{clearTimeout(lt0);clearTimeout(lt1);if(id!==spkId){return}
    if(ok){s3Pill();let lt=-1,n=0;const w=setInterval(()=>{if(id!==spkId){clearInterval(w);return}const q=S3A.probe();if(!q||q.e){clearInterval(w);return}if(q.p||q.t===lt){if(++n>=3){clearInterval(w);S3A.stop();s3Pill('⚠ Audio stopped',retry)}}else{n=0;lt=q.t}},2000);return}
@@ -9669,14 +9677,14 @@ function story(id){const c=STORY[id];if(!c)return;const old=document.getElementB
 const STEPS=[
  {sel:'#s3-chip',t:'This is YOU 👋',b:'Your rank, XP and 🔥 streak live here. Tap the chip to see all 13 ranks, from Beginner to 🌌 Mythic, and your badge collection. Open the app every day or the fire goes out. No pressure. OK, a little pressure.'},
  {sel:'button[aria-label="Menu"]',t:'The magic menu',b:'Everything hides in here: Bank, Reading, Listening, Speaking, 🎮 Play, 🎁 Rewards, and the 🧭 placement test that finds your English level from A1 to C1. Like a restaurant menu, but free.'},
- {sel:'#filter-section',t:'Find your questions',b:'Pick your unit and lesson, or type a word. The list gets smaller. Magic.'},
- {sel:'#questions-container>*',t:'Tap and earn',b:'Choose an answer. Right = +10 XP. Wrong = the question goes to Mastery jail and comes back tomorrow. You win either way.'},
+ {sel:'#qb3-st-cont',t:'Pick up where you stopped',b:'One tap and you are back at your next question. No searching, no scrolling.'},
+ {sel:'#qb3-st-units',t:'Browse by unit',b:'Choose a unit and a lesson, or look for a word. Then tap an answer: right = +10 XP. Wrong = the question goes to Mastery jail and comes back tomorrow. You win either way.'},
  {sel:'button[aria-label="Menu"]',t:"Today's Cards 🎴",b:'In the menu, open 🎮 Play → 🎴 Cards: three new cards wait for you every day, a word, a saying and an expression. Tap a card to flip it and earn +5 XP. When you see the 🟡 New cards for today! pointer, that is your cue. Thirty seconds a day keeps the dictionary away.'},
  {sel:'#s3-chip',t:'Loot time 🎁',b:'New goodies: avatar frames up to level 110, 24 milestone avatars to unlock, and bonus XP every week you study hard. Open 🎁 Rewards from the menu and see what you already won.'},
  {sel:'button[aria-label="Settings"]',t:'Your controls',b:'Colors, voice speed, and this tour (if you ever miss it) are in here. Tour over. Now: missions!'}
 ];
 let T=null;
-function startTour(){if(!stu()||T)return;try{switchTab('bank')}catch(e){}T={i:0};
+function startTour(){if(!stu()||T)return;try{switchTab('bank')}catch(e){}try{const g=document.getElementById('s3-greet');if(g)g.remove()}catch(e){}T={i:0};
  T.ring=document.createElement('div');T.ring.style.cssText='position:fixed;z-index:99992;border:3px solid var(--ac,#6366f1);border-radius:14px;box-shadow:0 0 0 9999px rgba(2,6,23,.72);pointer-events:none;transition:all .25s;display:none';
  T.bub=document.createElement('div');T.bub.id='s3-tour-bubble';T.bub.style.cssText='position:fixed;z-index:99993;background:var(--surf,#fff);color:var(--tx,#0f172a);border:1px solid var(--bd,#e2e8f0);border-radius:16px;padding:14px;max-width:320px;box-shadow:0 16px 44px rgba(0,0,0,.4);box-sizing:border-box';
  document.body.append(T.ring,T.bub);step(0)}
@@ -9684,6 +9692,7 @@ function step(i){
  if(!T)return;
  if(i>=STEPS.length)return endTour(true);
  T.i=i;const s=STEPS[i];let el=document.querySelector(s.sel);
+ if(el){const q=el.getBoundingClientRect();if(q.width<4||q.height<4||getComputedStyle(el).visibility==='hidden')el=null}
  if(!el)return step(i+1);
  try{el.scrollIntoView({block:'center',behavior:'instant'})}catch(e){try{el.scrollIntoView()}catch(_){} }
  const r=el.getBoundingClientRect(),pad=6,W=innerWidth,H=innerHeight;
@@ -9717,6 +9726,9 @@ setInterval(()=>{try{const body=$('s3-set-body');if(!body||$('s3-tour-row'))retu
 let tries=0;
 const boot=setInterval(()=>{tries++;try{
  const g=$('s3-gate'),inApp=stu()&&(!g||getComputedStyle(g).display==='none')&&$('s3-chip');
+ const ovOpen=[...document.querySelectorAll('[id$="-ov"]')].some(o=>o.offsetParent!==null||getComputedStyle(o).position==='fixed'&&getComputedStyle(o).display!=='none');
+ const homeReady=document.body.classList.contains('qb3-home')||!$('qb3-start')&&tries>8;
+ if(inApp&&(ovOpen||!homeReady)&&tries<85)return;
  if(inApp){clearInterval(boot);try{switchTab('bank')}catch(e){}
   let done=0;try{done=S().ls.get('s3tour_v1_'+S().SESS().id,0)}catch(e){}
   if(!done)setTimeout(startTour,900);else if(!questDone())showPill()}}catch(e){}
