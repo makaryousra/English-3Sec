@@ -12638,5 +12638,47 @@ body.cm-act #qb3-fbar>*:not(#cm-live){display:none!important}
   var mo=null; (function att(){ var el=$('qb3-start'); if(!el){ if(++n<100) return setTimeout(att,300); return; } mo=new MutationObserver(function(){ deco(); }); mo.observe(el,{childList:true}); deco(); })();
 })();
 </script>
+<script id="s3-mis-js">
+/* s3-mis-js: a student who stays signed in gets the questions the teacher marked Wrong in class mode
+   (students/<uid>.tmis) into "Review my mistakes" on a plain reload or when the app comes back to the front. */
+(function(){
+  if(window.__s3mis) return; window.__s3mis=1;
+  var busy=false,last=0,tries=0;
+  function S(){ return window.S3; }
+  function isStu(){ try{ return !!(S()&&S().isStudent&&S().isStudent()); }catch(e){ return false; } }
+  function run(){
+    if(busy||!isStu()) return;
+    var C=window.S3CLOUD, fb=null;
+    try{ fb=C&&C.on&&C.fbx&&C.fbx(); }catch(e){}
+    if(!fb||!fb.F||!fb.db) return;
+    var sess=S().SESS(); if(!sess||!sess.id) return;
+    busy=true; last=Date.now();
+    fb.F.getDoc(fb.F.doc(fb.db,'students',sess.id)).then(function(sn){
+      busy=false;
+      if(!sn||!sn.exists()) return;
+      var d=sn.data()||{}, ent=Object.entries(d.tmis||{});
+      try{ S().ls.set('s3_tp_'+sess.id,d.tpLog||{}); }catch(e){}
+      if(!ent.length) return;
+      var p=S().getProg(sess.id), done=new Set(p.tmisApplied||[]);
+      var nw=ent.filter(function(x){ return !done.has(x[0]); });
+      if(!nw.length) return;
+      if(typeof state==='undefined'||!state) return;
+      state.srsMap=state.srsMap||{};
+      nw.forEach(function(x){
+        var e=x[1]; if(e&&e.q!=null) state.srsMap[e.q]={level:0,consecutiveCorrect:0,nextReviewAt:Date.now()};
+        done.add(x[0]);
+      });
+      p.tmisApplied=Array.from(done).slice(-1500);
+      try{ S().saveProg(p); }catch(e){}
+      try{ if(window.saveState) window.saveState(); }catch(e){}
+      try{ if(S().toast) S().toast('📌 '+nw.length+' new question'+(nw.length>1?'s':'')+' added to Review my mistakes'); }catch(e){}
+    }).catch(function(){ busy=false; });
+  }
+  var iv=setInterval(function(){ tries++; if(tries>20){ clearInterval(iv); return; } if(isStu()) run(); },3000);
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'&&Date.now()-last>60000) run(); });
+  window.addEventListener('online',function(){ run(); });
+  window.__s3misRun=run;
+})();
+</script>
 </body>
 </html>
